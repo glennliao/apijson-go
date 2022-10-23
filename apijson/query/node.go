@@ -8,7 +8,6 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"my-apijson/apijson/db"
-	"my-apijson/apijson/util"
 	"path/filepath"
 	"strings"
 	"time"
@@ -131,23 +130,23 @@ func (n *Node) parse() {
 
 	if table != "" {
 
-		role := n.ctx.Value("ajg.role").([]string)
-
-		access := db.AccessMap[table]
-
-		canAccess := false
-		for _, r := range role {
-			if util.Contains(access.Get, r) {
-				canAccess = true
-				break
-			}
-		}
-		g.Log().Debug(n.ctx, "userRole:", role, "accessRole", access.Get, "can?:", canAccess)
-		if !canAccess {
-
-			g.Log().Debug(n.ctx, n.Path, "userRole:", role, "accessRole", access.Get, "can?:", canAccess)
-			return
-		}
+		// role := n.ctx.Value("ajg.role").([]string)
+		//
+		// access := db.AccessMap[table]
+		//
+		// canAccess := false
+		// for _, r := range role {
+		// 	if util.Contains(access.Get, r) {
+		// 		canAccess = true
+		// 		break
+		// 	}
+		// }
+		// g.Log().Debug(n.ctx, "userRole:", role, "accessRole", access.Get, "can?:", canAccess)
+		// if !canAccess {
+		//
+		// 	g.Log().Debug(n.ctx, n.Path, "userRole:", role, "accessRole", access.Get, "can?:", canAccess)
+		// 	return
+		// }
 
 		refKeyMap, conditionMap := parseRefKey(n.req)
 
@@ -161,22 +160,22 @@ func (n *Node) parse() {
 		}
 
 		// access 限定条件
-		if n.queryContext.AccessCondition != nil {
-			where, err := n.queryContext.AccessCondition(n.ctx, table, n.req, access.Get)
-			if err != nil {
-				n.err = err
-				return
-			}
-			if where != nil {
-				err = n.sqlExecutor.ParseCondition(where)
-
-				if err != nil {
-					n.err = err
-					return
-				}
-			}
-
-		}
+		// if n.queryContext.AccessCondition != nil {
+		// 	where, err := n.queryContext.AccessCondition(n.ctx, table, n.req, access.Get)
+		// 	if err != nil {
+		// 		n.err = err
+		// 		return
+		// 	}
+		// 	if where != nil {
+		// 		err = n.sqlExecutor.ParseCondition(where)
+		//
+		// 		if err != nil {
+		// 			n.err = err
+		// 			return
+		// 		}
+		// 	}
+		//
+		// }
 
 		if len(refKeyMap) > 0 {
 			n.refKeyMap = refKeyMap
