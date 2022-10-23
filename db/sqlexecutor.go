@@ -13,18 +13,22 @@ type SqlExecutor struct {
 	Table   string
 	m       *gdb.Model
 	builder *gdb.WhereBuilder
-	Page    int
-	Count   int
 
 	Columns []string
 	Order   string
 	Group   string
 
-	isList bool
+	WithEmptyResult bool // 是否最终为空结果
 }
 
-func NewSqlExecutor(ctx context.Context, table string, isList bool) *SqlExecutor {
-	// table = gstr.CaseSnake(table)
+func NewSqlExecutor(ctx context.Context, table string, accessVerify bool) (*SqlExecutor, error) {
+
+	access, err := GetAccess(table, accessVerify)
+	if err != nil {
+		return nil, err
+	}
+
+	table = access.Name
 
 	m := g.DB().Model(table)
 
@@ -33,13 +37,10 @@ func NewSqlExecutor(ctx context.Context, table string, isList bool) *SqlExecutor
 		Table:   table,
 		m:       m,
 		builder: m.Builder(),
-		Page:    1,
-		Count:   10,
 		Columns: nil,
 		Order:   "",
 		Group:   "",
-		isList:  isList,
-	}
+	}, nil
 }
 
 func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny) error {
@@ -48,24 +49,13 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny) error {
 		if strings.HasPrefix(k, "//") { // for debug, 如果字段//开头, 则忽略, 用于json"注释"
 			continue
 		}
-
-		// k = gstr.CaseSnake(k)
-
 		switch {
-		case k == "page":
-			e.parseCtrlCondition(k, condition)
-
-		case k == "count":
-			e.parseCtrlCondition(k, condition)
-
-		case strings.HasPrefix(k, "@"):
-			e.parseCtrlCondition(k, condition)
-
 		case strings.HasSuffix(k, "{}"):
 			e.parseMultiCondition(k[0:len(k)-2], condition)
 
 		case strings.HasSuffix(k, "$"):
 			e.builder = e.builder.WhereLike(k[0:len(k)-1], gconv.String(condition))
+
 		case strings.HasSuffix(k, "~"):
 			e.builder = e.builder.Where(k[0:len(k)-1]+" REGEXP ", gconv.String(condition))
 
@@ -114,6 +104,7 @@ func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 			b = b.Where(getK(k)+" "+c[0], c[1])
 		}
 		e.builder = e.builder.Where(b)
+
 	case '|':
 		b := e.m.Builder()
 		for _, c := range conditions {
@@ -123,54 +114,102 @@ func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 
 	case '!':
 		e.builder = e.builder.WhereNotIn(getK(k), condition)
+
 	default:
 		e.builder = e.builder.WhereIn(k, condition)
 	}
 
 }
 
-func (e *SqlExecutor) parseCtrlCondition(k string, condition any) error {
+func (e *SqlExecutor) ParseCtrl(m g.Map) error {
 
-	switch k {
-	case "count":
-		e.Count = gconv.Int(condition)
-	case "page":
-		e.Page = gconv.Int(condition)
-	case "@order":
-		order := strings.Replace(gconv.String(condition), "-", " desc", -1)
-		order = strings.Replace(order, "+", " ", -1)
-		e.Order = order
-	case "@column":
-		columns := gconv.String(condition)
-		columns = strings.Replace(columns, ";", ", ", -1)
-		columns = strings.Replace(columns, ":", " as ", -1)
-		e.Columns = strings.Split(columns, ",")
-	case "@group":
-		e.Group = gconv.String(condition)
+	for k, v := range m {
+		switch k {
+
+		case "@order":
+			order := strings.Replace(gconv.String(v), "-", " desc", -1)
+			order = strings.Replace(order, "+", " ", -1)
+			e.Order = order
+
+		case "@column":
+			columns := gconv.String(v)
+			columns = strings.Replace(columns, ";", ", ", -1)
+			columns = strings.Replace(columns, ":", " as ", -1)
+			e.Columns = strings.Split(columns, ",")
+
+		case "@group":
+			e.Group = gconv.String(v)
+		}
 	}
+
 	return nil
 }
 
-func (e *SqlExecutor) Fetch() (any, error) {
-
-	if e.Columns != nil {
-		e.m = e.m.Fields(e.Columns)
-	}
+func (e *SqlExecutor) build() *gdb.Model {
+	m := e.m.Clone()
 
 	if e.Order != "" {
-		e.m = e.m.Order(e.Order)
+		m = m.Order(e.Order)
 	}
 
-	e.m = e.m.Where(e.builder)
+	m = m.Where(e.builder)
 
 	if e.Group != "" {
-		e.m = e.m.Group(e.Group)
+		m = m.Group(e.Group)
 	}
 
-	if e.isList {
-		e.m = e.m.Page(e.Page, e.Count)
-		return e.m.All()
+	return m
+}
+
+func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int, err error) {
+
+	if e.WithEmptyResult {
+		return nil, 0, err
 	}
 
-	return e.m.One()
+	m := e.build()
+
+	if needTotal {
+		total, err = m.Fields("*").Count()
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	// 无需下一步查询
+	if needTotal && total == 0 {
+		return nil, 0, err
+	}
+
+	if e.Columns != nil {
+		m = m.Fields(e.Columns)
+	}
+
+	m = m.Page(page, count)
+	all, err := m.All()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for _, item := range all.List() {
+		list = append(list, item)
+	}
+
+	return
+}
+
+func (e *SqlExecutor) One() (g.Map, error) {
+	if e.WithEmptyResult {
+		return nil, nil
+	}
+
+	m := e.build()
+
+	if e.Columns != nil {
+		m = m.Fields(e.Columns)
+	}
+
+	one, err := m.One()
+
+	return one.Map(), err
 }
