@@ -1,0 +1,8 @@
+database:
+  logger:
+    level: "all"
+    stdout: true
+  default:
+    debug: true
+#    link: "mysql:root:145b4d882db4e6ea@tcp(192.168.31.70:3306)/my_apijson?charset=utf8mb4&parseTime=True&loc=Local"
+    link: "mysql:root:yourpassword@tcp(127.0.0.1:3306)/my_apijson?charset=utf8mb4&parseTime=True&loc=Local"
