@@ -155,7 +155,7 @@ func TestTotal(t *testing.T) {
 
 }
 
-// TestRefOnRef 暂不可用, 需要分析树节点中处理依赖节点被依赖时的优先级 //todo
+// TestRefOnRef
 func TestRefOnRef(t *testing.T) {
 	req := `
 {

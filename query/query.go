@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"time"
@@ -62,26 +63,60 @@ func printNode(n *Node, deep int) {
 
 }
 
-func analysisRef(p *Node, fetchNodeQueue *[]*Node, fetchNodeQueueWithRef *[]*Node, fetchNodeQueueRefNode *[]*Node) {
+func analysisOrder(prerequisites [][]string) ([]string, error) {
 
-	// 分析依赖关系, 让无依赖的先执行， 然后在执行后续的
-	// 需优化调整 更通用的 （目前问题点在于依赖的节点也有依赖时的优先顺序问题）
-	for _, node := range p.children {
-		if node.Type == NodeTypeQuery && len(node.refKeyMap) == 0 {
-			*fetchNodeQueue = append(*fetchNodeQueue, node)
-		} else {
-			if node.Type == NodeTypeRef {
-				*fetchNodeQueueRefNode = append(*fetchNodeQueueRefNode, node)
-			} else {
-				*fetchNodeQueueWithRef = append(*fetchNodeQueueWithRef, node)
+	var pointMap = make(map[string]bool)
+	for _, prerequisite := range prerequisites {
+		pointMap[prerequisite[0]] = true
+		pointMap[prerequisite[1]] = true
+	}
+
+	var pointNum = len(pointMap)
+	var edgesMap = make(map[string][]string)
+	var indeg = make(map[string]int)
+	var result []string
+
+	for _, prerequisite := range prerequisites {
+		edgesMap[prerequisite[1]] = append(edgesMap[prerequisite[1]], prerequisite[0])
+		indeg[prerequisite[0]]++
+	}
+
+	var queue []string
+
+	for point, _ := range pointMap {
+		if indeg[point] == 0 {
+			queue = append(queue, point)
+		}
+	}
+
+	for len(queue) > 0 {
+		var first string
+		first, queue = queue[0], queue[1:]
+		result = append(result, first)
+		for _, point := range edgesMap[first] {
+			indeg[point]--
+			if indeg[point] == 0 {
+				queue = append(queue, point)
 			}
 		}
-		//if node.primaryTableKey != "" {
-		//
-		//} else {
-		//
-		//}
-		analysisRef(node, fetchNodeQueue, fetchNodeQueueWithRef, fetchNodeQueueRefNode)
+	}
+
+	if len(result) != pointNum {
+		return nil, gerror.New("依赖循环, 请检查请求")
+	}
+
+	return result, nil
+
+}
+
+func analysisRef(p *Node, prerequisites *[][]string) {
+
+	// 分析依赖关系, 让无依赖的先执行， 然后在执行后续的
+	for _, node := range p.children {
+		for _, refNode := range node.refKeyMap {
+			*prerequisites = append(*prerequisites, []string{node.Path, refNode.node.Path})
+		}
+		analysisRef(node, prerequisites)
 	}
 
 }
@@ -89,53 +124,22 @@ func analysisRef(p *Node, fetchNodeQueue *[]*Node, fetchNodeQueueWithRef *[]*Nod
 func (q *Query) fetch() {
 	// 分析依赖关系
 
-	var fetchNodeQueue []*Node
-	var fetchNodeQueueWithRef []*Node
-	var fetchNodeQueueRefNode []*Node
+	var prerequisites [][]string
+	analysisRef(q.rootNode, &prerequisites)
+	fetchQueue, err := analysisOrder(prerequisites)
 
-	analysisRef(q.rootNode, &fetchNodeQueue, &fetchNodeQueueWithRef, &fetchNodeQueueRefNode)
-
-	//fetchNodeQueue = lo.Reverse(fetchNodeQueue)
-	//fetchNodeQueueWithRef = lo.Reverse(fetchNodeQueueWithRef)
-
-	//for _, node := range fetchNodeQueueWithRef {
-	//	fmt.Printf("%s\n", node.Path)
-	//	for k, refPath := range node.refKeyMap {
-	//		fmt.Printf("%s -> %s\n", k, refPath)
-	//	}
-	//	fmt.Println("---------------------")
-	//}
+	if err != nil {
+		q.err = err
+	}
 
 	fmt.Println("fetch queue")
-	for _, node := range append(fetchNodeQueue) {
-		fmt.Printf(" 【%s】 > ", node.Path)
-	}
-	fmt.Println("")
-
-	for _, node := range append(fetchNodeQueueWithRef) {
-		fmt.Printf(" 【%s】 > ", node.Path)
+	for _, path := range fetchQueue {
+		fmt.Printf(" 【%s】 > ", path)
 	}
 
-	fmt.Println("")
-
-	for _, node := range append(fetchNodeQueueRefNode) {
-		fmt.Printf(" 【%s】 > ", node.Path)
+	for _, path := range fetchQueue {
+		q.pathNodes[path].fetch()
 	}
-
-	fmt.Println("")
-
-	for _, node := range fetchNodeQueue {
-		node.fetch()
-	}
-
-	for _, node := range fetchNodeQueueWithRef {
-		node.fetch()
-	}
-
-	for _, node := range fetchNodeQueueRefNode {
-		node.fetch()
-	}
-
 }
 
 func (q *Query) Result() (g.Map, error) {
@@ -162,6 +166,10 @@ func (q *Query) Result() (g.Map, error) {
 	g.Log().Debugf(q.ctx, "【query】 ============ [fetch]")
 
 	q.fetch()
+
+	if q.err != nil {
+		return nil, err
+	}
 
 	resultMap, err := q.rootNode.Result()
 
