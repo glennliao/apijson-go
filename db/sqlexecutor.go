@@ -21,20 +21,13 @@ type SqlExecutor struct {
 	WithEmptyResult bool // 是否最终为空结果
 }
 
-func NewSqlExecutor(ctx context.Context, table string, accessVerify bool) (*SqlExecutor, error) {
+func NewSqlExecutor(ctx context.Context, tableName string, accessVerify bool) (*SqlExecutor, error) {
 
-	access, err := GetAccess(table, accessVerify)
-	if err != nil {
-		return nil, err
-	}
-
-	table = access.Name
-
-	m := g.DB().Model(table)
+	m := g.DB().Model(tableName)
 
 	return &SqlExecutor{
 		ctx:     ctx,
-		Table:   table,
+		Table:   tableName,
 		m:       m,
 		builder: m.Builder(),
 		Columns: nil,
@@ -46,9 +39,6 @@ func NewSqlExecutor(ctx context.Context, table string, accessVerify bool) (*SqlE
 func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny) error {
 
 	for k, condition := range conditions {
-		if strings.HasPrefix(k, "//") { // for debug, 如果字段//开头, 则忽略, 用于json"注释"
-			continue
-		}
 		switch {
 		case strings.HasSuffix(k, "{}"):
 			e.parseMultiCondition(k[0:len(k)-2], condition)

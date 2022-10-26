@@ -6,14 +6,12 @@ import (
 	"github.com/glennliao/apijson-go/config"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
-	"github.com/samber/lo"
 	"time"
 )
 
 type Query struct {
 	ctx context.Context
 
-	Role     string
 	req      g.Map // json请求内容
 	rootNode *Node // 节点树根节点
 
@@ -27,7 +25,7 @@ type Query struct {
 	// 是否权限验证
 	AccessVerify bool
 	// 自定义可访问权限的限定, 例如添加用户id的where条件
-	AccessCondition func(ctx context.Context, table string, req g.Map, reqRole string, needRole []string) (g.Map, error)
+	AccessCondition config.AccessCondition
 }
 
 func New(ctx context.Context, req g.Map) *Query {
@@ -64,15 +62,26 @@ func printNode(n *Node, deep int) {
 
 }
 
-func analysisRef(p *Node, fetchNodeQueue *[]*Node, fetchNodeQueueWithRef *[]*Node) {
+func analysisRef(p *Node, fetchNodeQueue *[]*Node, fetchNodeQueueWithRef *[]*Node, fetchNodeQueueRefNode *[]*Node) {
 
+	// 分析依赖关系, 让无依赖的先执行， 然后在执行后续的
+	// 需优化调整 更通用的 （目前问题点在于依赖的节点也有依赖时的优先顺序问题）
 	for _, node := range p.children {
-		if node.primaryTableKey != "" {
+		if node.Type == NodeTypeQuery && len(node.refKeyMap) == 0 {
 			*fetchNodeQueue = append(*fetchNodeQueue, node)
 		} else {
-			*fetchNodeQueueWithRef = append(*fetchNodeQueueWithRef, node)
+			if node.Type == NodeTypeRef {
+				*fetchNodeQueueRefNode = append(*fetchNodeQueueRefNode, node)
+			} else {
+				*fetchNodeQueueWithRef = append(*fetchNodeQueueWithRef, node)
+			}
 		}
-		analysisRef(node, fetchNodeQueue, fetchNodeQueueWithRef)
+		//if node.primaryTableKey != "" {
+		//
+		//} else {
+		//
+		//}
+		analysisRef(node, fetchNodeQueue, fetchNodeQueueWithRef, fetchNodeQueueRefNode)
 	}
 
 }
@@ -82,11 +91,12 @@ func (q *Query) fetch() {
 
 	var fetchNodeQueue []*Node
 	var fetchNodeQueueWithRef []*Node
+	var fetchNodeQueueRefNode []*Node
 
-	analysisRef(q.rootNode, &fetchNodeQueue, &fetchNodeQueueWithRef)
+	analysisRef(q.rootNode, &fetchNodeQueue, &fetchNodeQueueWithRef, &fetchNodeQueueRefNode)
 
-	fetchNodeQueue = lo.Reverse(fetchNodeQueue)
-	fetchNodeQueueWithRef = lo.Reverse(fetchNodeQueueWithRef)
+	//fetchNodeQueue = lo.Reverse(fetchNodeQueue)
+	//fetchNodeQueueWithRef = lo.Reverse(fetchNodeQueueWithRef)
 
 	//for _, node := range fetchNodeQueueWithRef {
 	//	fmt.Printf("%s\n", node.Path)
@@ -105,6 +115,13 @@ func (q *Query) fetch() {
 	for _, node := range append(fetchNodeQueueWithRef) {
 		fmt.Printf(" 【%s】 > ", node.Path)
 	}
+
+	fmt.Println("")
+
+	for _, node := range append(fetchNodeQueueRefNode) {
+		fmt.Printf(" 【%s】 > ", node.Path)
+	}
+
 	fmt.Println("")
 
 	for _, node := range fetchNodeQueue {
@@ -115,21 +132,18 @@ func (q *Query) fetch() {
 		node.fetch()
 	}
 
+	for _, node := range fetchNodeQueueRefNode {
+		node.fetch()
+	}
+
 }
 
 func (q *Query) Result() (g.Map, error) {
+
 	g.Log().Debugf(q.ctx, "【query】 ============ [buildNodeTree]")
 
 	// 构建节点树,并校验结构是否符合,  不符合则返回错误, 结束本次查询
 	q.rootNode = newNode(q, "", "", q.req)
-
-	if config.AccessVerify {
-		if role, ok := q.req["@role"]; ok {
-			q.rootNode.role = defaultRole(q.ctx, gconv.String(role))
-		} else {
-			q.rootNode.role = defaultRole(q.ctx, "")
-		}
-	}
 
 	err := q.rootNode.buildChild()
 
@@ -139,9 +153,9 @@ func (q *Query) Result() (g.Map, error) {
 
 	printNode(q.rootNode, 0)
 
-	//return nil, err
-
 	g.Log().Debugf(q.ctx, "【query】 ============ [parse]")
+
+	setNodeRole(q.rootNode, "", "")
 
 	q.rootNode.parse()
 
@@ -150,6 +164,18 @@ func (q *Query) Result() (g.Map, error) {
 	q.fetch()
 
 	resultMap, err := q.rootNode.Result()
+
+	if err != nil {
+		if q.rootNode.err != nil {
+			return nil, q.rootNode.err
+		}
+
+		resultMap := g.Map{}
+		for k, node := range q.rootNode.children {
+			resultMap[k] = node.err
+		}
+		return resultMap, err
+	}
 
 	g.Log().Debugf(q.ctx, "【query】 ^=======================^")
 	return resultMap.(g.Map), err

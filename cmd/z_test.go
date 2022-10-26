@@ -5,12 +5,11 @@ import (
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
-	"github.com/glennliao/apijson-go/handler"
+	"github.com/glennliao/apijson-go/handlers"
 	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
-	"github.com/samber/lo"
 	"strings"
 	"testing"
 )
@@ -32,7 +31,7 @@ func TestList(t *testing.T) {
 	db.Init()
 	ctx := context.TODO()
 	reqMap := gjson.New(req).Map()
-	out, err := handler.Get(ctx, reqMap)
+	out, err := handlers.Get(ctx, reqMap)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +53,7 @@ func TestRefRef(t *testing.T) {
 	db.Init()
 	ctx := context.TODO()
 	reqMap := gjson.New(req).Map()
-	out, err := handler.Get(ctx, reqMap)
+	out, err := handlers.Get(ctx, reqMap)
 	if err != nil {
 		panic(err)
 	}
@@ -77,7 +76,7 @@ func TestTwoTableGet(t *testing.T) {
 
 	ctx := context.TODO()
 	reqMap := gjson.New(req).Map()
-	out, err := handler.Get(ctx, reqMap)
+	out, err := handlers.Get(ctx, reqMap)
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +100,7 @@ func TestTowTableGetList(t *testing.T) {
 `
 	ctx := context.TODO()
 	reqMap := gjson.New(req).Map()
-	out, err := handler.Get(ctx, reqMap)
+	out, err := handlers.Get(ctx, reqMap)
 	if err != nil {
 		panic(err)
 	}
@@ -129,7 +128,7 @@ func TestTotal(t *testing.T) {
 
 	ctx := context.TODO()
 
-	out, err := handler.Get(ctx, gjson.New(req).Map())
+	out, err := handlers.Get(ctx, gjson.New(req).Map())
 	if err != nil {
 		panic(err)
 	}
@@ -188,7 +187,7 @@ func TestRefOnRef(t *testing.T) {
 `
 	ctx := context.TODO()
 	reqMap := gjson.New(req).Map()
-	out, err := handler.Get(ctx, reqMap)
+	out, err := handlers.Get(ctx, reqMap)
 	if err != nil {
 		panic(err)
 	}
@@ -211,7 +210,7 @@ func TestCheckRequest(t *testing.T) {
 	ctx := context.TODO()
 	reqMap := gjson.New(req).Map()
 
-	out, err := handler.Post(ctx, reqMap)
+	out, err := handlers.Post(ctx, reqMap)
 	if err != nil {
 		g.Dump(err)
 	}
@@ -238,42 +237,42 @@ func TestAccess(t *testing.T) {
 	ctx = context.WithValue(ctx, "ajg.userId", "2")
 	ctx = context.WithValue(ctx, config.RoleKey, []string{consts.LOGIN, consts.OWNER})
 
-	config.AccessCondition = accessCondition
+	//config.AccessCondition = accessCondition
 	config.AccessVerify = true
 
 	reqMap := gjson.New(req).Map()
-	out, err := handler.Get(ctx, reqMap)
+	out, err := handlers.Get(ctx, reqMap)
 	if err != nil {
 		panic(err)
 	}
 	g.Dump(out)
 }
 
-func accessCondition(ctx context.Context, table string, req g.Map, reqRole string, needRole []string) (g.Map, error) {
-
-	userRole := ctx.Value(config.RoleKey).([]string)
-
-	// 可改成switch方式
-
-	if lo.Contains(needRole, consts.UNKNOWN) {
-		return nil, nil
-	}
-
-	if lo.Contains(needRole, consts.LOGIN) && lo.Contains(userRole, consts.LOGIN) { // 登录后公开资源
-		return nil, nil
-	}
-
-	if lo.Contains(needRole, consts.OWNER) && lo.Contains(userRole, consts.OWNER) {
-		if table == "User" {
-			return g.Map{
-				"id": ctx.Value("ajg.userId"),
-			}, nil
-		} else {
-			return g.Map{
-				"userId": ctx.Value("ajg.userId"),
-			}, nil
-		}
-	}
-
-	return nil, nil
-}
+//func accessCondition(ctx context.Context, table string, req g.Map, reqRole string, needRole []string) (g.Map, error) {
+//
+//	userRole := ctx.Value(config.RoleKey).([]string)
+//
+//	// 可改成switch方式
+//
+//	if lo.Contains(needRole, consts.UNKNOWN) {
+//		return nil, nil
+//	}
+//
+//	if lo.Contains(needRole, consts.LOGIN) && lo.Contains(userRole, consts.LOGIN) { // 登录后公开资源
+//		return nil, nil
+//	}
+//
+//	if lo.Contains(needRole, consts.OWNER) && lo.Contains(userRole, consts.OWNER) {
+//		if table == "User" {
+//			return g.Map{
+//				"id": ctx.Value("ajg.userId"),
+//			}, nil
+//		} else {
+//			return g.Map{
+//				"userId": ctx.Value("ajg.userId"),
+//			}, nil
+//		}
+//	}
+//
+//	return nil, nil
+//}

@@ -1,7 +1,6 @@
 package query
 
 import (
-	"context"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
@@ -80,28 +79,16 @@ func hasAccess(node *Node, table string) (hasAccess bool, accessWhere g.Map, err
 		return false, nil, err
 	}
 
-	accessWhere, err = node.queryContext.AccessCondition(node.ctx, tableName, node.req, node.role, accessRoles)
+	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.AccessConditionReq{
+		Table:               tableName,
+		TableAccessRoleList: accessRoles,
+		Method:              consts.MethodGet,
+		NodeReq:             node.req,
+		NodeRole:            node.role,
+	})
 
 	return true, accessWhere, err
 
-}
-
-func defaultRole(ctx context.Context, role string) string {
-	userRole := ctx.Value(config.RoleKey).([]string)
-	if lo.Contains(userRole, role) {
-		return role
-	}
-	if role == "" {
-		if len(userRole) > 0 {
-			return userRole[0]
-		}
-	}
-
-	if lo.Contains(userRole, consts.OWNER) {
-		return consts.OWNER
-	}
-
-	return consts.UNKNOWN
 }
 
 func getColList(list []g.Map, col string) []any {
@@ -117,5 +104,30 @@ func setNeedTotal(node *Node) {
 	node.needTotal = true
 	if node.Type == NodeTypeStruct {
 		setNeedTotal(node.children[node.primaryTableKey])
+	}
+}
+
+func setNodeRole(node *Node, tableName string, parenNodeRole string) {
+
+	role, ok := node.req["@role"]
+
+	if node.Type != NodeTypeQuery {
+		if !ok {
+			node.role = parenNodeRole
+		} else {
+			node.role = gconv.String(role)
+		}
+	} else {
+		if ok {
+			node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
+				Table:    tableName,
+				NodeRole: gconv.String(role),
+			})
+		} else {
+			node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
+				Table:    tableName,
+				NodeRole: parenNodeRole,
+			})
+		}
 	}
 }

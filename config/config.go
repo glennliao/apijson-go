@@ -11,13 +11,35 @@ var (
 	Debug = false
 )
 
-type AccessConditionFunc func(ctx context.Context, table string, req g.Map, reqRole string, needRole []string) (g.Map, error)
+type AccessConditionReq struct {
+	Table               string
+	TableAccessRoleList []string
+	Method              string
+	NodeReq             g.Map  //节点的请求数据
+	NodeRole            string // 节点的角色
+}
+
+type RoleReq struct {
+	Table    string
+	Method   string
+	NodeRole string // 前端传入的节点的角色, 目前未传入则为空
+}
+
+// AccessCondition 根据传入的ctx获取用户信息, 结合req 中的信息 返回需要添加到sql的where条件
+type AccessCondition func(ctx context.Context, req AccessConditionReq) (g.Map, error)
+
+// DefaultRole nodeRole 为前端显式指定的role, 需要此函数中判断该role是不是用户角色之一, 返回最终该节点的角色
+type DefaultRole func(ctx context.Context, req RoleReq) (string, error)
 
 var (
 	// AccessVerify 是否权限验证
 	AccessVerify = false
-	// AccessCondition 自定义权限限制条件
-	AccessCondition AccessConditionFunc
+	// AccessConditionFunc 自定义权限限制条件
+	AccessConditionFunc AccessCondition
+	// DefaultRoleFunc 自定义获取节点的默认角色
+	DefaultRoleFunc DefaultRole = func(ctx context.Context, req RoleReq) (string, error) {
+		return consts.UNKNOWN, nil
+	}
 )
 
 // 自定义设置从ctx获取用户id和角色的key

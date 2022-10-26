@@ -2,7 +2,6 @@ package query
 
 import (
 	"context"
-	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -124,7 +123,7 @@ func (n *Node) buildChild() error {
 			continue
 		}
 
-		if n.Type == NodeTypeQuery && !isFirstUp(key) { // 查询节点嵌套查询节点
+		if n.Type == NodeTypeQuery && !isFirstUp(key) { // 查询节点嵌套查询节点, 目前不支持
 			continue
 		}
 
@@ -134,14 +133,8 @@ func (n *Node) buildChild() error {
 		}
 		node := newNode(n.queryContext, key, path+key, v)
 
-		if config.AccessVerify {
-			if reqMap, ok := v.(g.Map); ok {
-				if role, ok := reqMap["@role"]; ok {
-					node.role = defaultRole(n.ctx, gconv.String(role))
-				} else {
-					node.role = defaultRole(n.ctx, "")
-				}
-			}
+		if n.Type != NodeTypeQuery { // 非查询节点role主要的功能是传递角色(设置该节点下子节点的角色)
+			setNodeRole(node, "", n.role)
 		}
 
 		err := node.buildChild()
@@ -178,24 +171,40 @@ func (n *Node) parse() {
 
 	switch n.Type {
 	case NodeTypeQuery:
-		table := parseTableKey(n.Key, n.Path)
+		tableKey := parseTableKey(n.Key, n.Path)
+
+		access, err := db.GetAccess(tableKey, n.queryContext.AccessVerify)
+		if err != nil {
+			n.err = err
+			return
+		}
+		tableName := access.Name
 
 		var accessWhereCondition g.Map
 
+		setNodeRole(n, tableName, n.role)
+
+		if n.role == consts.DENY {
+			n.err = gerror.New("deny node: " + n.Path)
+			return
+		}
+
 		if n.queryContext.AccessVerify {
-			has, condition, err := hasAccess(n, table)
+			has, condition, err := hasAccess(n, tableKey)
 			if err != nil {
 				n.err = err
 				return
 			}
+
 			if !has {
-				n.err = gerror.New("无权限访问:" + table)
+				n.err = gerror.New("无权限访问:" + tableKey + " by " + n.role)
 				return
 			}
+
 			accessWhereCondition = condition
 		}
 
-		executor, err := db.NewSqlExecutor(n.ctx, table, n.queryContext.AccessVerify)
+		executor, err := db.NewSqlExecutor(n.ctx, tableName, n.queryContext.AccessVerify)
 		if err != nil {
 			n.err = err
 			return
@@ -246,6 +255,11 @@ func (n *Node) parse() {
 				refNode := n.queryContext.pathNodes[refPath]
 				if refNode == nil {
 					panic(gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path))
+				}
+
+				if refNode.err != nil {
+					n.err = refNode.err
+					return
 				}
 
 				for _, _refN := range refNode.refKeyMap {
@@ -299,6 +313,12 @@ func (n *Node) parse() {
 
 			hasPrimary := false // 是否存在主查询表
 			for _, child := range n.children {
+
+				if child.err != nil {
+					n.err = child.err
+					return
+				}
+
 				if child.primaryTableKey != "" {
 
 					if hasPrimary {
@@ -441,14 +461,18 @@ func (n *Node) fetch() {
 
 func (n *Node) Result() (any, error) {
 
+	if n.err != nil {
+		return nil, n.err
+	}
+
 	switch n.Type {
 	case NodeTypeQuery:
 		if n.IsList {
-			if n.ret == nil {
-				return []string{}, n.err
+			if n.ret == nil || n.ret.([]g.Map) == nil {
+				return []g.Map{}, n.err
 			}
 		} else {
-			if n.ret == nil {
+			if n.ret == nil || n.ret.(g.Map) == nil {
 				return nil, n.err
 			}
 		}
@@ -505,7 +529,7 @@ func (n *Node) Result() (any, error) {
 				}
 				retMap[k], err = node.Result()
 				if err != nil {
-					panic(err)
+					return nil, err
 				}
 			}
 			n.ret = retMap
