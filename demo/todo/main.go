@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/glennliao/apijson-go/apijson/app/ind"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/glennliao/apijson-go/handlers"
@@ -64,6 +65,21 @@ func main() {
 		group.POST("/head", commonResponse(handlers.Head))
 		group.POST("/put", commonResponse(handlers.Put))
 		group.POST("/delete", commonResponse(handlers.Delete))
+	})
+
+	s.Group("index", func(group *ghttp.RouterGroup) {
+
+		group.Middleware(func(r *ghttp.Request) {
+			// TODO 权限校验
+			//...
+
+			r.Middleware.Next()
+
+			res := r.GetHandlerResponse()
+			r.Response.WriteJson(res)
+		})
+
+		group.Bind(ind.Routers()...)
 	})
 
 	s.Run()
