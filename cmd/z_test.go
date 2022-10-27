@@ -38,7 +38,32 @@ func TestList(t *testing.T) {
 	g.Dump(out)
 }
 
-// 此处形成了依赖循坏
+func TestList2(t *testing.T) {
+	req := `
+{
+	"[]":{
+		"User":{
+
+		},
+		"Todo[]":{
+			"user_id@":"/User/user_id"
+		}
+	}
+}
+`
+	db.Init()
+	ctx := context.TODO()
+	reqMap := gjson.New(req).Map()
+	config.AccessVerify = false // 是否验证权限
+
+	out, err := handlers.Get(ctx, reqMap)
+	if err != nil {
+		panic(err)
+	}
+	g.Dump(out)
+}
+
+// 此处形成了自我依赖
 func TestRefRef(t *testing.T) {
 	req := `
 {
@@ -47,6 +72,30 @@ func TestRefRef(t *testing.T) {
 	   },
 	"Todo":{
 		"user_id@":"User/user_id"
+	}
+}
+`
+	db.Init()
+	ctx := context.TODO()
+	reqMap := gjson.New(req).Map()
+	out, err := handlers.Get(ctx, reqMap)
+	if err != nil {
+		panic(err)
+	}
+	g.Dump(out)
+}
+
+func TestRefCircle(t *testing.T) {
+	req := `
+{
+	"User":{
+		"user_id@":"Todo/user_id"
+	},
+	"Todo":{
+		"user_id@":"Notice/user_id"
+	},
+	"Notice":{
+		"id@":"User/id"
 	}
 }
 `

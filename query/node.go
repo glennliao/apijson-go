@@ -282,7 +282,11 @@ func (n *Node) parse() {
 
 	case NodeTypeRef:
 
-		refPath, refCol := parseRefCol(n.simpleReqVal)
+		refStr := n.simpleReqVal
+		if strings.HasPrefix(refStr, "/") { // 这里/开头是相对同级
+			refStr = filepath.Dir(n.Path) + refStr
+		}
+		refPath, refCol := parseRefCol(refStr)
 		if refPath == n.Path { // 不能依赖自身
 			panic(gerror.Newf("node cannot ref self: (%s)", refPath))
 		}
@@ -502,13 +506,30 @@ func (n *Node) Result() (any, error) {
 					for childK, childNode := range n.children {
 						if childNode.primaryTableKey == "" {
 							if childNode.ret != nil {
+
+								var resultList []g.Map
+
 								for _, depRetItem := range childNode.ret.([]g.Map) {
+									match := true
 									for refK, refNode := range childNode.refKeyMap {
-										if pItem[refNode.column] == depRetItem[refK] {
-											item[childK] = depRetItem
+										if pItem[refNode.column] != depRetItem[refK] {
+											match = false
+											break
 										}
 									}
+									if match {
+										resultList = append(resultList, depRetItem)
+									}
+
 								}
+								if len(resultList) > 0 {
+									if strings.HasSuffix(childK, "[]") {
+										item[childK] = resultList
+									} else {
+										item[childK] = resultList[0]
+									}
+								}
+
 							}
 
 						}

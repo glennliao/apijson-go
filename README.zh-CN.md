@@ -23,6 +23,9 @@
   - [x] 基于角色控制
 
 - [ ] 远程函数
+- [ ] 错误提示
+- [ ] 查询节点 自定义查询数据
+
 
 ## 查询实现
 1. 根据json构造节点树, 并检查节点结构(不符合直接返回)
@@ -34,7 +37,22 @@
 # 列表查询限制
 
 [//]: # (1. page,count 最大值)
-- []下只能有一个主查询表 (不依赖于列表中其他表)
+- `[]`下只能有一个主查询表 (不依赖于列表中其他表)
+- 由于是应用内拼接结果处理1+n的问题， 当前以下写法total并不能获取到[]下单个节点的Todo[]的total值,也不能对Todo[]分页,所以勿使用于拔出萝卜带出泥的场景
+```json
+{
+	"[]":{
+		"User":{
+
+		},
+		"Todo[]":{
+			"user_id@":"/User/user_id"
+		},
+		"total@":"/Todo[]/total"
+	}
+}
+```
+
 
 # 权限控制方案
 ## 表
@@ -56,8 +74,6 @@
 4. 从cmd/config.yaml.example 改成 cmd/config.yaml, 然后修改配置文件cmd/config.yaml中数据库连接
 5. 在cmd目录运行go run main.go
 6. 查看测试 test.http / z_test.go
-
-
 
 # 感谢
 - [GoFrame](https://gitee.com/johng/gf)

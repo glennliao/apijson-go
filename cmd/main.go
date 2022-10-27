@@ -54,14 +54,14 @@ func main() {
 			r.Middleware.Next()
 		})
 
-		group.POST("/get", gfHandler("get"))
-		group.POST("/post", gfHandler("post"))
-		group.POST("/head", gfHandler("head"))
-		group.POST("/put", gfHandler("put"))
-		group.POST("/delete", gfHandler("delete"))
+		group.POST("/get", commonResponse(handlers.Get))
+		group.POST("/post", commonResponse(handlers.Post))
+		group.POST("/head", commonResponse(handlers.Head))
+		group.POST("/put", commonResponse(handlers.Put))
+		group.POST("/delete", commonResponse(handlers.Delete))
 	})
 
-	config.AccessVerify = true
+	config.AccessVerify = false // 是否验证权限
 	config.AccessConditionFunc = accessCondition
 	config.DefaultRoleFunc = role
 	config.Debug = true
@@ -143,79 +143,61 @@ func accessCondition(ctx context.Context, req config.AccessConditionReq) (g.Map,
 	return nil, nil
 }
 
-func gfHandler(p string) func(req *ghttp.Request) {
+func commonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err error)) func(req *ghttp.Request) {
 
-	var api func(ctx context.Context, req g.Map) (res g.Map, err error)
-
-	switch p {
-	case "get":
-		api = handlers.Get
-	case "post":
-		api = handlers.Post
-	case "head":
-		api = handlers.Head
-	case "put":
-		api = handlers.Put
-	case "delete":
-		api = handlers.Delete
-	}
 	return func(req *ghttp.Request) {
-		commonResponse(req, api)
-	}
-}
+		res := gmap.ListMap{}
+		code := 200
+		msg := "success"
+		err := g.Try(req.Context(), func(ctx context.Context) {
 
-func commonResponse(req *ghttp.Request, handler func(ctx context.Context, req g.Map) (res g.Map, err error)) {
-	res := gmap.ListMap{}
-	code := 200
-	msg := "success"
-	err := g.Try(req.Context(), func(ctx context.Context) {
+			ret, err := handler(req.Context(), req.GetMap())
 
-		ret, err := handler(req.Context(), req.GetMap())
+			if err == nil {
+				code = 200
+			} else {
+				code = 500
+				msg = err.Error()
+			}
 
-		if err == nil {
-			code = 200
-		} else {
+			if config.Debug { //调试模式开启
+				reqSortMap := orderedmap.New()
+
+				err := json.Unmarshal(req.GetBody(), reqSortMap)
+				if err != nil {
+					g.Log().Error(req.Context(), err)
+				}
+				for _, k := range reqSortMap.Keys() {
+					if strings.HasPrefix(k, "@") {
+						continue
+					}
+					if k == "tag" {
+						continue
+					}
+
+					res.Set(k, ret[k])
+				}
+
+			} else {
+				for k, v := range ret {
+					res.Set(k, v)
+				}
+			}
+
+		})
+		if err != nil {
 			code = 500
 			msg = err.Error()
-		}
 
-		if config.Debug { //调试模式开启
-			reqSortMap := orderedmap.New()
-
-			err := json.Unmarshal(req.GetBody(), reqSortMap)
-			if err != nil {
-				g.Log().Error(req.Context(), err)
-			}
-			for _, k := range reqSortMap.Keys() {
-				if strings.HasPrefix(k, "@") {
-					continue
-				}
-				if k == "tag" {
-					continue
-				}
-
-				res.Set(k, ret[k])
-			}
-
-		} else {
-			for k, v := range ret {
-				res.Set(k, v)
+			if e, ok := err.(*gerror.Error); ok {
+				g.Log().Stack(false).Error(req.Context(), err, e.Stack())
+			} else {
+				g.Log().Stack(false).Error(req.Context(), err)
 			}
 		}
-
-	})
-	if err != nil {
-		code = 500
-		msg = err.Error()
-
-		if e, ok := err.(*gerror.Error); ok {
-			g.Log().Stack(false).Error(req.Context(), err, e.Stack())
-		} else {
-			g.Log().Stack(false).Error(req.Context(), err)
-		}
+		res.Set("code", code)
+		res.Set("msg", msg)
+		res.Set("_span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
+		req.Response.WriteJson(res.String())
 	}
-	res.Set("code", code)
-	res.Set("msg", msg)
-	res.Set("_span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
-	req.Response.WriteJson(res.String())
 }

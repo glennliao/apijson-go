@@ -7,6 +7,7 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
+	"github.com/samber/lo"
 	"time"
 )
 
@@ -63,6 +64,7 @@ func printNode(n *Node, deep int) {
 
 }
 
+// analysisOrder 拓扑排序 分析优先级
 func analysisOrder(prerequisites [][]string) ([]string, error) {
 
 	var pointMap = make(map[string]bool)
@@ -130,16 +132,26 @@ func (q *Query) fetch() {
 
 	if err != nil {
 		q.err = err
+		return
+	}
+
+	for k, _ := range q.pathNodes {
+		if !lo.Contains(fetchQueue, k) {
+			fetchQueue = append(fetchQueue, k)
+		}
 	}
 
 	fmt.Println("fetch queue")
 	for _, path := range fetchQueue {
 		fmt.Printf(" 【%s】 > ", path)
 	}
+	fmt.Println()
 
 	for _, path := range fetchQueue {
 		q.pathNodes[path].fetch()
 	}
+
+	q.rootNode.fetch()
 }
 
 func (q *Query) Result() (g.Map, error) {
@@ -168,7 +180,7 @@ func (q *Query) Result() (g.Map, error) {
 	q.fetch()
 
 	if q.err != nil {
-		return nil, err
+		return nil, q.err
 	}
 
 	resultMap, err := q.rootNode.Result()
