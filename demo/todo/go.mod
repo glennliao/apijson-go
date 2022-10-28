@@ -1,12 +1,12 @@
-module github.com/glennliao/apijson-go
+module todo
 
-go 1.18
+go 1.19
 
 require (
+	github.com/glennliao/apijson-go v0.0.0
 	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.2.1
 	github.com/gogf/gf/v2 v2.2.1
 	github.com/iancoleman/orderedmap v0.2.0
-	github.com/samber/lo v1.33.0
 )
 
 require (
@@ -27,6 +27,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/samber/lo v1.33.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
@@ -36,5 +37,3 @@ require (
 	golang.org/x/text v0.3.8-0.20211105212822-18b340fc7af2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-

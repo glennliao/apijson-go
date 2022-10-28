@@ -11,14 +11,14 @@ ports:
 
 tasks:
   - init: |
-      mv cmd/config.yaml.example cmd/config.yaml
+      mv demo/todo/config.yaml.example demo/todo/config.yaml
       mysql -e "CREATE DATABASE my_apijson;"
-      mysql -p my_apijson < cmd/test/test.sql
+      mysql -p my_apijson < demo/todo/todo/todo.sql
       mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'yourpassword';"
 
     command: |
       go mod tidy
-      go run cmd/main.go
+      # go run cmd/main.go
 
 vscode:
   extensions:
