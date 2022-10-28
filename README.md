@@ -5,7 +5,7 @@
 
 
 # 快速体验
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/glennliao/apijson-go)
+<a href="https://gitpod.io/#https://github.com/glennliao/apijson-go"><img src="https://gitpod.io/button/open-in-gitpod.svg" /> </a>
 
 创建后 执行cmd/test/test.http 或者 cmd/z_test.go 访问测试
 
