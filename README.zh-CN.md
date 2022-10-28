@@ -3,6 +3,11 @@
 
 > 暂仍处于前期开发探索中, 请仅使用在 个人探索项目
 
+# 快速体验
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/glennliao/apijson-go)
+
+创建后 执行cmd/test/test.http 或者 cmd/z_test.go 访问测试
+
 # 功能实现
 
 - [x] 单表查询、单表数组查询
