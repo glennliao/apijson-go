@@ -8,6 +8,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
+	"strings"
 	"time"
 )
 
@@ -141,11 +142,7 @@ func (q *Query) fetch() {
 		}
 	}
 
-	fmt.Println("fetch queue")
-	for _, path := range fetchQueue {
-		fmt.Printf(" 【%s】 > ", path)
-	}
-	fmt.Println()
+	g.Log().Debugf(q.ctx, "fetch queue： %s", strings.Join(fetchQueue, " > "))
 
 	for _, path := range fetchQueue {
 		q.pathNodes[path].fetch()
@@ -167,7 +164,9 @@ func (q *Query) Result() (g.Map, error) {
 		return nil, err
 	}
 
-	printNode(q.rootNode, 0)
+	if config.Debug {
+		printNode(q.rootNode, 0)
+	}
 
 	g.Log().Debugf(q.ctx, "【query】 ============ [parse]")
 
