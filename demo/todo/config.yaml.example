@@ -11,3 +11,4 @@ database:
     debug: true
     timezone: Asia/Shanghai
     link: "mysql:root:yourpassword@tcp(127.0.0.1:3306)/my_apijson?charset=utf8mb4&parseTime=True&loc=Local"
+

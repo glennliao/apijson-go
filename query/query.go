@@ -51,7 +51,7 @@ func printNode(n *Node, deep int) {
 	}
 
 	desc := gconv.String(n.Type)
-	if n.IsList {
+	if n.isList {
 		desc += "[]"
 	}
 

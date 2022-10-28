@@ -3,8 +3,9 @@
 
 > 暂仍处于前期开发探索中, 请仅使用在 个人探索项目
 
+
 # 快速体验
-<a href="https://gitpod.io/#https://github.com/glennliao/apijson-go"><img src="https://gitpod.io/button/open-in-gitpod.svg" /> </a>
+<a href="https://gitpod.io/#https://github.com/glennliao/apijson-go"  target="_blank"><img src="https://gitpod.io/button/open-in-gitpod.svg" /> </a>
 
 创建后 执行cmd/test/test.http 或者 cmd/z_test.go 访问测试
 
@@ -75,10 +76,10 @@
 
 1. go >= 1.18
 2. 创建mysql数据库
-3. 导入cmd/test.sql文件
-4. 从cmd/config.yaml.example 改成 cmd/config.yaml, 然后修改配置文件cmd/config.yaml中数据库连接
-5. 在cmd目录运行go run main.go
-6. 查看测试 test.http / z_test.go
+3. 导入demo/todo/todo/todo.sql文件
+4. demo/todo/config.yaml.example 改成 demo/todo/config.yaml, 然后修改配置文件 config.yaml 中数据库连接
+5. 在demo/todo目录运行go run main.go
+6. 查看测试 demo/todo/todo/tests
 
 # 感谢
 - [GoFrame](https://gitee.com/johng/gf)

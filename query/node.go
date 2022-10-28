@@ -7,6 +7,7 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
+	"github.com/samber/lo"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,8 +29,10 @@ type Node struct {
 	Path string
 	// 节点类型
 	Type int
+
 	// 是否为列表节点
-	IsList bool
+	isList bool
+	page   g.Map // 分页参数
 
 	// 访问当前节点的角色
 	role string
@@ -90,7 +93,7 @@ func newNode(ctx *Query, key string, path string, nodeReq any) *Node {
 		}
 
 		if strings.HasSuffix(key, "[]") || strings.HasSuffix(filepath.Dir(path), "[]") {
-			node.IsList = true
+			node.isList = true
 		}
 	}
 
@@ -125,6 +128,12 @@ func (n *Node) buildChild() error {
 
 		if n.Type == NodeTypeQuery && !isFirstUp(key) { // 查询节点嵌套查询节点, 目前不支持
 			continue
+		}
+
+		if n.isList {
+			if lo.Contains([]string{"total", "page"}, key) {
+				continue
+			}
 		}
 
 		path := n.Path
@@ -213,7 +222,7 @@ func (n *Node) parse() {
 		n.sqlExecutor = executor
 
 		// 查询条件
-		refKeyMap, conditionMap, ctrlMap := parseQueryNodeReq(n.req, n.IsList)
+		refKeyMap, conditionMap, ctrlMap := parseQueryNodeReq(n.req, n.isList)
 
 		n.sqlExecutor.ParseCtrl(ctrlMap)
 
@@ -313,7 +322,15 @@ func (n *Node) parse() {
 			childNode.parse()
 		}
 
-		if n.IsList { // []节点
+		if n.isList { // []节点
+
+			page := g.Map{}
+			if v, exists := n.req["page"]; exists {
+				page["page"] = gconv.Int(v)
+			}
+			if v, exists := n.req["count"]; exists {
+				page["count"] = gconv.Int(v)
+			}
 
 			hasPrimary := false // 是否存在主查询表
 			for _, child := range n.children {
@@ -331,6 +348,8 @@ func (n *Node) parse() {
 
 					hasPrimary = true
 					n.primaryTableKey = child.Key
+					child.page = page
+
 				}
 			}
 
@@ -374,7 +393,7 @@ func (n *Node) fetch() {
 				return
 			}
 
-			if refNode.node.IsList {
+			if refNode.node.isList {
 				list := ret.([]g.Map)
 
 				valList := getColList(list, refNode.column)
@@ -414,10 +433,20 @@ func (n *Node) fetch() {
 			}
 		}
 
-		if n.IsList {
+		if n.isList {
 
 			page := 1
 			count := 10
+
+			for k, v := range n.page {
+				switch k {
+				case "page":
+					page = gconv.Int(v)
+
+				case "count":
+					count = gconv.Int(v)
+				}
+			}
 
 			for k, v := range n.req {
 				switch k {
@@ -456,7 +485,7 @@ func (n *Node) fetch() {
 
 	case NodeTypeStruct:
 		// 目前结构节点组装数据在result, 如果被依赖的是组装后的, 则无法查询。 如遇到此情况再看
-		if n.IsList && n.needTotal {
+		if n.isList && n.needTotal {
 			n.total = n.children[n.primaryTableKey].total
 		}
 	}
@@ -471,7 +500,7 @@ func (n *Node) Result() (any, error) {
 
 	switch n.Type {
 	case NodeTypeQuery:
-		if n.IsList {
+		if n.isList {
 			if n.ret == nil || n.ret.([]g.Map) == nil {
 				return []g.Map{}, n.err
 			}
@@ -486,7 +515,7 @@ func (n *Node) Result() (any, error) {
 			return n.total, nil
 		}
 	case NodeTypeStruct:
-		if n.IsList {
+		if n.isList {
 			var retList []g.Map
 
 			var primaryList []g.Map
