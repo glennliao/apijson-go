@@ -1,9 +1,10 @@
-package tests
+package fail_test
 
 import (
 	"github.com/glennliao/apijson-go/handlers"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -21,8 +22,12 @@ func TestRefCircle(t *testing.T) {
 `
 	reqMap := gjson.New(req).Map()
 	out, err := handlers.Get(ctx, reqMap)
+
+	a := assert.New(t)
+	a.NotNil(err)
+
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 	g.Dump(out)
 }
@@ -44,8 +49,12 @@ func TestRefCircle2(t *testing.T) {
 `
 	reqMap := gjson.New(req).Map()
 	out, err := handlers.Get(ctx, reqMap)
+
+	a := assert.New(t)
+	a.NotNil(err)
+
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 	g.Dump(out)
 }

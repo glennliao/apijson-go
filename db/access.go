@@ -98,4 +98,5 @@ func Init() {
 func Reload() {
 	loadAccessMap()
 	loadRequestMap()
+	loadTableMeta()
 }

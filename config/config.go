@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/samber/lo"
+	"strings"
 )
 
 var (
@@ -59,22 +61,74 @@ var (
 // access 中填写的角色应在角色列表中
 
 var (
-	RoleList = []string{consts.UNKNOWN, consts.LOGIN, consts.OWNER, consts.ADMIN}
+	roleList = []string{consts.UNKNOWN, consts.LOGIN, consts.OWNER, consts.ADMIN}
 )
 
 // AddRole 增加自定义角色
 func AddRole(name string) {
-	if !lo.Contains(RoleList, name) {
-		RoleList = append(RoleList, name)
+	if !lo.Contains(roleList, name) {
+		roleList = append(roleList, name)
 	}
 }
 
+func RoleList() []string { return roleList }
+
+// =========================  请求方法 =======================
+
+var methodList = []string{consts.MethodGet, consts.MethodHead, consts.MethodPost, consts.MethodPut, consts.MethodDelete}
+
+func MethodList() []string { return methodList }
+
 // =========================  字段配置 =======================
 
-// JsonFieldStyle DbFieldStyle 字段命名风格
-var JsonFieldStyle = consts.CaseCamel
-var DbFieldStyle = consts.CaseSnake
+// jsonFieldStyle dbFieldStyle 配置Json字段, 数据库命名风格
+var jsonFieldStyle = consts.CaseCamel
+var dbFieldStyle = consts.CaseSnake
 
-// todo 如果配置 DbFieldStyle 风格下划线， 则前端传进来的字段查询时候都转成下划线, 返回时则根据JsonFieldStyle转换, 如果JsonFieldStyle， DbFieldStyle 一致， 则可以看成不用转
-// sqlexecute中处理数据库端的转换
-// 返回的可在查询的field字段中使用 user_id as userId 完成转换
+// TODO 从配置文件读取命名风格
+
+// SetJsonFieldStyle 设置返回的 json字段风格, 默认为 lowerCamelCase风格, 参考 gstr.CaseCamelLower
+func SetJsonFieldStyle(style string) {
+	jsonFieldStyle = fieldStyle(style)
+}
+
+// SetDbFieldStyle 设置数据库的字段风格, 默认为 snake_case风格, 参考 gstr.CaseSnake
+func SetDbFieldStyle(style string) {
+	dbFieldStyle = fieldStyle(style)
+}
+
+func fieldStyle(style string) int {
+
+	switch strings.ToUpper(style) {
+	case consts.CASE_CAMEL:
+		return consts.CaseCamel
+	case consts.CASE_CAMEL_UPPER:
+		return consts.CaseCamelUpper
+	case consts.CASE_SNAKE:
+		return consts.CaseSnake
+	}
+
+	return consts.Origin
+}
+
+func convFieldStyle(style int, field string) string {
+	switch style {
+
+	case consts.CaseCamel:
+		return gstr.CaseCamelLower(field)
+	case consts.CaseCamelUpper:
+		return gstr.CaseCamel(field)
+	case consts.CaseSnake:
+		return gstr.CaseSnake(field)
+	default:
+		return field
+	}
+}
+
+func ToDbField(field string) string {
+	return convFieldStyle(dbFieldStyle, field)
+}
+
+func ToJsonField(field string) string {
+	return convFieldStyle(jsonFieldStyle, field)
+}

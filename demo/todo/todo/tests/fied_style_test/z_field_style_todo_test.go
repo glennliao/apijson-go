@@ -1,7 +1,8 @@
-package tests
+package fied_style_test
 
 import (
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/handlers"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
@@ -9,17 +10,18 @@ import (
 )
 
 func init() {
-	config.SetDbFieldStyle("Origin")
+	config.SetDbFieldStyle(consts.CASE_SNAKE)
 
-	config.SetJsonFieldStyle("Origin")
+	config.SetJsonFieldStyle(consts.CASE_CAMEL)
+	//config.SetJsonFieldStyle(consts.CASE_CAMEL_UPPER)
 }
 
-// TestTodoList 列表查询
-func TestTodoList(t *testing.T) {
+// TestCaseCameTodoList 列表查询
+func TestCaseCameTodoList(t *testing.T) {
 	req := `
 	{
-		"Todo":{
-		
+		"Todo[]":{
+			"query":"1"
 		   }
 	}
 `
@@ -31,13 +33,13 @@ func TestTodoList(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestListTodoWithPage 分页列表查询
-func TestListTodoWithPage(t *testing.T) {
+// TestCaseCameListTodoWithPage 分页列表查询
+func TestCaseCameListTodoWithPage(t *testing.T) {
 	req := `
 	{
     	"[]": {
 			"Todo": {
-			  "@column": "id:todoId;title"
+			  "@column": "id:todoId;title;userId:userIdCaseCamelLower"
 			},
 			"page": 2,
 			"count": 2
@@ -53,15 +55,15 @@ func TestListTodoWithPage(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestTodoWithUser 两表关联查询
-func TestTodoWithUser(t *testing.T) {
+// TestCaseCameTodoWithUser 两表关联查询
+func TestCaseCameTodoWithUser(t *testing.T) {
 	req := `
 	{
     	"Todo": {
 			
   		},
 		"User":{
-			"user_id@":"Todo/user_id"
+			"userId@":"Todo/userId"
 		}
 	}
 `
@@ -74,8 +76,10 @@ func TestTodoWithUser(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestTodoListWithUser 两表关联查询
-func TestTodoListWithUser(t *testing.T) {
+// TestCaseCameTodoListWithUser 两表关联查询
+func TestCaseCameTodoListWithUser(t *testing.T) {
+	config.SetJsonFieldStyle(consts.CASE_CAMEL)
+
 	req := `
 	{
 	  "[]": {
@@ -83,7 +87,7 @@ func TestTodoListWithUser(t *testing.T) {
 	
 		},
 		"User": {
-		  "user_id@": "[]/Todo/user_id"
+		  "userId@": "[]/Todo/userId"
 		}
 	  }
 	}
@@ -97,14 +101,14 @@ func TestTodoListWithUser(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestTodoListByUser 两表关联查询
-func TestTodoListByUser(t *testing.T) {
+// TestCaseCameTodoListByUser 两表关联查询
+func TestCaseCameTodoListByUser(t *testing.T) {
 	req := `
 	{
 	  "User": {},
 	  "[]": {
 		"Todo": {
-		  "user_id@": "User/user_id"
+		  "userId@": "User/userId"
 		}
 	  }
 	}
@@ -118,25 +122,25 @@ func TestTodoListByUser(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestTodoRef 两表关联查询
-func TestTodoRef(t *testing.T) {
+// TestCaseCameTodoRef 两表关联查询
+func TestCaseCameTodoRef(t *testing.T) {
 	req := `
 	{
 	  "Todo": {
-		"@column": "id,user_id",
-		"user_id@":"User/user_id"
+		"@column": "id,userId",
+		"userId@":"User/userId"
 	  },
 	  "User": {
-		"@column": "user_id"
+		"@column": "userId"
 	  },
 	  "[]": {
 		"Todo": {
-		  "user_id@": "Todo/user_id",
-		  "@column": "id,user_id"
+		  "userId@": "Todo/userId",
+		  "@column": "id,userId"
 		},
 		"User": {
-		  "user_id@": "/Todo/user_id",
-		  "@column": "user_id"
+		  "userId@": "/Todo/userId",
+		  "@column": "userId"
 		}
 	  }
 	}
@@ -150,17 +154,18 @@ func TestTodoRef(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestTodoOneMany 列表中一对多
-func TestTodoOneMany(t *testing.T) {
+// TestCaseCameTodoOneMany 列表中一对多
+func TestCaseCameTodoOneMany(t *testing.T) {
 	req := `
 {
 	"[]":{
 		"User":{
-
+			
 		},
 		"Todo[]":{
-			"user_id@":"/User/user_id"
-		}
+			"userId@":"/User/userId"
+		},
+		"query": "1"
 	}
 }
 `
