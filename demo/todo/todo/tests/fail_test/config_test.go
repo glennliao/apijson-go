@@ -1,4 +1,4 @@
-package tests
+package fail_test
 
 import (
 	"context"

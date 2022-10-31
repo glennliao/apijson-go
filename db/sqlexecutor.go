@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
+	"regexp"
 	"strings"
 )
 
@@ -25,12 +27,17 @@ func NewSqlExecutor(ctx context.Context, tableName string, accessVerify bool) (*
 
 	m := g.DB().Model(tableName)
 
+	var columns []string
+	for _, column := range tableMap[tableName].Columns {
+		columns = append(columns, column.Name)
+	}
+
 	return &SqlExecutor{
 		ctx:     ctx,
 		Table:   tableName,
 		m:       m,
 		builder: m.Builder(),
-		Columns: nil,
+		Columns: columns,
 		Order:   "",
 		Group:   "",
 	}, nil
@@ -39,6 +46,8 @@ func NewSqlExecutor(ctx context.Context, tableName string, accessVerify bool) (*
 func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny) error {
 
 	for k, condition := range conditions {
+		k = config.ToDbField(k) // 将请求字段转化为数据库字段风格
+
 		switch {
 		case strings.HasSuffix(k, "{}"):
 			e.parseMultiCondition(k[0:len(k)-2], condition)
@@ -111,24 +120,34 @@ func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 
 }
 
-func (e *SqlExecutor) ParseCtrl(m g.Map) error {
+var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 
-	for k, v := range m {
+func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
+
+	for k, v := range ctrl {
+		// https://github.com/Tencent/APIJSON/blob/master/Document.md
+		// 应该用分号 ; 隔开 SQL 函数，改为 "@column":"store_id;sum(amt):totAmt"）
+		fieldStr := strings.ReplaceAll(gconv.String(v), ";", Separator)
+
+		fieldList := strings.Split(fieldStr, ",")
+		for i, item := range fieldList {
+			fieldList[i] = exp.ReplaceAllStringFunc(item, config.ToDbField) // 将请求字段转化为数据库字段风格
+		}
+
+		fieldStr = strings.Join(fieldList, Separator)
+
 		switch k {
 
 		case "@order":
-			order := strings.Replace(gconv.String(v), "-", " desc", -1)
-			order = strings.Replace(order, "+", " ", -1)
+			order := strings.ReplaceAll(fieldStr, "-", DESC)
+			order = strings.ReplaceAll(order, "+", " ")
 			e.Order = order
 
 		case "@column":
-			columns := gconv.String(v)
-			columns = strings.Replace(columns, ";", ", ", -1)
-			columns = strings.Replace(columns, ":", " as ", -1)
-			e.Columns = strings.Split(columns, ",")
+			e.Columns = fieldList
 
 		case "@group":
-			e.Group = gconv.String(v)
+			e.Group = fieldStr
 		}
 	}
 
@@ -160,20 +179,13 @@ func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, t
 	m := e.build()
 
 	if needTotal {
-		total, err = m.Fields("*").Count()
-		if err != nil {
+		total, err = m.Count()
+		if err != nil || total == 0 {
 			return nil, 0, err
 		}
 	}
 
-	// 无需下一步查询
-	if needTotal && total == 0 {
-		return nil, 0, err
-	}
-
-	if e.Columns != nil {
-		m = m.Fields(e.Columns)
-	}
+	m = m.Fields(e.JsonFields())
 
 	m = m.Page(page, count)
 	all, err := m.All()
@@ -181,11 +193,7 @@ func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, t
 		return nil, 0, err
 	}
 
-	for _, item := range all.List() {
-		list = append(list, item)
-	}
-
-	return
+	return all.List(), total, nil
 }
 
 func (e *SqlExecutor) One() (g.Map, error) {
@@ -195,11 +203,28 @@ func (e *SqlExecutor) One() (g.Map, error) {
 
 	m := e.build()
 
-	if e.Columns != nil {
-		m = m.Fields(e.Columns)
-	}
+	m = m.Fields(e.JsonFields())
 
 	one, err := m.One()
 
 	return one.Map(), err
+}
+
+// JsonFields 返回 config.ToJsonField 指定的字段格式.
+func (e *SqlExecutor) JsonFields() []string {
+
+	var fields = make([]string, 0, len(e.Columns))
+	for _, column := range e.Columns {
+		column = strings.ReplaceAll(column, ":", AS)
+		if !strings.Contains(column, AS) {
+			field := config.ToJsonField(column)
+			if field != column {
+				column = column + AS + field
+			}
+		}
+
+		fields = append(fields, column)
+	}
+
+	return fields
 }

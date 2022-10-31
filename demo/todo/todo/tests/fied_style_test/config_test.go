@@ -1,4 +1,4 @@
-package tests
+package fied_style_test
 
 import (
 	"context"
