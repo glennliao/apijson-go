@@ -5,6 +5,7 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/gogf/gf/v2/container/gset"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -17,6 +18,7 @@ func isFirstUp(str string) bool {
 	return firstLetter >= 'A' && firstLetter <= 'Z'
 }
 
+// hasFirstUpKey
 func hasFirstUpKey(m g.Map) bool {
 	for k := range m {
 		if isFirstUp(k) {
@@ -38,6 +40,7 @@ func parseTableKey(k string, p string) (tableName string) {
 	return tableName
 }
 
+// parseQueryNodeReq 解析节点请求内容
 func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.Map, ctrlMap g.Map) {
 	refMap = g.MapStrStr{}
 	ctrlMap = g.Map{}
@@ -107,6 +110,7 @@ func setNeedTotal(node *Node) {
 	}
 }
 
+// setNodeRole 设置节点的@role, 根据 config.DefaultRoleFunc 获取节点最终的@role
 func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 
 	role, ok := node.req["@role"]
@@ -130,4 +134,63 @@ func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 			})
 		}
 	}
+}
+
+// analysisRef 分析依赖, 将依赖关系保存到prerequisites中
+func analysisRef(p *Node, prerequisites *[][]string) {
+
+	// 分析依赖关系, 让无依赖的先执行， 然后在执行后续的
+	for _, node := range p.children {
+		for _, refNode := range node.refKeyMap {
+			*prerequisites = append(*prerequisites, []string{node.Path, refNode.node.Path})
+		}
+		analysisRef(node, prerequisites)
+	}
+}
+
+// analysisOrder 使用拓扑排序 分析节点fetch优先级
+func analysisOrder(prerequisites [][]string) ([]string, error) {
+
+	var pointMap = make(map[string]bool)
+	for _, prerequisite := range prerequisites {
+		pointMap[prerequisite[0]] = true
+		pointMap[prerequisite[1]] = true
+	}
+
+	var pointNum = len(pointMap)
+	var edgesMap = make(map[string][]string)
+	var indeg = make(map[string]int)
+	var result []string
+
+	for _, prerequisite := range prerequisites {
+		edgesMap[prerequisite[1]] = append(edgesMap[prerequisite[1]], prerequisite[0])
+		indeg[prerequisite[0]]++
+	}
+
+	var queue []string
+
+	for point, _ := range pointMap {
+		if indeg[point] == 0 {
+			queue = append(queue, point)
+		}
+	}
+
+	for len(queue) > 0 {
+		var first string
+		first, queue = queue[0], queue[1:]
+		result = append(result, first)
+		for _, point := range edgesMap[first] {
+			indeg[point]--
+			if indeg[point] == 0 {
+				queue = append(queue, point)
+			}
+		}
+	}
+
+	if len(result) != pointNum {
+		return nil, gerror.New("依赖循环, 请检查请求")
+	}
+
+	return result, nil
+
 }

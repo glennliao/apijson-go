@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -61,65 +60,6 @@ func printNode(n *Node, deep int) {
 
 	for _, node := range n.children {
 		printNode(node, deep+1)
-	}
-
-}
-
-// analysisOrder 拓扑排序 分析优先级
-func analysisOrder(prerequisites [][]string) ([]string, error) {
-
-	var pointMap = make(map[string]bool)
-	for _, prerequisite := range prerequisites {
-		pointMap[prerequisite[0]] = true
-		pointMap[prerequisite[1]] = true
-	}
-
-	var pointNum = len(pointMap)
-	var edgesMap = make(map[string][]string)
-	var indeg = make(map[string]int)
-	var result []string
-
-	for _, prerequisite := range prerequisites {
-		edgesMap[prerequisite[1]] = append(edgesMap[prerequisite[1]], prerequisite[0])
-		indeg[prerequisite[0]]++
-	}
-
-	var queue []string
-
-	for point, _ := range pointMap {
-		if indeg[point] == 0 {
-			queue = append(queue, point)
-		}
-	}
-
-	for len(queue) > 0 {
-		var first string
-		first, queue = queue[0], queue[1:]
-		result = append(result, first)
-		for _, point := range edgesMap[first] {
-			indeg[point]--
-			if indeg[point] == 0 {
-				queue = append(queue, point)
-			}
-		}
-	}
-
-	if len(result) != pointNum {
-		return nil, gerror.New("依赖循环, 请检查请求")
-	}
-
-	return result, nil
-
-}
-
-func analysisRef(p *Node, prerequisites *[][]string) {
-
-	// 分析依赖关系, 让无依赖的先执行， 然后在执行后续的
-	for _, node := range p.children {
-		for _, refNode := range node.refKeyMap {
-			*prerequisites = append(*prerequisites, []string{node.Path, refNode.node.Path})
-		}
-		analysisRef(node, prerequisites)
 	}
 
 }

@@ -61,6 +61,7 @@ func Role(ctx context.Context, req config.RoleReq) (string, error) {
 func AccessCondition(ctx context.Context, req config.AccessConditionReq) (g.Map, error) {
 
 	user, ok := ctx.Value(config.UserIdKey).(*CurrentUser)
+
 	if !ok {
 		return nil, nil
 	}

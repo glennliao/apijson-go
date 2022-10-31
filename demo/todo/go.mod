@@ -1,6 +1,6 @@
 module todo
 
-go 1.19
+go 1.18
 
 require (
 	github.com/glennliao/apijson-go v0.0.0
@@ -37,3 +37,5 @@ require (
 	golang.org/x/text v0.3.8-0.20211105212822-18b340fc7af2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/glennliao/apijson-go v0.0.0 => ../..

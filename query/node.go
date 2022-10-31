@@ -69,13 +69,13 @@ type NodeRef struct {
 	node   *Node
 }
 
-func newNode(ctx *Query, key string, path string, nodeReq any) *Node {
+func newNode(query *Query, key string, path string, nodeReq any) *Node {
 
-	g.Log().Debugf(ctx.ctx, "【node】(%s) <new> ", path)
+	g.Log().Debugf(query.ctx, "【node】(%s) <new> ", path)
 
 	node := &Node{
-		ctx:          ctx.ctx,
-		queryContext: ctx,
+		ctx:          query.ctx,
+		queryContext: query,
 		Key:          key,
 		Path:         path,
 		startAt:      time.Now(),
@@ -109,7 +109,7 @@ func newNode(ctx *Query, key string, path string, nodeReq any) *Node {
 
 func (n *Node) buildChild() error {
 
-	if n.Type == NodeTypeQuery && !hasFirstUpKey(n.req) {
+	if n.Type == NodeTypeQuery && !hasFirstUpKey(n.req) { // 查询节点嵌套查询节点, 目前不支持
 		return nil
 	}
 
@@ -155,7 +155,7 @@ func (n *Node) buildChild() error {
 
 	if len(children) > 0 {
 
-		// 最大宽度检查
+		// 最大宽度检查, 目前为某节点的宽度, 应该计算为整棵树的最大宽度
 		if len(children) > consts.MaxTreeWidth {
 			path := n.Path
 			if path == "" {
@@ -187,6 +187,7 @@ func (n *Node) parse() {
 			n.err = err
 			return
 		}
+
 		tableName := access.Name
 
 		var accessWhereCondition g.Map

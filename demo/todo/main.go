@@ -86,7 +86,7 @@ func commonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err
 				msg = err.Error()
 			}
 
-			if config.Debug { //调试模式开启
+			if config.Debug { //调试模式开启, 使用orderedmap输出结果
 				reqSortMap := orderedmap.New()
 
 				err := json.Unmarshal(req.GetBody(), reqSortMap)
@@ -100,6 +100,7 @@ func commonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err
 					if k == "tag" {
 						continue
 					}
+
 					if strings.HasSuffix(k, "@") {
 						k = k[:len(k)-1]
 					}
