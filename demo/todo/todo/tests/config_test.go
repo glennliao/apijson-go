@@ -21,6 +21,10 @@ func init() {
 
 	iamWangmiao()
 	iamShiqiang()
+
+	config.SetDbFieldStyle(config.CaseSnake)
+
+	config.SetJsonFieldStyle(config.CaseCamel)
 }
 
 // iamWangmiao 使用汪淼账号

@@ -54,7 +54,7 @@ func TestRefCircle2(t *testing.T) {
 	a.NotNil(err)
 
 	if err != nil {
-		//panic(err)
+		panic(err)
 	}
 	g.Dump(out)
 }

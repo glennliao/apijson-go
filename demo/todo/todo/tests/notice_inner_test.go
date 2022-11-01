@@ -11,7 +11,8 @@ import (
 func TestNoticeInner(t *testing.T) {
 	req := `
 	{
-		"NoticeInner": {}
+		"NoticeInner": {
+"created_at":"12"}
 	}
 `
 	out, err := handlers.Get(ctx, gjson.New(req).Map())

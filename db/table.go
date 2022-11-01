@@ -7,10 +7,12 @@ import (
 
 type (
 	Column struct {
+		// 字段名
 		Name string
 	}
 
 	Table struct {
+		// 表名
 		Name    string
 		Columns []Column
 	}
@@ -20,6 +22,8 @@ var tableMap = map[string]Table{}
 
 func loadTableMeta() {
 	var ctx = context.TODO()
+
+	_tableMap := make(map[string]Table)
 
 	tables, err := g.DB().Tables(ctx)
 	if err != nil {
@@ -37,9 +41,11 @@ func loadTableMeta() {
 			columns = append(columns, Column{Name: field})
 		}
 
-		tableMap[table] = Table{
+		_tableMap[table] = Table{
 			Name:    table,
 			Columns: columns,
 		}
 	}
+
+	tableMap = _tableMap
 }

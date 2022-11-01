@@ -2,7 +2,6 @@ package fied_style_test
 
 import (
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/handlers"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
@@ -10,9 +9,9 @@ import (
 )
 
 func init() {
-	config.SetDbFieldStyle(consts.CASE_SNAKE)
+	config.SetDbFieldStyle(config.CaseSnake)
 
-	config.SetJsonFieldStyle(consts.CASE_CAMEL)
+	config.SetJsonFieldStyle(config.CaseSnake)
 	//config.SetJsonFieldStyle(consts.CASE_CAMEL_UPPER)
 }
 
@@ -78,7 +77,7 @@ func TestCaseCameTodoWithUser(t *testing.T) {
 
 // TestCaseCameTodoListWithUser 两表关联查询
 func TestCaseCameTodoListWithUser(t *testing.T) {
-	config.SetJsonFieldStyle(consts.CASE_CAMEL)
+	config.SetJsonFieldStyle(config.CaseCamel)
 
 	req := `
 	{

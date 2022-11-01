@@ -1,18 +1,11 @@
 package tests
 
 import (
-	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/handlers"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"testing"
 )
-
-func init() {
-	config.SetDbFieldStyle("Origin")
-
-	config.SetJsonFieldStyle("Origin")
-}
 
 // TestTodoList 列表查询
 func TestTodoList(t *testing.T) {
@@ -124,18 +117,18 @@ func TestTodoRef(t *testing.T) {
 	{
 	  "Todo": {
 		"@column": "id,user_id",
-		"user_id@":"User/user_id"
+		"user_id@":"User/userId"
 	  },
 	  "User": {
 		"@column": "user_id"
 	  },
 	  "[]": {
 		"Todo": {
-		  "user_id@": "Todo/user_id",
+		  "user_id@": "Todo/userId",
 		  "@column": "id,user_id"
 		},
 		"User": {
-		  "user_id@": "/Todo/user_id",
+		  "user_id@": "/Todo/userId",
 		  "@column": "user_id"
 		}
 	  }
@@ -159,7 +152,7 @@ func TestTodoOneMany(t *testing.T) {
 
 		},
 		"Todo[]":{
-			"user_id@":"/User/user_id"
+			"userId@":"/User/userId"
 		}
 	}
 }
