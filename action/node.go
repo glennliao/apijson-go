@@ -34,7 +34,7 @@ func (n *Node) parseReq(method string) {
 	n.data = g.Map{}
 	n.where = g.Map{}
 	for key, val := range n.req {
-		if key == "@role" {
+		if key == consts.Role {
 			n.role = gconv.String(val)
 		} else {
 			if method == consts.MethodDelete {
@@ -62,7 +62,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	}
 
 	n.tableName = access.Name
-	n.rowKey = "id" // 暂固定
+	n.rowKey = access.RowKey
 
 	n.parseReq(method)
 
@@ -101,13 +101,13 @@ func (n *Node) parse(ctx context.Context, method string) error {
 
 func (n *Node) roleUpdate() error {
 
-	if val, exists := n.structure.Insert["@role"]; exists {
+	if val, exists := n.structure.Insert[consts.Role]; exists {
 		if n.role == "" {
 			n.role = gconv.String(val)
 		}
 	}
 
-	if val, exists := n.structure.Update["@role"]; exists {
+	if val, exists := n.structure.Update[consts.Role]; exists {
 		n.role = gconv.String(val)
 	}
 

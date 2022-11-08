@@ -1,10 +1,11 @@
-package todo
+package app
 
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/samber/lo"
 )
 
 type CurrentUser struct {
@@ -34,11 +35,11 @@ func Role(ctx context.Context, req config.RoleReq) (string, error) {
 		switch req.Table {
 		case "t_todo", "t_user":
 
-			if req.NodeRole == consts.OWNER || req.NodeRole == consts.LOGIN {
-				return consts.OWNER, nil
+			if req.NodeRole == consts.LOGIN {
+				req.NodeRole = consts.OWNER
 			}
 
-			if req.NodeRole == PARTNER {
+			if lo.Contains([]string{consts.OWNER, PARTNER}, req.NodeRole) {
 				return req.NodeRole, nil
 			}
 

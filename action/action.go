@@ -10,7 +10,6 @@ import (
 	"strings"
 )
 
-// Structure https://github.com/Tencent/APIJSON/blob/master/APIJSONORM/src/main/java/apijson/orm/Operation.java
 type Structure struct {
 	Must   []string `json:"MUST,omitempty"`
 	Refuse []string `json:"REFUSE,omitempty"`

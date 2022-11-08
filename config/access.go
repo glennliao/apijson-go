@@ -39,15 +39,17 @@ var (
 )
 
 // 自定义设置从ctx获取用户id和角色的key
+
 var (
-	RoleKey   = "ajg.role" // ctx 中role 的key
 	UserIdKey = "ajg.userId"
 )
 
 // 设置 _access/_request 自定义表名
 var (
-	TableAccess  = "_access"
-	TableRequest = "_request"
+	TableAccess     = "_access"
+	TableAccessExt  = "_access_ext"
+	TableRequest    = "_request"
+	TableRequestExt = "_request_ext"
 )
 
 // =========================  角色 =======================

@@ -6,52 +6,105 @@ import (
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
+	"github.com/samber/lo"
 	"regexp"
 	"strings"
 )
 
 type SqlExecutor struct {
-	ctx   context.Context
-	Table string
+	ctx context.Context
 
-	Where [][]any //保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
+	Role string
+
+	//保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
+	Where [][]any
 
 	Columns []string
 	Order   string
 	Group   string
 
-	WithEmptyResult bool // 是否最终为空结果, 用于node中中断数据获取
+	// 是否最终为空结果, 用于node中中断数据获取
+	WithEmptyResult bool
+
+	accessVerify bool
+
+	access *Access
 }
 
-func NewSqlExecutor(ctx context.Context, tableName string, accessVerify bool) (*SqlExecutor, error) {
+func NewSqlExecutor(ctx context.Context, accessVerify bool, role string, access *Access) (*SqlExecutor, error) {
 
 	return &SqlExecutor{
-		ctx:   ctx,
-		Table: tableName,
-		Where: [][]any{},
-		Order: "",
-		Group: "",
+		ctx:             ctx,
+		Role:            role,
+		Where:           [][]any{},
+		Columns:         nil,
+		Order:           "",
+		Group:           "",
+		WithEmptyResult: false,
+		accessVerify:    accessVerify,
+		access:          access,
 	}, nil
 }
 
 // ParseCondition 解析查询条件
-func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny) error {
+// accessVerify 内部调用时, 不校验是否可使用该种查询方式
+func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) error {
 
 	for key, condition := range conditions {
 		switch {
 		case strings.HasSuffix(key, "{}"):
 			e.parseMultiCondition(key[0:len(key)-2], condition)
 
-		case strings.HasSuffix(key, "$"):
-			e.Where = append(e.Where, []any{key[0 : len(key)-1], "LIKE", gconv.String(condition)})
+		case strings.HasSuffix(key, Like):
+			e.Where = append(e.Where, []any{key[0 : len(key)-1], SqlLike, gconv.String(condition)})
 
-		case strings.HasSuffix(key, "~"):
-			e.Where = append(e.Where, []any{key[0 : len(key)-1], "REGEXP", gconv.String(condition)})
+		case strings.HasSuffix(key, Regexp):
+			e.Where = append(e.Where, []any{key[0 : len(key)-1], SqlRegexp, gconv.String(condition)})
 
 		default:
-			e.Where = append(e.Where, []any{key, "=", condition})
+			e.Where = append(e.Where, []any{key, SqlEqual, condition})
 		}
 	}
+
+	if !accessVerify {
+		return nil
+	}
+
+	inFieldsMap := e.access.GetFieldsGetInByRole(e.Role)
+
+	dbStyle := config.GetDbFieldStyle()
+
+	tableName := e.access.Name
+
+	for _, where := range e.Where {
+		k := dbStyle(e.ctx, tableName, where[0].(string))
+		if val, exists := inFieldsMap[k]; exists {
+
+			if val[0] == "*" {
+				continue
+			}
+
+			op := where[1].(string)
+			if op == SqlLike {
+				condition := where[2].(string)
+				op = Like
+				if strings.HasPrefix(condition, "%") {
+					op = "%" + op
+				}
+				if strings.HasSuffix(condition, "%") {
+					op = op + "%"
+				}
+			}
+
+			if !lo.Contains(val, op) {
+				panic("不允许使用" + where[0].(string) + "的搜索方式:" + op)
+			}
+
+		} else {
+			panic("不允许使用" + where[0].(string) + "搜索")
+		}
+	}
+
 	return nil
 }
 
@@ -59,7 +112,7 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny) error {
 func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 
 	var conditions [][]string
-	var value any = condition
+	var value = condition
 
 	if _str, ok := condition.(string); ok {
 		for _, s := range strings.Split(_str, ",") {
@@ -101,17 +154,16 @@ var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
 
 	fieldStyle := config.GetDbFieldStyle()
-
+	tableName := e.access.Name
 	for k, v := range ctrl {
-		// https://github.com/Tencent/APIJSON/blob/master/Document.md
-		// 应该用分号 ; 隔开 SQL 函数，改为 "@column":"store_id;sum(amt):totAmt"）
+		// 使用;分割字段
 		fieldStr := strings.ReplaceAll(gconv.String(v), ";", ",")
 
 		fieldList := strings.Split(fieldStr, ",")
 
 		for i, item := range fieldList {
 			fieldList[i] = exp.ReplaceAllStringFunc(item, func(field string) string {
-				return fieldStyle(e.ctx, e.Table, field)
+				return fieldStyle(e.ctx, tableName, field)
 			}) // 将请求字段转化为数据库字段风格
 		}
 
@@ -136,8 +188,8 @@ func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
 }
 
 func (e *SqlExecutor) build() *gdb.Model {
-
-	m := g.DB().Model(e.Table)
+	tableName := e.access.Name
+	m := g.DB().Model(tableName)
 
 	if e.Order != "" {
 		m = m.Order(e.Order)
@@ -148,7 +200,7 @@ func (e *SqlExecutor) build() *gdb.Model {
 	fieldStyle := config.GetDbFieldStyle()
 
 	for _, whereItem := range e.Where {
-		key := fieldStyle(e.ctx, e.Table, whereItem[0].(string))
+		key := fieldStyle(e.ctx, tableName, whereItem[0].(string))
 		op := whereItem[1]
 		value := whereItem[2]
 
@@ -178,11 +230,11 @@ func (e *SqlExecutor) build() *gdb.Model {
 		} else {
 
 			switch op {
-			case "LIKE":
+			case SqlLike:
 				whereBuild = whereBuild.WhereLike(key, value.(string))
-			case "REGEXP":
-				whereBuild = whereBuild.Where(key+" REGEXP ", value.(string))
-			case "=":
+			case SqlRegexp:
+				whereBuild = whereBuild.Where(key+" "+SqlRegexp, value.(string))
+			case SqlEqual:
 				whereBuild = whereBuild.Where(key, value)
 			}
 
@@ -196,6 +248,46 @@ func (e *SqlExecutor) build() *gdb.Model {
 	}
 
 	return m
+}
+
+func (e *SqlExecutor) column() []string {
+
+	outFields := e.access.GetFieldsGetOutByRole(e.Role)
+
+	tableName := e.access.Name
+
+	var columns []string
+
+	if e.Columns != nil {
+		columns = e.Columns
+	} else {
+		columns = getTableColumns(tableName)
+	}
+
+	var fields = make([]string, 0, len(columns))
+
+	fieldStyle := config.GetJsonFieldStyle()
+	dbStyle := config.GetDbFieldStyle()
+
+	for _, column := range columns {
+		fieldName := column
+		column = strings.ReplaceAll(column, ":", " AS ")
+		if !strings.Contains(column, " AS ") {
+			field := fieldStyle(e.ctx, tableName, column)
+			if field != column {
+				column = column + " AS " + field
+			}
+		} else {
+			fieldName = strings.TrimSpace(strings.Split(fieldName, "AS")[0])
+		}
+
+		// 过滤可访问字段
+		if !e.accessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) {
+			fields = append(fields, column)
+		}
+	}
+
+	return fields
 }
 
 func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int, err error) {
@@ -237,34 +329,4 @@ func (e *SqlExecutor) One() (g.Map, error) {
 	one, err := m.One()
 
 	return one.Map(), err
-}
-
-func (e *SqlExecutor) column() []string {
-
-	columns := e.Columns
-
-	if columns == nil {
-		var _columns []string
-		for _, column := range tableMap[e.Table].Columns {
-			_columns = append(_columns, column.Name)
-		}
-		columns = _columns
-	}
-
-	var fields = make([]string, 0, len(columns))
-
-	fieldStyle := config.GetJsonFieldStyle()
-
-	for _, column := range columns {
-		column = strings.ReplaceAll(column, ":", " AS ")
-		if !strings.Contains(column, " AS ") {
-			field := fieldStyle(e.ctx, e.Table, column)
-			if field != column {
-				column = column + " AS " + field
-			}
-		}
-		fields = append(fields, column)
-	}
-
-	return fields
 }

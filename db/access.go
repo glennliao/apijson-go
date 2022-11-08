@@ -6,9 +6,15 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/samber/lo"
 )
 
 var accessMap = map[string]Access{}
+
+type FieldsGetValue struct {
+	In  map[string][]string
+	Out map[string]string
+}
 
 type Access struct {
 	Debug     int8
@@ -26,20 +32,60 @@ type Access struct {
 
 	// ext
 
-	RowKey string
+	RowKey    string
+	FieldsGet map[string]FieldsGetValue
+}
+
+func (a *Access) GetFieldsGetOutByRole(role string) []string {
+	var fieldsMap map[string]string
+
+	if val, exists := a.FieldsGet[role]; exists {
+		fieldsMap = val.Out
+	} else {
+		fieldsMap = a.FieldsGet["default"].Out
+	}
+	return lo.Keys(fieldsMap)
+}
+
+func (a *Access) GetFieldsGetInByRole(role string) map[string][]string {
+	var inFieldsMap map[string][]string
+
+	if val, exists := a.FieldsGet[role]; exists {
+		inFieldsMap = val.In
+	} else {
+		inFieldsMap = a.FieldsGet["default"].In
+	}
+
+	return inFieldsMap
 }
 
 func loadAccessMap() {
 	_accessMap := make(map[string]Access)
 
 	var accessList []Access
-	g.DB().Model(config.TableAccess).Scan(&accessList)
+
+	db := g.DB()
+
+	db.Model(config.TableAccess).Scan(&accessList)
+
+	type AccessExt struct {
+		RowKey    string
+		FieldsGet map[string]FieldsGetValue
+	}
 
 	for _, access := range accessList {
 		name := access.Alias
 		if name == "" {
 			name = access.Name
 		}
+
+		var ext *AccessExt
+		db.Model(config.TableAccessExt).Where("table", access.Name).Scan(&ext)
+		if ext != nil {
+			access.RowKey = ext.RowKey
+			access.FieldsGet = ext.FieldsGet
+		}
+
 		_accessMap[name] = access
 	}
 
@@ -47,8 +93,6 @@ func loadAccessMap() {
 }
 
 func GetAccess(table string, accessVerify bool) (*Access, error) {
-	// 暂未使用version
-	// 读取配置时将最新的版本额外增加一个@latest的版本, 传入为-1时候, 读取最新版本
 	access, ok := accessMap[table]
 
 	if !ok {
@@ -66,8 +110,6 @@ func GetAccess(table string, accessVerify bool) (*Access, error) {
 }
 
 func GetAccessRole(table string, method string) ([]string, string, error) {
-	// 暂未使用version
-	// 读取配置时将最新的版本额外增加一个@latest的版本, 传入为-1时候, 读取最新版本
 	access, ok := accessMap[table]
 
 	if !ok {

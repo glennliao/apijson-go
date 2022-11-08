@@ -188,11 +188,9 @@ func (n *Node) parse() {
 			return
 		}
 
-		tableName := access.Name
-
 		var accessWhereCondition g.Map
 
-		setNodeRole(n, tableName, n.role)
+		setNodeRole(n, access.Name, n.role)
 
 		if n.role == consts.DENY {
 			n.err = gerror.New("deny node: " + n.Path)
@@ -214,7 +212,7 @@ func (n *Node) parse() {
 			accessWhereCondition = condition
 		}
 
-		executor, err := db.NewSqlExecutor(n.ctx, tableName, n.queryContext.AccessVerify)
+		executor, err := db.NewSqlExecutor(n.ctx, n.queryContext.AccessVerify, n.role, access)
 		if err != nil {
 			n.err = err
 			return
@@ -227,13 +225,13 @@ func (n *Node) parse() {
 
 		n.sqlExecutor.ParseCtrl(ctrlMap)
 
-		err = n.sqlExecutor.ParseCondition(conditionMap)
+		err = n.sqlExecutor.ParseCondition(conditionMap, true)
 		if err != nil {
 			n.err = err
 			return
 		}
 
-		err = n.sqlExecutor.ParseCondition(accessWhereCondition)
+		err = n.sqlExecutor.ParseCondition(accessWhereCondition, false)
 		if err != nil {
 			n.err = err
 			return
@@ -259,12 +257,14 @@ func (n *Node) parse() {
 				}
 
 				if refPath == n.Path { // 不能依赖自身
-					panic(gerror.Newf("node cannot ref self: (%s) {%s:%s}", refPath, refKey, refStr))
+					n.err = gerror.Newf("node cannot ref self: (%s) {%s:%s}", refPath, refKey, refStr)
+					return
 				}
 
 				refNode := n.queryContext.pathNodes[refPath]
 				if refNode == nil {
-					panic(gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path))
+					n.err = gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path)
+					return
 				}
 
 				if refNode.err != nil {
@@ -274,7 +274,8 @@ func (n *Node) parse() {
 
 				for _, _refN := range refNode.refKeyMap {
 					if _refN.node.Path == n.Path {
-						panic(gerror.Newf("circle ref %s & %s", refNode.Path, n.Path))
+						n.err = gerror.Newf("circle ref %s & %s", refNode.Path, n.Path)
+						return
 					}
 				}
 
@@ -389,7 +390,7 @@ func (n *Node) fetch() {
 		for refK, refNode := range n.refKeyMap {
 			ret, err := refNode.node.Result()
 			if err != nil {
-				g.Log().Error(n.ctx, "", err)
+				//g.Log().Error(n.ctx, "", err)
 				n.err = err
 				return
 			}
@@ -405,7 +406,7 @@ func (n *Node) fetch() {
 
 				err := n.sqlExecutor.ParseCondition(g.Map{
 					refK + "{}": valList, //  @ 与 {}&等的结合 id{}@的处理
-				})
+				}, false)
 
 				if err != nil {
 					n.err = err
@@ -426,7 +427,7 @@ func (n *Node) fetch() {
 				var refConditionMap = g.Map{
 					refK: refVal,
 				}
-				err := n.sqlExecutor.ParseCondition(refConditionMap)
+				err := n.sqlExecutor.ParseCondition(refConditionMap, false)
 				if err != nil {
 					n.err = err
 					return

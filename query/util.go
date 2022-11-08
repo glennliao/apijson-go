@@ -18,7 +18,7 @@ func isFirstUp(str string) bool {
 	return firstLetter >= 'A' && firstLetter <= 'Z'
 }
 
-// hasFirstUpKey
+// hasFirstUpKey 用户判断是否存在查询节点
 func hasFirstUpKey(m g.Map) bool {
 	for k := range m {
 		if isFirstUp(k) {
@@ -66,8 +66,9 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 }
 
 func parseRefCol(refStr string) (refPath string, refCol string) {
-	refCol = filepath.Base(refStr)                  // "id@":"[]/T-odo/userId"  ->  userId
-	refPath = refStr[0 : len(refStr)-len(refCol)-1] // "id@":"[]/T-odo/userId"  ->  []/T-odo   不加横杠会自动变成goland的to_do 项
+	// "id@":"[]/User/userId"
+	refCol = filepath.Base(refStr)                  // userId
+	refPath = refStr[0 : len(refStr)-len(refCol)-1] // []/User
 	return refPath, refCol
 }
 
@@ -113,7 +114,7 @@ func setNeedTotal(node *Node) {
 // setNodeRole 设置节点的@role, 根据 config.DefaultRoleFunc 获取节点最终的@role
 func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 
-	role, ok := node.req["@role"]
+	role, ok := node.req[consts.Role]
 
 	if node.Type != NodeTypeQuery {
 		if !ok {
@@ -159,18 +160,18 @@ func analysisOrder(prerequisites [][]string) ([]string, error) {
 
 	var pointNum = len(pointMap)
 	var edgesMap = make(map[string][]string)
-	var indeg = make(map[string]int)
+	var inDeg = make(map[string]int)
 	var result []string
 
 	for _, prerequisite := range prerequisites {
 		edgesMap[prerequisite[1]] = append(edgesMap[prerequisite[1]], prerequisite[0])
-		indeg[prerequisite[0]]++
+		inDeg[prerequisite[0]]++
 	}
 
 	var queue []string
 
 	for point, _ := range pointMap {
-		if indeg[point] == 0 {
+		if inDeg[point] == 0 {
 			queue = append(queue, point)
 		}
 	}
@@ -180,8 +181,8 @@ func analysisOrder(prerequisites [][]string) ([]string, error) {
 		first, queue = queue[0], queue[1:]
 		result = append(result, first)
 		for _, point := range edgesMap[first] {
-			indeg[point]--
-			if indeg[point] == 0 {
+			inDeg[point]--
+			if inDeg[point] == 0 {
 				queue = append(queue, point)
 			}
 		}

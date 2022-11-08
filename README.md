@@ -37,16 +37,17 @@
 1. [Get开放查询](./doc/query.md)
 2. [非开放请求](./doc/action.md)
 3. [权限控制](./doc/access.md)
+4. [roadmap](./doc/roadmap.md)
 
 
 # 开发指南
 
 1. go >= 1.18
-2. 创建mysql数据库
-3. 导入demo/todo/todo/todo.sql文件
+2. 创建 mysql 数据库
+3. 导入 demo/todo/doc/todo.sql文件
 4. demo/todo/config.yaml.example 改成 demo/todo/config.yaml, 然后修改配置文件 config.yaml 中数据库连接
-5. 在demo/todo目录运行go run main.go
-6. 查看测试 demo/todo/todo/tests
+5. 在demo/todo 目录运行 go run main.go 或者 查看测试 demo/todo/tests
+
 
 
 

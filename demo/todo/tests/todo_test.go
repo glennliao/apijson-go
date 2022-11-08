@@ -1,27 +1,19 @@
-package fied_style_test
+package tests
 
 import (
-	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/handlers"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"testing"
 )
 
-func init() {
-	config.SetDbFieldStyle(config.CaseSnake)
-
-	config.SetJsonFieldStyle(config.CaseSnake)
-	//config.SetJsonFieldStyle(consts.CASE_CAMEL_UPPER)
-}
-
-// TestCaseCameTodoList 列表查询
-func TestCaseCameTodoList(t *testing.T) {
+// TestTodoList 列表查询
+func TestTodoList(t *testing.T) {
 	req := `
 	{
-		"Todo[]":{
-			"query":"1"
-		   }
+		"Todo":{
+			
+		}
 	}
 `
 	reqMap := gjson.New(req).Map()
@@ -32,13 +24,13 @@ func TestCaseCameTodoList(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestCaseCameListTodoWithPage 分页列表查询
-func TestCaseCameListTodoWithPage(t *testing.T) {
+// TestListTodoWithPage 分页列表查询
+func TestListTodoWithPage(t *testing.T) {
 	req := `
 	{
     	"[]": {
 			"Todo": {
-			  "@column": "id:todoId;title;userId:userIdCaseCamelLower"
+			  "@column": "id:todoId;title"
 			},
 			"page": 2,
 			"count": 2
@@ -54,8 +46,8 @@ func TestCaseCameListTodoWithPage(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestCaseCameTodoWithUser 两表关联查询
-func TestCaseCameTodoWithUser(t *testing.T) {
+// TestTodoWithUser 两表关联查询
+func TestTodoWithUser(t *testing.T) {
 	req := `
 	{
     	"Todo": {
@@ -75,10 +67,8 @@ func TestCaseCameTodoWithUser(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestCaseCameTodoListWithUser 两表关联查询
-func TestCaseCameTodoListWithUser(t *testing.T) {
-	config.SetJsonFieldStyle(config.CaseCamel)
-
+// TestTodoListWithUser 两表关联查询
+func TestTodoListWithUser(t *testing.T) {
 	req := `
 	{
 	  "[]": {
@@ -100,11 +90,13 @@ func TestCaseCameTodoListWithUser(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestCaseCameTodoListByUser 两表关联查询
-func TestCaseCameTodoListByUser(t *testing.T) {
+// TestTodoListByUser 两表关联查询
+func TestTodoListByUser(t *testing.T) {
 	req := `
 	{
-	  "User": {},
+	  "User": {
+		
+	},
 	  "[]": {
 		"Todo": {
 		  "userId@": "User/userId"
@@ -121,8 +113,8 @@ func TestCaseCameTodoListByUser(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestCaseCameTodoRef 两表关联查询
-func TestCaseCameTodoRef(t *testing.T) {
+// TestTodoRef 两表关联查询
+func TestTodoRef(t *testing.T) {
 	req := `
 	{
 	  "Todo": {
@@ -138,7 +130,7 @@ func TestCaseCameTodoRef(t *testing.T) {
 		  "@column": "id,userId"
 		},
 		"User": {
-		  "userId@": "/Todo/userId",
+		  "user_id@": "/Todo/userId",
 		  "@column": "userId"
 		}
 	  }
@@ -153,18 +145,41 @@ func TestCaseCameTodoRef(t *testing.T) {
 	g.Dump(out)
 }
 
-// TestCaseCameTodoOneMany 列表中一对多
-func TestCaseCameTodoOneMany(t *testing.T) {
+// TestTodoOneMany 列表中一对多
+func TestTodoOneMany(t *testing.T) {
 	req := `
 {
 	"[]":{
 		"User":{
-			
+
 		},
 		"Todo[]":{
 			"userId@":"/User/userId"
+		}
+	}
+}
+`
+	reqMap := gjson.New(req).Map()
+
+	out, err := handlers.Get(ctx, reqMap)
+	if err != nil {
+		panic(err)
+	}
+	g.Dump(out)
+}
+
+// TestAccessExt
+func TestAccessExt(t *testing.T) {
+	req := `
+{
+	"[]":{
+		"User":{
+			"userId@":"/Todo/userId"
 		},
-		"query": "1"
+		"Todo":{
+				"@role":"PARTNER",
+				"createdAt$":"ss%"
+		}
 	}
 }
 `

@@ -11,11 +11,10 @@ import (
 var requestMap = map[string]Request{}
 
 type Request struct {
-	Debug   int8
-	Version int16
-	Method  string
-	Tag     string
-	// https://github.com/Tencent/APIJSON/blob/master/APIJSONORM/src/main/java/apijson/orm/Operation.java
+	Debug     int8
+	Version   int16
+	Method    string
+	Tag       string
 	Structure g.Map
 	Detail    string
 	CreatedAt *gtime.Time
@@ -32,7 +31,6 @@ func loadRequestMap() {
 		tag := item.Tag
 		if strings.ToLower(tag) != tag {
 			// 本身大写, 如果没有外层, 则套一层
-			// https://github.com/Tencent/APIJSON/issues/115#issuecomment-565733254
 			if _, ok := item.Structure[tag]; !ok {
 				item.Structure = g.Map{
 					tag: item.Structure,

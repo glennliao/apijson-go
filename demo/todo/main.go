@@ -15,7 +15,7 @@ import (
 	"github.com/iancoleman/orderedmap"
 	"strings"
 	"time"
-	"todo/todo"
+	"todo/app"
 )
 
 func main() {
@@ -23,8 +23,8 @@ func main() {
 	db.Init()
 
 	config.AccessVerify = false // 全局配置验证权限开关
-	config.AccessConditionFunc = todo.AccessCondition
-	config.DefaultRoleFunc = todo.Role
+	config.AccessConditionFunc = app.AccessCondition
+	config.DefaultRoleFunc = app.Role
 	config.Debug = true
 
 	s := g.Server()
@@ -44,7 +44,7 @@ func main() {
 			authorization := r.Request.Header.Get("Authorization")
 			if authorization != "" {
 				ctx := r.Context()
-				ctx = context.WithValue(ctx, config.UserIdKey, &todo.CurrentUser{UserId: authorization})
+				ctx = context.WithValue(ctx, config.UserIdKey, &app.CurrentUser{UserId: authorization})
 				r.SetCtx(ctx)
 			} else {
 				if r.URL.Path != "/get" { // 此处限制非查询的都需要登录, 可结合实际调整
@@ -69,6 +69,7 @@ func main() {
 	s.Run()
 }
 
+// commonResponse 创建统一响应
 func commonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err error)) func(req *ghttp.Request) {
 
 	return func(req *ghttp.Request) {
