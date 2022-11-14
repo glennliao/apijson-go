@@ -178,7 +178,7 @@ func TestAccessExt(t *testing.T) {
 		},
 		"Todo":{
 				"@role":"PARTNER",
-				"createdAt$":"ss%"
+				"createdAt$":"ss"
 		}
 	}
 }

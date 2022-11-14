@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/glennliao/apijson-go/handlers"
@@ -27,7 +28,7 @@ func init() {
 	g.DB().SetLogger(g.Log())
 
 	g.Log().SetLevelStr("all")
-	g.Log().SetLevelStr("info") // 需要显示debug时将本句注释即可
+	//g.Log().SetLevelStr("info") // 需要显示debug时将本句注释即可
 
 	db.Init()
 
@@ -53,6 +54,11 @@ func iAmUnKnow() {
 func queryByJsonStr(req string) (res g.Map, err error) {
 	reqMap := gjson.New(req).Map()
 	return handlers.Get(ctx, reqMap)
+}
+
+func actionByJsonStr(req string, method string) (res g.Map, err error) {
+	reqMap := gjson.New(req).Map()
+	return action.New(ctx, method, reqMap).Result()
 }
 
 func countTodoByUser(userId string) int {

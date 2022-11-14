@@ -5,6 +5,7 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/gogf/gf/v2/util/gconv"
 	"strings"
 )
 
@@ -64,16 +65,21 @@ func loadRequestMap() {
 			item.ExecQueue = strings.Split(tag, ",")
 		}
 
-		_requestMap[item.Method+"@"+item.Tag] = item
+		_requestMap[item.Method+"@"+item.Tag+"@"+gconv.String(item.Version)] = item
+		// todo 暂按照列表获取, 最后一个是最新, 这里需要调整
+		_requestMap[item.Method+"@"+item.Tag+"@"+"latest"] = item
 	}
 
 	requestMap = _requestMap
 }
 
-func GetRequest(tag string, method string, version int16) (*Request, error) {
-	// 暂未使用version
-	// 读取配置时将最新的版本额外增加一个@latest的版本, 传入为-1时候, 读取最新版本
-	key := method + "@" + tag
+func GetRequest(tag string, method string, version string) (*Request, error) {
+
+	if version == "" || version == "-1" || version == "0" {
+		version = "latest"
+	}
+
+	key := method + "@" + tag + "@" + version
 	request, ok := requestMap[key]
 
 	if !ok {

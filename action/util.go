@@ -15,8 +15,9 @@ func checkTag(req g.Map, method string) (*db.Request, error) {
 	}
 
 	tag := gconv.String(_tag)
+	version := req["version"]
 
-	request, err := db.GetRequest(tag, method, -1)
+	request, err := db.GetRequest(tag, method, gconv.String(version))
 	if err != nil {
 		return nil, err
 	}

@@ -48,6 +48,7 @@ func New(ctx context.Context, method string, req g.Map) *Action {
 	}
 
 	delete(req, "tag")
+	delete(req, "version")
 
 	a := &Action{
 		ctx:        ctx,
@@ -92,7 +93,7 @@ func (a *Action) parse() error {
 		if ok { // 将所有node都假设成列表, 如果单个则看成一个元素的批量
 			list = []g.Map{_v}
 		} else {
-			list = v.([]g.Map)
+			list = gconv.SliceMap(v)
 		}
 
 		node := newNode(key, list, structure)

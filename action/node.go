@@ -285,9 +285,11 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 		}
 
 		if len(n.Data) > 0 { //多条插入时返回值已经应该无意义了
+
+			jsonStyle := config.GetJsonFieldStyle()
 			if rowKeyVal != nil {
 				for k, v := range rowKeyVal {
-					ret[k] = v
+					ret[jsonStyle(ctx, n.TableName, k)] = v
 				}
 			}
 		}
