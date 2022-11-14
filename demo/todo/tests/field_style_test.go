@@ -15,15 +15,17 @@ func hasKey(m g.Map, k string) bool {
 }
 
 func TestFieldStyle(t *testing.T) {
-
 	oriDbStyle := config.GetDbFieldStyle()
 	oriJsonStyle := config.GetJsonFieldStyle()
+	defer func() {
+		config.SetDbFieldStyle(oriDbStyle)
+		config.SetJsonFieldStyle(oriJsonStyle)
+	}()
 
-	Convey("TestFieldStyle", t, func() {
+	// 手动临时启用
+	SkipConvey("TestFieldStyle", t, func() {
 		// ============================================================
 		Convey("json use CaseCamel, db use CaseSnake", func() {
-			config.SetJsonFieldStyle(config.CaseCamel)
-			config.SetDbFieldStyle(config.CaseSnake)
 
 			req := `
 					{
@@ -77,7 +79,4 @@ func TestFieldStyle(t *testing.T) {
 			So(todo["user_id"] == "10001", ShouldBeTrue)
 		})
 	})
-
-	config.SetDbFieldStyle(oriDbStyle)
-	config.SetDbFieldStyle(oriJsonStyle)
 }

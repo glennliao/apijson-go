@@ -25,12 +25,17 @@ func init() {
 	config.AccessConditionFunc = app.AccessCondition
 	config.AccessVerify = false // 全局配置验证权限开关
 
-	g.DB().SetLogger(g.Log())
-
 	g.Log().SetLevelStr("all")
 	//g.Log().SetLevelStr("info") // 需要显示debug时将本句注释即可
 
+	logger := g.Log("db")      // 使用独立的Logger控制sql日志
+	logger.SetLevelStr("info") // 不打印db.Init初始化的日志
+	g.DB().SetLogger(logger)
+
 	db.Init()
+
+	logger.SetLevelStr("all")
+	g.DB().SetLogger(logger)
 
 	config.SetDbFieldStyle(config.CaseSnake)
 	config.SetJsonFieldStyle(config.CaseCamel)
