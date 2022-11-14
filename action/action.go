@@ -37,6 +37,7 @@ type Action struct {
 	err error
 
 	children map[string]Node
+	keyNode  map[string]*Node
 }
 
 func New(ctx context.Context, method string, req g.Map) *Action {
@@ -54,6 +55,7 @@ func New(ctx context.Context, method string, req g.Map) *Action {
 		method:     method,
 		req:        req,
 		children:   map[string]Node{},
+		keyNode:    map[string]*Node{},
 	}
 	return a
 }
@@ -64,9 +66,15 @@ func (a *Action) parse() error {
 
 	for key, v := range a.req {
 
+		structuresKey := key
+		if strings.HasSuffix(key, "[]") {
+			structuresKey = structuresKey[0 : len(structuresKey)-2]
+		}
 		structureMap, ok := structures[key]
 		if !ok {
-			return gerror.New("structure错误: 400, 缺少" + key)
+			if structureMap, ok = structures[structuresKey]; !ok { //User[]可读取User或者User[]
+				return gerror.New("structure错误: 400, 缺少" + key)
+			}
 		}
 
 		structure := Structure{}
@@ -75,10 +83,22 @@ func (a *Action) parse() error {
 			return err
 		}
 
+		// todo 初始化时完成map2struct,不用每次都scan生成
 		structure.Must = strings.Split(structure.Must[0], ",")
 		structure.Refuse = strings.Split(structure.Refuse[0], ",")
 
-		node := newNode(key, v.(g.Map), structure)
+		var list []g.Map
+		_v, ok := v.(g.Map)
+		if ok { // 将所有node都假设成列表, 如果单个则看成一个元素的批量
+			list = []g.Map{_v}
+		} else {
+			list = v.([]g.Map)
+		}
+
+		node := newNode(key, list, structure)
+		node.ctx = a.ctx
+		a.keyNode[key] = &node
+		node.keyNode = a.keyNode
 		err = node.parse(a.ctx, a.method)
 		if err != nil {
 			return err
@@ -100,7 +120,9 @@ func (a *Action) Result() (g.Map, error) {
 	ret := g.Map{}
 
 	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx *gdb.TX) error {
-		for k, node := range a.children {
+		for _, k := range a.tagRequest.ExecQueue {
+
+			node := a.children[k]
 			ret[k], err = node.execute(ctx, a.method)
 			if err != nil {
 				return err

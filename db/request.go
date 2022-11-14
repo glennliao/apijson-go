@@ -18,6 +18,8 @@ type Request struct {
 	Structure g.Map
 	Detail    string
 	CreatedAt *gtime.Time
+
+	ExecQueue []string
 }
 
 func loadRequestMap() {
@@ -29,6 +31,9 @@ func loadRequestMap() {
 	for _, item := range requestList {
 
 		tag := item.Tag
+		if strings.HasSuffix(tag, "[]") {
+			tag = tag[0 : len(tag)-2]
+		}
 		if strings.ToLower(tag) != tag {
 			// 本身大写, 如果没有外层, 则套一层
 			if _, ok := item.Structure[tag]; !ok {
@@ -36,6 +41,27 @@ func loadRequestMap() {
 					tag: item.Structure,
 				}
 			}
+		}
+
+		// todo 改成列表读取数据库, 避免多次查询
+		type ext struct {
+			ExecQueue string
+		}
+		var _ext *ext
+		g.DB().Model(config.TableRequestExt).Where(g.Map{
+			"version": item.Version,
+			"method":  item.Method,
+			"tag":     item.Tag,
+		}).Scan(&_ext)
+
+		if _ext != nil {
+			item.ExecQueue = strings.Split(_ext.ExecQueue, ",")
+		} else {
+			tag := item.Tag
+			if strings.HasSuffix(tag, "[]") {
+				tag = tag[0 : len(tag)-2]
+			}
+			item.ExecQueue = strings.Split(tag, ",")
 		}
 
 		_requestMap[item.Method+"@"+item.Tag] = item

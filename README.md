@@ -1,47 +1,25 @@
-# apijson-go [WIP]
+# apijson-go [下水阶段]
 基于 go + goframe 实现的 apijson
 
-> 暂仍处于前期开发探索中, 请仅使用在 个人探索项目
+> ~~暂仍处于前期开发探索中, 请仅使用在 个人探索项目~~
 
+> 目前处于 【下水阶段】, 欢迎测试、issue、建议、pr
+
+[RoadMap 阶段规划](./doc/roadmap.md)
 
 # 快速体验
 <a href="https://gitpod.io/#https://github.com/glennliao/apijson-go"  target="_blank"><img src="https://gitpod.io/button/open-in-gitpod.svg" /> </a>
 
-创建后 执行 demo/todo/todo/tests 下的 *_test.go 访问测试
+创建后 执行 demo/todo/tests 下的 *_test.go 访问测试
 
-# 功能实现
-
-- [x] 单表查询、单表数组查询
-- [x] 双表一对一关联查询、数组关联查询
-- [x] 双表一对多关联查询、数组关联查询
-- [x] @column, @order, @group, page, count
-- [x] 单表单条新增
-- [x] 单表单条修改
-- [x] 单表单条、批量删除
-- [x] Request表的tag校验
-  - [x] MUST
-  - [x] REFUSE
-- [x] 分页返回total@
-
-- [x] 可用的权限方案
-  - [x] get只有access中定义的才能访问
-  - [x] 非get操作则必须与request指定一致才可请求
-  - [x] 基于角色控制
-- [ ] 远程函数
-- [ ] 错误提示
-- [ ] 查询节点 自定义查询数据
-- [ ] 字段限制
-- [ ] 请求结构复杂度限制
 
 ## 文档参考
 1. [Get开放查询](./doc/query.md)
 2. [非开放请求](./doc/action.md)
 3. [权限控制](./doc/access.md)
-4. [roadmap](./doc/roadmap.md)
 
 
 # 开发指南
-
 1. go >= 1.18
 2. 创建 mysql 数据库
 3. 导入 demo/todo/doc/todo.sql文件

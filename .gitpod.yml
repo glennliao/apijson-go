@@ -13,7 +13,7 @@ tasks:
   - init: |
       mv demo/todo/config.yaml.example demo/todo/config.yaml
       mysql -e "CREATE DATABASE my_apijson;"
-      mysql -p my_apijson < demo/todo/todo/todo.sql
+      mysql -p my_apijson < demo/todo/doc/todo.sql
       mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'yourpassword';"
 
     command: |

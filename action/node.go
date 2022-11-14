@@ -9,60 +9,78 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
+	"strings"
 )
 
 type Node struct {
-	req       g.Map
-	key       string
-	tableName string
-	role      string
+	req       []g.Map
+	ctx       context.Context
+	Key       string
+	TableName string
+	Role      string
 
-	data   g.Map  // 需写入数据库的数据
-	where  g.Map  // 条件
-	rowKey string // 主键
+	Data   []g.Map // 需写入数据库的数据
+	Where  []g.Map // 条件
+	RowKey string  // 主键
 
 	structure Structure
+
+	keyNode map[string]*Node
 }
 
-func newNode(key string, req g.Map, structure Structure) Node {
+func newNode(key string, req []g.Map, structure Structure) Node {
 	return Node{
-		key: key, req: req, structure: structure,
+		Key: key, req: req, structure: structure,
 	}
 }
 
 func (n *Node) parseReq(method string) {
-	n.data = g.Map{}
-	n.where = g.Map{}
-	for key, val := range n.req {
-		if key == consts.Role {
-			n.role = gconv.String(val)
-		} else {
-			if method == consts.MethodDelete {
-				n.where[key] = val
+	n.Data = []g.Map{}
+	n.Where = []g.Map{}
+
+	for i, item := range n.req {
+
+		n.Data = append(n.Data, g.Map{})
+		n.Where = append(n.Where, g.Map{})
+
+		for key, val := range item {
+			if key == consts.Role {
+				n.Role = gconv.String(val)
 			} else {
-				if key == n.rowKey {
-					if method == consts.MethodPut {
-						n.where[key] = val
-					}
-					// Post 暂原则上不让传递这个值
+				key = config.GetDbFieldStyle()(n.ctx, n.TableName, key)
+
+				if method == consts.MethodDelete {
+					n.Where[i][key] = val
 				} else {
-					n.data[key] = val
+					if key == n.RowKey || key == n.RowKey+"{}" {
+						if method == consts.MethodPut {
+							n.Where[i][key] = val
+						}
+						// Post 暂原则上不让传递这个rowKey值
+					} else {
+						n.Data[i][key] = val
+					}
 				}
 			}
 		}
 	}
+
 }
 
 func (n *Node) parse(ctx context.Context, method string) error {
 
-	access, err := db.GetAccess(n.key, true)
+	key := n.Key
+	if strings.HasSuffix(key, "[]") {
+		key = key[0 : len(key)-2] // todo 提取util, 获取非数组的key
+	}
+	access, err := db.GetAccess(key, true)
 
 	if err != nil {
 		return err
 	}
 
-	n.tableName = access.Name
-	n.rowKey = access.RowKey
+	n.TableName = access.Name
+	n.RowKey = access.RowKey
 
 	n.parseReq(method)
 
@@ -102,13 +120,13 @@ func (n *Node) parse(ctx context.Context, method string) error {
 func (n *Node) roleUpdate() error {
 
 	if val, exists := n.structure.Insert[consts.Role]; exists {
-		if n.role == "" {
-			n.role = gconv.String(val)
+		if n.Role == "" {
+			n.Role = gconv.String(val)
 		}
 	}
 
 	if val, exists := n.structure.Update[consts.Role]; exists {
-		n.role = gconv.String(val)
+		n.Role = gconv.String(val)
 	}
 
 	return nil
@@ -117,9 +135,9 @@ func (n *Node) roleUpdate() error {
 func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []string) error {
 
 	role, err := config.DefaultRoleFunc(ctx, config.RoleReq{
-		Table:    n.tableName,
+		Table:    n.TableName,
 		Method:   method,
-		NodeRole: n.role,
+		NodeRole: n.Role,
 	})
 
 	if err != nil {
@@ -127,34 +145,36 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 	}
 
 	if role == consts.DENY {
-		return gerror.Newf("deny node: %s with %s", n.key, n.role)
+		return gerror.Newf("deny node: %s with %s", n.Key, n.Role)
 	}
 
-	n.role = role
+	n.Role = role
 
 	if !lo.Contains(accessRoles, role) {
-		return gerror.Newf("node not access: %s with %s", n.key, n.role)
+		return gerror.Newf("node not access: %s with %s", n.Key, n.Role)
 	}
 
-	where, err := config.AccessConditionFunc(ctx, config.AccessConditionReq{
-		Table:               n.tableName,
-		TableAccessRoleList: accessRoles,
-		Method:              method,
-		NodeRole:            n.role,
-		NodeReq:             n.req,
-	})
+	for i, item := range n.req {
+		where, err := config.AccessConditionFunc(ctx, config.AccessConditionReq{
+			Table:               n.TableName,
+			TableAccessRoleList: accessRoles,
+			Method:              method,
+			NodeRole:            n.Role,
+			NodeReq:             item,
+		})
 
-	if err != nil {
-		return err
-	}
-
-	if method == consts.MethodPost {
-		for k, v := range where {
-			n.data[k] = v
+		if err != nil {
+			return err
 		}
-	} else {
-		for k, v := range where {
-			n.where[k] = v
+
+		if method == consts.MethodPost {
+			for k, v := range where {
+				n.Data[i][k] = v
+			}
+		} else {
+			for k, v := range where {
+				n.Where[i][k] = v
+			}
 		}
 	}
 
@@ -163,29 +183,31 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 
 func (n *Node) checkReq() error {
 
-	// must
-	for _, key := range n.structure.Must {
-		if _, exists := n.req[key]; !exists {
-			return gerror.New("structure错误: 400, 缺少" + n.key + "." + key)
-		}
-	}
-
-	// refuse
-	if n.structure.Refuse[0] == "!" {
-		if len(n.structure.Must) == 0 {
-			return gerror.New("structure错误: 400, REFUSE为!时必须指定MUST" + n.key)
-		}
-
-		for key, _ := range n.req {
-			if !lo.Contains(n.structure.Must, key) {
-				return gerror.New("structure错误: 400, 不能包含" + n.key + "." + key)
+	for _, item := range n.req {
+		// must
+		for _, key := range n.structure.Must {
+			if _, exists := item[key]; !exists {
+				return gerror.New("structure错误: 400, 缺少" + n.Key + "." + key)
 			}
 		}
 
-	} else {
-		for _, key := range n.structure.Refuse {
-			if _, exists := n.req[key]; exists {
-				return gerror.New("structure错误: 400, 不能包含" + n.key + "." + key)
+		// refuse
+		if n.structure.Refuse[0] == "!" {
+			if len(n.structure.Must) == 0 {
+				return gerror.New("structure错误: 400, REFUSE为!时必须指定MUST" + n.Key)
+			}
+
+			for key, _ := range item {
+				if !lo.Contains(n.structure.Must, key) {
+					return gerror.New("structure错误: 400, 不能包含" + n.Key + "." + key)
+				}
+			}
+
+		} else {
+			for _, key := range n.structure.Refuse {
+				if _, exists := item[key]; exists {
+					return gerror.New("structure错误: 400, 不能包含" + n.Key + "." + key)
+				}
 			}
 		}
 	}
@@ -195,56 +217,117 @@ func (n *Node) checkReq() error {
 
 func (n *Node) reqUpdate() error {
 
-	for key, updateVal := range n.structure.Update {
-		n.data[key] = updateVal
-	}
+	for i, _ := range n.req {
+		for key, updateVal := range n.structure.Update {
+			n.Data[i][key] = updateVal
+		}
 
-	for key, updateVal := range n.structure.Insert {
-		if _, exists := n.data[key]; !exists {
-			n.data[key] = updateVal
+		for key, updateVal := range n.structure.Insert {
+			if _, exists := n.Data[i][key]; !exists {
+				n.Data[i][key] = updateVal
+			}
+		}
+
+		for k, v := range n.Data[i] {
+			if strings.HasSuffix(k, "@") {
+				refNodeKey, refCol := parseRefCol(v.(string))
+				if strings.HasSuffix(refNodeKey, "[]") { // 双列表
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
+				} else {
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
+				}
+
+			}
 		}
 	}
 
 	return nil
 }
 
-func (n *Node) do(ctx context.Context, method string) (g.Map, error) {
+func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err error) {
+
+	for _, hook := range hooks {
+		if hook.Before != nil {
+			err := hook.Before(n, method)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	switch method {
 	case consts.MethodPost:
-		id, count, err := db.Insert(ctx, n.tableName, n.data)
+
+		var rowKeyVal g.Map
+		for i, _ := range n.Data {
+			rowKeyVal, err = rowKeyGen(ctx, n.TableName, n.Data[i])
+			if err != nil {
+				return nil, err
+			}
+
+			if rowKeyVal != nil {
+				for k, v := range rowKeyVal {
+					n.Data[i][k] = v
+				}
+			}
+
+		}
+
+		id, count, err := db.Insert(ctx, n.TableName, n.Data)
 		if err != nil {
 			return nil, err
 		}
 
-		return g.Map{
+		ret = g.Map{
 			"code":  200,
+			"count": count,
 			"id":    id,
-			"count": count,
-		}, nil
+		}
+
+		if len(n.Data) > 0 { //多条插入时返回值已经应该无意义了
+			if rowKeyVal != nil {
+				for k, v := range rowKeyVal {
+					ret[k] = v
+				}
+			}
+		}
+
 	case consts.MethodPut:
-		count, err := db.Update(ctx, n.tableName, n.data, n.where)
+		count, err := db.Update(ctx, n.TableName, n.Data[i], n.Where[i])
 		if err != nil {
 			return nil, err
 		}
 
-		return g.Map{
+		ret = g.Map{
 			"code":  200,
 			"count": count,
-		}, nil
+		}
 	case consts.MethodDelete:
-		count, err := db.Delete(ctx, n.tableName, n.where)
+		count, err := db.Delete(ctx, n.TableName, n.Where[i])
 		if err != nil {
 			return nil, err
 		}
 
-		return g.Map{
+		ret = g.Map{
 			"code":  200,
 			"count": count,
-		}, nil
+		}
 	}
 
-	return nil, gerror.New("undefined method:" + method)
+	if ret == nil {
+		return nil, gerror.New("undefined method:" + method)
+	}
+
+	for _, hook := range hooks {
+		if hook.After != nil {
+			err := hook.After(n, method)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return
 }
 
 func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
@@ -256,5 +339,24 @@ func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 	}
 
 	// 执行操作
-	return n.do(ctx, method)
+
+	if method == consts.MethodPost { // 新增时可以合并新增
+		ret, err := n.do(ctx, method, 0)
+		if err != nil {
+			return nil, err
+		}
+		return ret, nil
+	} else {
+		for i, _ := range n.req {
+			_, err := n.do(ctx, method, i)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+	}
+
+	return g.Map{
+		"code": 200,
+	}, nil
 }
