@@ -13,6 +13,9 @@
 创建后 执行 demo/todo/tests 下的 *_test.go 访问测试
 
 
+# 使用指南
+暂参考demo目录下的todo
+
 ## 文档参考
 1. [Get开放查询](./doc/query.md)
 2. [非开放请求](./doc/action.md)

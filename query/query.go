@@ -129,11 +129,11 @@ func (q *Query) Result() (g.Map, error) {
 			return nil, q.rootNode.err
 		}
 
-		resultMap := g.Map{}
+		ret := g.Map{}
 		for k, node := range q.rootNode.children {
-			resultMap[k] = node.err
+			ret[k] = node.err
 		}
-		return resultMap, err
+		return ret, err
 	}
 
 	g.Log().Debugf(q.ctx, "【query】 ^=======================^")
