@@ -246,6 +246,7 @@ func (n *Node) reqUpdate() error {
 
 func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err error) {
 
+	// todo 此处运行会导致事务时长与hook时长相关,特别是hook中运行了io类型的操作, 故需要调整到事务外去执行, 且如果事务失败, 则不执行after, 可以改成增加error
 	for _, hook := range hooks {
 		if hook.Before != nil {
 			err := hook.Before(n, method)
