@@ -93,6 +93,10 @@ func TestActionOneTableOneLine(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(one.IsEmpty(), ShouldBeTrue)
+
+			// 物理删除测试数据
+			g.DB().Model("t_todo").Unscoped().Delete(g.Map{"todo_id": todoId})
+
 		})
 	})
 }
@@ -249,6 +253,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(cnt, ShouldEqual, 0)
+
 		})
 	})
 }

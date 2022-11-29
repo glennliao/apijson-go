@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
+	"github.com/glennliao/apijson-go/functions"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -17,6 +18,7 @@ const (
 	NodeTypeStruct = iota // 结构节点
 	NodeTypeQuery         // 查询节点
 	NodeTypeRef           // 引用节点
+	NodeTypeFunc          // functions 节点
 )
 
 type Node struct {
@@ -69,6 +71,11 @@ type NodeRef struct {
 	node   *Node
 }
 
+/**
+node 生命周期
+new -> buildChild -> parse -> fetch -> result
+*/
+
 func newNode(query *Query, key string, path string, nodeReq any) *Node {
 
 	g.Log().Debugf(query.ctx, "【node】(%s) <new> ", path)
@@ -82,17 +89,20 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 		finish:       false,
 	}
 
+	// 节点类型判断
 	if key != "" {
 		if isFirstUp(key) { // 大写开头, 为查询节点(对应数据库)
 			node.Type = NodeTypeQuery
 		} else if strings.HasSuffix(key, "@") {
 			node.Type = NodeTypeRef
+		} else if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
+			node.Type = NodeTypeFunc
 		} else {
 			node.Type = NodeTypeStruct
 			// 结构节点下应该必须存在查询节点
 		}
 
-		if strings.HasSuffix(key, "[]") || strings.HasSuffix(filepath.Dir(path), "[]") {
+		if strings.HasSuffix(key, consts.ListKeySuffix) || strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) {
 			node.isList = true
 		}
 	}
@@ -360,6 +370,12 @@ func (n *Node) parse() {
 			}
 		}
 
+	case NodeTypeFunc:
+		functionName, paramKeys := functions.ParseFunctionsStr(n.simpleReqVal)
+		n.simpleReqVal = functionName
+		for _, key := range paramKeys {
+			g.Dump(key)
+		}
 	}
 	g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
 
@@ -478,6 +494,50 @@ func (n *Node) fetch() {
 			return
 		}
 
+		// 需优化调整
+		for k, v := range n.req {
+			if !strings.HasSuffix(k, consts.FunctionsKeySuffix) {
+				continue
+			}
+
+			k := k[0 : len(k)-2]
+
+			functionName, paramKeys := functions.ParseFunctionsStr(v.(string))
+
+			if n.isList {
+				for i, item := range n.ret.([]g.Map) {
+					var param = g.Map{}
+					for _, key := range paramKeys {
+						if key == "$req" {
+							param[key] = item
+						} else {
+							param[key] = item[key]
+						}
+					}
+					var err error
+					n.ret.([]g.Map)[i][k], err = functions.Call(n.ctx, functionName, param)
+					if err != nil {
+						panic(err) // todo
+					}
+				}
+			} else {
+				var param = g.Map{}
+				for _, key := range paramKeys {
+					if key == "$req" {
+						param[key] = n.ret.(g.Map)
+					} else {
+						param[key] = n.ret.(g.Map)[key]
+					}
+
+				}
+				var err error
+				n.ret.(g.Map)[k], err = functions.Call(n.ctx, functionName, param)
+				if err != nil {
+					panic(err) // todo
+				}
+			}
+		}
+
 	case NodeTypeRef:
 		for _, refNode := range n.refKeyMap {
 			if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, "[]") {
@@ -490,6 +550,9 @@ func (n *Node) fetch() {
 		if n.isList && n.needTotal {
 			n.total = n.children[n.primaryTableKey].total
 		}
+	case NodeTypeFunc:
+		param := g.Map{}
+		n.ret, n.err = functions.Call(n.ctx, n.simpleReqVal, param)
 	}
 
 }
@@ -579,13 +642,22 @@ func (n *Node) Result() (any, error) {
 				if strings.HasSuffix(k, "@") {
 					k = k[0 : len(k)-1]
 				}
+				if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
+					k = k[0 : len(k)-2]
+				}
+
 				retMap[k], err = node.Result()
+				if node.Type == NodeTypeFunc && retMap[k] == nil {
+					delete(retMap, k)
+				}
+
 				if err != nil {
 					return nil, err
 				}
 			}
 			n.ret = retMap
 		}
+
 	}
 
 	return n.ret, n.err

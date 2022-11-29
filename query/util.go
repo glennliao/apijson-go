@@ -46,6 +46,11 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 	ctrlMap = g.Map{}
 	where = g.Map{}
 	for k, v := range reqMap {
+
+		if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
+			continue
+		}
+
 		if strings.HasSuffix(k, "@") { //引用
 			refMap[k[0:len(k)-1]] = gconv.String(v)
 		} else if strings.HasPrefix(k, "@") { // @column等ctrl字段

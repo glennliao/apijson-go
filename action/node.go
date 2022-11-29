@@ -5,6 +5,7 @@ import (
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
+	"github.com/glennliao/apijson-go/functions"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -70,7 +71,7 @@ func (n *Node) parseReq(method string) {
 func (n *Node) parse(ctx context.Context, method string) error {
 
 	key := n.Key
-	if strings.HasSuffix(key, "[]") {
+	if strings.HasSuffix(key, consts.ListKeySuffix) {
 		key = key[0 : len(key)-2] // todo 提取util, 获取非数组的key
 	}
 	access, err := db.GetAccess(key, true)
@@ -219,7 +220,28 @@ func (n *Node) reqUpdate() error {
 
 	for i, _ := range n.req {
 		for key, updateVal := range n.structure.Update {
-			n.Data[i][key] = updateVal
+
+			if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
+				functionName, paramKeys := functions.ParseFunctionsStr(updateVal.(string))
+				var param = g.Map{}
+				for _, key := range paramKeys {
+					if key == "$req" {
+						param[key] = n.Data[i]
+					} else {
+						param[key] = n.Data[i][key]
+					}
+				}
+				k := key[0 : len(key)-2]
+				val, err := functions.Call(n.ctx, functionName, param)
+				if err != nil {
+					return err
+				}
+				if val != nil {
+					n.Data[i][k] = val
+				}
+			} else {
+				n.Data[i][key] = updateVal
+			}
 		}
 
 		for key, updateVal := range n.structure.Insert {
@@ -236,7 +258,6 @@ func (n *Node) reqUpdate() error {
 				} else {
 					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
 				}
-
 			}
 		}
 	}
@@ -336,7 +357,7 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 
 	// 参数替换
-	err := n.reqUpdate()
+	err := n.reqUpdate() // todo 处理放到事务外, 减短事务时长
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +372,7 @@ func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 		return ret, nil
 	} else {
 		for i, _ := range n.req {
-			_, err := n.do(ctx, method, i)
+			_, err = n.do(ctx, method, i)
 			if err != nil {
 				return nil, err
 			}
