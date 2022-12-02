@@ -11,7 +11,7 @@
  Target Server Version : 50737
  File Encoding         : 65001
 
- Date: 22/11/2022 12:27:35
+ Date: 02/12/2022 18:28:31
 */
 
 SET NAMES utf8mb4;
@@ -22,22 +22,22 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `_access`;
 CREATE TABLE `_access`  (
-  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `debug` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否为调试表，只允许在开发环境使用，测试和线上环境禁用',
-  `name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '实际表名，例如 apijson_user',
-  `alias` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '外部调用的表别名，例如 User',
-  `get` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"UNKNOWN\", \"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 get 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]\n用 JSON 类型不能设置默认值，反正权限对应的需求是明确的，也不需要自动转 JSONArray。\nTODO: 直接 LOGIN,CONTACT,CIRCLE,OWNER 更简单，反正是开发内部用，不需要复杂查询。',
-  `head` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"UNKNOWN\", \"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 head 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
-  `gets` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 gets 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
-  `heads` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 heads 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
-  `post` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"OWNER\", \"ADMIN\"]' COMMENT '允许 post 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
-  `put` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"OWNER\", \"ADMIN\"]' COMMENT '允许 put 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
-  `delete` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"OWNER\", \"ADMIN\"]' COMMENT '允许 delete 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `detail` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `name_UNIQUE`(`name`) USING BTREE,
-  UNIQUE INDEX `alias_UNIQUE`(`alias`) USING BTREE
+                            `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                            `debug` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否为调试表，只允许在开发环境使用，测试和线上环境禁用',
+                            `name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '实际表名，例如 apijson_user',
+                            `alias` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '外部调用的表别名，例如 User',
+                            `get` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"UNKNOWN\", \"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 get 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]\n用 JSON 类型不能设置默认值，反正权限对应的需求是明确的，也不需要自动转 JSONArray。\nTODO: 直接 LOGIN,CONTACT,CIRCLE,OWNER 更简单，反正是开发内部用，不需要复杂查询。',
+                            `head` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"UNKNOWN\", \"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 head 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
+                            `gets` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 gets 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
+                            `heads` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\", \"ADMIN\"]' COMMENT '允许 heads 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
+                            `post` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"OWNER\", \"ADMIN\"]' COMMENT '允许 post 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
+                            `put` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"OWNER\", \"ADMIN\"]' COMMENT '允许 put 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
+                            `delete` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '[\"OWNER\", \"ADMIN\"]' COMMENT '允许 delete 的角色列表，例如 [\"LOGIN\", \"CONTACT\", \"CIRCLE\", \"OWNER\"]',
+                            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            `detail` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+                            PRIMARY KEY (`id`) USING BTREE,
+                            UNIQUE INDEX `name_UNIQUE`(`name`) USING BTREE,
+                            UNIQUE INDEX `alias_UNIQUE`(`alias`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '权限配置(必须)' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -56,12 +56,12 @@ INSERT INTO `_access` VALUES (16, 0, 't_todo_log', 'TodoLog', '[\"OWNER\", \"PAR
 -- ----------------------------
 DROP TABLE IF EXISTS `_access_ext`;
 CREATE TABLE `_access_ext`  (
-  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `table` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '表名',
-  `row_key` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '关联主键字段名,联合主键时使用,分割',
-  `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
-  `fields_get` json NULL COMMENT 'get时字段配置',
-  PRIMARY KEY (`id`) USING BTREE
+                                `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                                `table` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '表名',
+                                `row_key` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '关联主键字段名,联合主键时使用,分割',
+                                `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+                                `fields_get` json NULL COMMENT 'get时字段配置',
+                                PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -76,20 +76,20 @@ INSERT INTO `_access_ext` VALUES (4, 't_todo_log', 'id', '2022-11-14 19:12:29', 
 -- ----------------------------
 DROP TABLE IF EXISTS `_function`;
 CREATE TABLE `_function`  (
-  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `debug` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否为 DEBUG 调试数据，只允许在开发环境使用，测试和线上环境禁用：0-否，1-是。',
-  `userId` bigint(20) NOT NULL COMMENT '管理员用户Id',
-  `name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '方法名',
-  `arguments` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '参数列表，每个参数的类型都是 String。\n用 , 分割的字符串 比 [JSONArray] 更好，例如 array,item ，更直观，还方便拼接函数。',
-  `demo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '可用的示例。\nTODO 改成 call，和返回值示例 back 对应。',
-  `detail` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '详细描述',
-  `type` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'Object' COMMENT '返回值类型。TODO RemoteFunction 校验 type 和 back',
-  `version` tinyint(4) NOT NULL DEFAULT 0 COMMENT '允许的最低版本号，只限于GET,HEAD外的操作方法。\nTODO 使用 requestIdList 替代 version,tag,methods',
-  `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '允许的标签.\nnull - 允许全部\nTODO 使用 requestIdList 替代 version,tag,methods',
-  `methods` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '允许的操作方法。\nnull - 允许全部\nTODO 使用 requestIdList 替代 version,tag,methods',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `back` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '返回值示例',
-  PRIMARY KEY (`id`) USING BTREE
+                              `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                              `debug` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否为 DEBUG 调试数据，只允许在开发环境使用，测试和线上环境禁用：0-否，1-是。',
+                              `userId` bigint(20) NOT NULL COMMENT '管理员用户Id',
+                              `name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '方法名',
+                              `arguments` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '参数列表，每个参数的类型都是 String。\n用 , 分割的字符串 比 [JSONArray] 更好，例如 array,item ，更直观，还方便拼接函数。',
+                              `demo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '可用的示例。\nTODO 改成 call，和返回值示例 back 对应。',
+                              `detail` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '详细描述',
+                              `type` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'Object' COMMENT '返回值类型。TODO RemoteFunction 校验 type 和 back',
+                              `version` tinyint(4) NOT NULL DEFAULT 0 COMMENT '允许的最低版本号，只限于GET,HEAD外的操作方法。\nTODO 使用 requestIdList 替代 version,tag,methods',
+                              `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '允许的标签.\nnull - 允许全部\nTODO 使用 requestIdList 替代 version,tag,methods',
+                              `methods` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '允许的操作方法。\nnull - 允许全部\nTODO 使用 requestIdList 替代 version,tag,methods',
+                              `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                              `back` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '返回值示例',
+                              PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '远程函数。强制在启动时校验所有demo是否能正常运行通过' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -109,15 +109,15 @@ INSERT INTO `_function` VALUES (13, 0, 0, 'getFromObject', 'object,key', '{\"key
 -- ----------------------------
 DROP TABLE IF EXISTS `_request`;
 CREATE TABLE `_request`  (
-  `id` int(10) NOT NULL AUTO_INCREMENT COMMENT '唯一标识',
-  `debug` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否为 DEBUG 调试数据，只允许在开发环境使用，测试和线上环境禁用：0-否，1-是。',
-  `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT 'GET,HEAD可用任意结构访问任意开放内容，不需要这个字段。\n其它的操作因为写入了结构和内容，所以都需要，按照不同的version选择对应的structure。\n\n自动化版本管理：\nRequest JSON最外层可以传  “version”:Integer 。\n1.未传或 <= 0，用最新版。 “@order”:”version-“\n2.已传且 > 0，用version以上的可用版本的最低版本。 “@order”:”version+”, “version{}”:”>={version}”',
-  `method` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'GETS' COMMENT '只限于GET,HEAD外的操作方法。',
-  `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '标签',
-  `structure` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '结构。\nTODO 里面的 PUT 改为 UPDATE，避免和请求 PUT 搞混。',
-  `detail` varchar(10000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '详细说明',
-  `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`) USING BTREE
+                             `id` int(10) NOT NULL AUTO_INCREMENT COMMENT '唯一标识',
+                             `debug` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否为 DEBUG 调试数据，只允许在开发环境使用，测试和线上环境禁用：0-否，1-是。',
+                             `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT 'GET,HEAD可用任意结构访问任意开放内容，不需要这个字段。\n其它的操作因为写入了结构和内容，所以都需要，按照不同的version选择对应的structure。\n\n自动化版本管理：\nRequest JSON最外层可以传  “version”:Integer 。\n1.未传或 <= 0，用最新版。 “@order”:”version-“\n2.已传且 > 0，用version以上的可用版本的最低版本。 “@order”:”version+”, “version{}”:”>={version}”',
+                             `method` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'GETS' COMMENT '只限于GET,HEAD外的操作方法。',
+                             `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '标签',
+                             `structure` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '结构。\nTODO 里面的 PUT 改为 UPDATE，避免和请求 PUT 搞混。',
+                             `detail` varchar(10000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '详细说明',
+                             `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+                             PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '请求参数校验配置(必须)。\r\n最好编辑完后删除主键，这样就是只读状态，不能随意更改。需要更改就重新加上主键。\r\n\r\n每次启动服务器时加载整个表到内存。\r\n这个表不可省略，model内注解的权限只是客户端能用的，其它可以保证即便服务端代码错误时也不会误删数据。' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -125,7 +125,7 @@ CREATE TABLE `_request`  (
 -- ----------------------------
 INSERT INTO `_request` VALUES (2, 0, 1, 'POST', 'api_register', '{\"User\": {\"MUST\": \"username,realname\", \"REFUSE\": \"id\", \"UNIQUE\": \"username\"}, \"Credential\": {\"MUST\": \"pwdHash\", \"UPDATE\": {\"id@\": \"User/id\"}}}', '注意tag名小写开头，则不会被默认映射到表', '2021-07-29 02:15:40');
 INSERT INTO `_request` VALUES (3, 0, 1, 'PUT', 'User', '{\"REFUSE\": \"username\", \"UPDATE\": {\"@role\": \"OWNER\"}}', 'user 修改自身数据', '2021-07-29 20:49:20');
-INSERT INTO `_request` VALUES (4, 0, 1, 'POST', 'Todo', '{\"MUST\": \"title\", \"UPDATE\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"id,user_id\"}', '增加todo', '2021-07-29 21:18:50');
+INSERT INTO `_request` VALUES (4, 0, 1, 'POST', 'Todo', '{\"MUST\": \"title\", \"UPDATE\": {\"@role\": \"OWNER\",\"check()\":\"checkTodoTitle(title)\",\"title()\":\"updateTodoTitle(title)\"}, \"REFUSE\": \"id,user_id\"}', '增加todo', '2021-07-29 21:18:50');
 INSERT INTO `_request` VALUES (5, 0, 1, 'PUT', 'Todo', '{\"Todo\":{ \"MUST\":\"todoId\",\"REFUSE\": \"userId\", \"INSERT\": {\"@role\": \"OWNER\"}} }', '修改todo', '2021-07-29 22:05:57');
 INSERT INTO `_request` VALUES (6, 0, 1, 'DELETE', 'Todo', '{\"MUST\": \"todoId\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}', '删除todo', '2021-07-29 22:10:32');
 INSERT INTO `_request` VALUES (8, 0, 1, 'PUT', 'helper+', '{\"Todo\": {\"MUST\": \"id,helper+\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '增加todo helper', '2021-07-30 05:46:34');
@@ -134,7 +134,7 @@ INSERT INTO `_request` VALUES (10, 0, 1, 'POST', 'Todo:[]', '{\"Todo[]\": [{\"MU
 INSERT INTO `_request` VALUES (11, 0, 1, 'PUT', 'Todo:[]', '{\"Todo[]\":[{ \"MUST\":\"id\",\"REFUSE\": \"userId\", \"UPDATE\": {\"checkCanPut-()\": \"isUserCanPutTodo(id)\"}}] }', '每项单独设置（现在不生效）', '2021-08-01 12:51:31');
 INSERT INTO `_request` VALUES (12, 0, 1, 'PUT', 'Todo[]', '{\"Todo\":{ \"MUST\":\"title\",\"REFUSE\": \"userId\", \"UPDATE\": {\"checkCanPut-()\": \"isUserCanPutTodo(id)\"}},\"Todo[]\":{\"MUST\":\"todoId\",\"REFUSE\":\"id\"} }', '指定全部改（现在不生效）', '2021-08-01 12:51:31');
 INSERT INTO `_request` VALUES (13, 0, 1, 'DELETE', 'Todo[]', '{\"Todo\": {\"MUST\": \"todoId{}\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '删除todo', '2021-08-01 18:35:15');
-INSERT INTO `_request` VALUES (14, 0, 2, 'POST', 'Todo', '{\r\n    \"Todo\": {\r\n        \"MUST\": \"title\",\r\n        \"UPDATE\": {\r\n            \"@role\": \"OWNER\"\r\n        },\r\n        \"REFUSE\": \"id,user_id\"\r\n    },\r\n    \"TodoLog\": {\r\n        \"MUST\": \"log\",\r\n        \"UPDATE\": {\r\n            \"@role\": \"OWNER\",\r\n            \"todoId@\":\"Todo/todoId\"\r\n        },\r\n        \"REFUSE\": \"!\"\r\n    },\r\n    \"TodoLog[]\": {\r\n        \"MUST\": \"log\",\r\n        \"UPDATE\": {\r\n            \"@role\": \"OWNER\",\r\n            \"todoId@\":\"Todo/todoId\"\r\n        },\r\n        \"REFUSE\": \"!\"\r\n    }\r\n}', '增加todo', '2021-07-29 21:18:50');
+INSERT INTO `_request` VALUES (14, 0, 2, 'POST', 'Todo', '{\"Todo\":{\"MUST\":\"title\",\"UPDATE\":{\"@role\":\"OWNER\"},\"REFUSE\":\"id,user_id\"},\"TodoLog\":{\"MUST\":\"log\",\"UPDATE\":{\"@role\":\"OWNER\",\"todoId@\":\"Todo/todoId\"},\"REFUSE\":\"!\"},\"TodoLog[]\":{\"MUST\":\"log\",\"UPDATE\":{\"@role\":\"OWNER\",\"todoId@\":\"Todo/todoId\"},\"REFUSE\":\"!\"}}', '增加todo', '2021-07-29 21:18:50');
 INSERT INTO `_request` VALUES (16, 0, 1, 'DELETE', 'TodoLog[]', '{\"TodoLog\": {\"MUST\": \"id{}\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '删除todoLog', '2021-08-01 18:35:15');
 INSERT INTO `_request` VALUES (18, 0, 1, 'PUT', 'TodoLog[]', '{\"TodoLog\":{ \"MUST\":\"remark\",\"REFUSE\": \"userId\", \"UPDATE\": {},\"INSERT\": {\"@role\": \"OWNER\"}},\"TodoLog[]\":{\"MUST\":\"id,log\",\"REFUSE\":\"!\",\"INSERT\": {\"@role\": \"OWNER\"}} }', '指定全部改', '2021-08-01 12:51:31');
 INSERT INTO `_request` VALUES (20, 0, 1, 'DELETE', 'TodoLog', '{\"TodoLog\": {\"MUST\": \"id{}\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '删除todoLog', '2021-08-01 18:35:15');
@@ -144,12 +144,12 @@ INSERT INTO `_request` VALUES (20, 0, 1, 'DELETE', 'TodoLog', '{\"TodoLog\": {\"
 -- ----------------------------
 DROP TABLE IF EXISTS `_request_ext`;
 CREATE TABLE `_request_ext`  (
-  `id` int(10) NOT NULL AUTO_INCREMENT COMMENT '唯一标识',
-  `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT 'GET,HEAD可用任意结构访问任意开放内容，不需要这个字段。\n其它的操作因为写入了结构和内容，所以都需要，按照不同的version选择对应的structure。\n\n自动化版本管理：\nRequest JSON最外层可以传  “version”:Integer 。\n1.未传或 <= 0，用最新版。 “@order”:”version-“\n2.已传且 > 0，用version以上的可用版本的最低版本。 “@order”:”version+”, “version{}”:”>={version}”',
-  `method` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'GETS' COMMENT '只限于GET,HEAD外的操作方法。',
-  `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '标签',
-  `exec_queue` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '执行队列, 因为请求的结构是确定的, 所以固定住节点的执行顺序,不用每次计算',
-  PRIMARY KEY (`id`) USING BTREE
+                                 `id` int(10) NOT NULL AUTO_INCREMENT COMMENT '唯一标识',
+                                 `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT 'GET,HEAD可用任意结构访问任意开放内容，不需要这个字段。\n其它的操作因为写入了结构和内容，所以都需要，按照不同的version选择对应的structure。\n\n自动化版本管理：\nRequest JSON最外层可以传  “version”:Integer 。\n1.未传或 <= 0，用最新版。 “@order”:”version-“\n2.已传且 > 0，用version以上的可用版本的最低版本。 “@order”:”version+”, “version{}”:”>={version}”',
+                                 `method` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'GETS' COMMENT '只限于GET,HEAD外的操作方法。',
+                                 `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '标签',
+                                 `exec_queue` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '执行队列, 因为请求的结构是确定的, 所以固定住节点的执行顺序,不用每次计算',
+                                 PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '请求参数校验配置(必须)。\r\n最好编辑完后删除主键，这样就是只读状态，不能随意更改。需要更改就重新加上主键。\r\n\r\n每次启动服务器时加载整个表到内存。\r\n这个表不可省略，model内注解的权限只是客户端能用的，其它可以保证即便服务端代码错误时也不会误删数据。' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -164,12 +164,12 @@ INSERT INTO `_request_ext` VALUES (18, 1, 'PUT', 'TodoLog[]', 'TodoLog,TodoLog[]
 -- ----------------------------
 DROP TABLE IF EXISTS `notice`;
 CREATE TABLE `notice`  (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `content` varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `created_at` datetime NULL DEFAULT NULL,
-  `created_by` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
+                           `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+                           `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `content` varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `created_at` datetime NULL DEFAULT NULL,
+                           `created_by` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -182,12 +182,12 @@ INSERT INTO `notice` VALUES (2, '公告测试', '这是第一条公告', '2022-1
 -- ----------------------------
 DROP TABLE IF EXISTS `notice_inner`;
 CREATE TABLE `notice_inner`  (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `content` varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `created_at` datetime NULL DEFAULT NULL,
-  `created_by` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
+                                 `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+                                 `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                                 `content` varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                                 `created_at` datetime NULL DEFAULT NULL,
+                                 `created_by` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                                 PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -200,10 +200,10 @@ INSERT INTO `notice_inner` VALUES (2, '“三体游戏” 版本更新，停机�
 -- ----------------------------
 DROP TABLE IF EXISTS `privacy`;
 CREATE TABLE `privacy`  (
-  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `secret_key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
+                            `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                            `user_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                            `secret_key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                            PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -215,16 +215,16 @@ CREATE TABLE `privacy`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `t_todo`;
 CREATE TABLE `t_todo`  (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `created_at` datetime NULL DEFAULT NULL,
-  `deleted_at` datetime NULL DEFAULT NULL,
-  `partner` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '与谁一起',
-  `todo_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1424 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+                           `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                           `user_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `created_at` datetime NULL DEFAULT NULL,
+                           `deleted_at` datetime NULL DEFAULT NULL,
+                           `partner` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '与谁一起',
+                           `todo_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1468 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of t_todo
@@ -337,19 +337,27 @@ INSERT INTO `t_todo` VALUES (1416, '10001', '去找林云喝茶, 把史强的预
 INSERT INTO `t_todo` VALUES (1418, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2022-11-14 19:29:26', NULL, NULL, '20221114192926');
 INSERT INTO `t_todo` VALUES (1420, '10001', '去找林云喝茶, 把史强的预约先取消', NULL, '2022-11-15 10:15:26', '2022-11-15 10:15:26', NULL, '20221115101526');
 INSERT INTO `t_todo` VALUES (1422, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2022-11-15 10:15:27', NULL, NULL, '20221115101527');
+INSERT INTO `t_todo` VALUES (1424, '10002', '去找林云喝茶', NULL, '2022-11-29 12:28:05', NULL, NULL, '20221129122805');
+INSERT INTO `t_todo` VALUES (1426, '10002', '去找林云喝茶', NULL, '2022-11-29 12:35:15', NULL, NULL, '20221129123515');
+INSERT INTO `t_todo` VALUES (1428, '10002', '去找林云喝茶', NULL, '2022-11-29 12:35:41', NULL, NULL, '20221129123541');
+INSERT INTO `t_todo` VALUES (1430, '10002', '去找林云喝茶', NULL, '2022-11-29 12:36:43', NULL, NULL, '20221129123643');
+INSERT INTO `t_todo` VALUES (1432, '10002', '去找林云喝茶x', NULL, '2022-11-29 12:57:26', NULL, NULL, '20221129125726');
+INSERT INTO `t_todo` VALUES (1434, '10002', '去找林云逛街', NULL, '2022-11-29 13:01:51', NULL, NULL, '20221129130151');
+INSERT INTO `t_todo` VALUES (1436, '10002', '去找林云逛街', NULL, '2022-11-29 13:03:14', '2022-11-29 13:03:14', NULL, '20221129130314');
+INSERT INTO `t_todo` VALUES (1464, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2022-12-02 18:19:06', NULL, NULL, '20221202181906');
 
 -- ----------------------------
 -- Table structure for t_todo_log
 -- ----------------------------
 DROP TABLE IF EXISTS `t_todo_log`;
 CREATE TABLE `t_todo_log`  (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `todo_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `log` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `created_at` datetime NULL DEFAULT NULL,
-  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 202 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+                               `id` int(11) NOT NULL AUTO_INCREMENT,
+                               `todo_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                               `log` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                               `created_at` datetime NULL DEFAULT NULL,
+                               `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                               PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 214 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of t_todo_log
@@ -415,13 +423,13 @@ INSERT INTO `t_todo_log` VALUES (158, '20221114191631', 'update by list[1]', '20
 -- ----------------------------
 DROP TABLE IF EXISTS `t_user`;
 CREATE TABLE `t_user`  (
-  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `realname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `created_at` datetime NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `User_id_uindex`(`id`) USING BTREE
+                           `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                           `user_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `realname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                           `created_at` datetime NULL DEFAULT NULL,
+                           PRIMARY KEY (`id`) USING BTREE,
+                           UNIQUE INDEX `User_id_uindex`(`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
