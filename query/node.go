@@ -61,7 +61,7 @@ type Node struct {
 
 	primaryTableKey string // 主查询表
 
-	total     int // 数据总条数
+	total     int64 // 数据总条数
 	needTotal bool
 }
 

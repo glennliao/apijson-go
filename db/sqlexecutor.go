@@ -282,7 +282,8 @@ func (e *SqlExecutor) column() []string {
 		}
 
 		// 过滤可访问字段
-		if !e.accessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) {
+		if !e.accessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
+			len(outFields) == 0 /* 数据库中未设置, 则看成全部可访问 */ {
 			fields = append(fields, column)
 		}
 	}
@@ -290,7 +291,7 @@ func (e *SqlExecutor) column() []string {
 	return fields
 }
 
-func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int, err error) {
+func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int64, err error) {
 
 	if e.WithEmptyResult {
 		return nil, 0, err
@@ -299,9 +300,11 @@ func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, t
 	m := e.build()
 
 	if needTotal {
-		total, err = m.Count()
-		if err != nil || total == 0 {
+		_total, err := m.Count()
+		if err != nil || _total == 0 {
 			return nil, 0, err
+		} else {
+			total = int64(_total)
 		}
 	}
 

@@ -28,7 +28,7 @@ func hasFirstUpKey(m g.Map) bool {
 	return false
 }
 
-// parseTableKey 解析表名
+// parseTableKey 解析表名 //todo 增加一个通用解析key的方法, 避免到处出现判断key后缀以及截取操作
 func parseTableKey(k string, p string) (tableName string) {
 	tableName = k
 
@@ -58,7 +58,7 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 		} else {
 			if isList {
 				switch k {
-				case "page", "count", "query":
+				case "page", "count", "query": // todo 调整常量
 					// 分页字段不传递到sqlExecutor
 					continue
 				}

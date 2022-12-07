@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/glennliao/apijson-go v0.0.0
-	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.2.1
+	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.2.2
 	github.com/gogf/gf/v2 v2.2.2
 	github.com/iancoleman/orderedmap v0.2.0
 	github.com/samber/lo v1.33.0

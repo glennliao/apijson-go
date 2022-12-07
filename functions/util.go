@@ -2,7 +2,7 @@ package functions
 
 import "strings"
 
-// 解析ParseFunctionsStr字符串, 返回函数名和参数列表
+// ParseFunctionsStr 解析ParseFunctionsStr字符串, 返回函数名和参数列表
 func ParseFunctionsStr(funcStr string) (functionsName string, paramKeys []string) {
 	if !strings.Contains(funcStr, "(") { // 无参形式
 		functionsName = funcStr
