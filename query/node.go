@@ -95,7 +95,7 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 	if key != "" {
 		if isFirstUp(key) { // 大写开头, 为查询节点(对应数据库)
 			node.Type = NodeTypeQuery
-		} else if strings.HasSuffix(key, "@") {
+		} else if strings.HasSuffix(key, consts.RefKeySuffix) {
 			node.Type = NodeTypeRef
 		} else if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
 			node.Type = NodeTypeFunc
@@ -134,7 +134,7 @@ func (n *Node) buildChild() error {
 
 	for key, v := range n.req {
 
-		if strings.HasPrefix(key, "@") {
+		if strings.HasPrefix(key, consts.RefKeySuffix) {
 			continue
 		}
 
@@ -510,7 +510,7 @@ func (n *Node) fetch() {
 				continue
 			}
 
-			k := k[0 : len(k)-2]
+			k = k[0 : len(k)-2]
 
 			functionName, paramKeys := functions.ParseFunctionsStr(v.(string))
 
@@ -518,7 +518,7 @@ func (n *Node) fetch() {
 				for i, item := range n.ret.([]g.Map) {
 					var param = g.Map{}
 					for _, key := range paramKeys {
-						if key == "$req" {
+						if key == consts.FunctionOriReqParam {
 							param[key] = item
 						} else {
 							param[key] = item[key]
@@ -533,7 +533,7 @@ func (n *Node) fetch() {
 			} else {
 				var param = g.Map{}
 				for _, key := range paramKeys {
-					if key == "$req" {
+					if key == consts.FunctionOriReqParam {
 						param[key] = n.ret.(g.Map)
 					} else {
 						param[key] = n.ret.(g.Map)[key]
@@ -627,7 +627,7 @@ func (n *Node) Result() (any, error) {
 
 								}
 								if len(resultList) > 0 {
-									if strings.HasSuffix(childK, "[]") {
+									if strings.HasSuffix(childK, consts.ListKeySuffix) {
 										item[childK] = resultList
 									} else {
 										item[childK] = resultList[0]
@@ -649,7 +649,7 @@ func (n *Node) Result() (any, error) {
 			retMap := g.Map{}
 			for k, node := range n.children {
 				var err error
-				if strings.HasSuffix(k, "@") {
+				if strings.HasSuffix(k, consts.RefKeySuffix) {
 					k = k[0 : len(k)-1]
 				}
 				if strings.HasSuffix(k, consts.FunctionsKeySuffix) {

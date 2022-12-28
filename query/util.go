@@ -51,7 +51,7 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 			continue
 		}
 
-		if strings.HasSuffix(k, "@") { //引用
+		if strings.HasSuffix(k, consts.RefKeySuffix) { //引用
 			refMap[k[0:len(k)-1]] = gconv.String(v)
 		} else if strings.HasPrefix(k, "@") { // @column等ctrl字段
 			ctrlMap[k] = v
