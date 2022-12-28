@@ -38,18 +38,10 @@ var (
 	}
 )
 
-// 自定义设置从ctx获取用户id和角色的key
-
-var (
-	UserIdKey = "ajg.userId"
-)
-
 // 设置 _access/_request 自定义表名
 var (
-	TableAccess     = "_access"
-	TableAccessExt  = "_access_ext"
-	TableRequest    = "_request"
-	TableRequestExt = "_request_ext"
+	TableAccess  = "_access"
+	TableRequest = "_request"
 )
 
 // =========================  角色 =======================
@@ -60,7 +52,6 @@ var (
 	roleList = []string{consts.UNKNOWN, consts.LOGIN, consts.OWNER, consts.ADMIN}
 )
 
-// AddRole 增加自定义角色
 func AddRole(name string) {
 	if !lo.Contains(roleList, name) {
 		roleList = append(roleList, name)

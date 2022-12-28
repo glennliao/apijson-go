@@ -28,12 +28,12 @@ func hasFirstUpKey(m g.Map) bool {
 	return false
 }
 
-// parseTableKey 解析表名 //todo 增加一个通用解析key的方法, 避免到处出现判断key后缀以及截取操作
+// parseTableKey 解析表名
 func parseTableKey(k string, p string) (tableName string) {
 	tableName = k
 
-	if strings.HasSuffix(k, "[]") {
-		tableName = k[0 : len(k)-2]
+	if strings.HasSuffix(k, consts.ListKeySuffix) {
+		tableName = k[0 : len(k)-len(consts.ListKeySuffix)]
 	} else if strings.Contains(p, "[]") {
 		tableName = k
 	}
@@ -51,14 +51,14 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 			continue
 		}
 
-		if strings.HasSuffix(k, "@") { //引用
+		if strings.HasSuffix(k, consts.RefKeySuffix) { //引用
 			refMap[k[0:len(k)-1]] = gconv.String(v)
 		} else if strings.HasPrefix(k, "@") { // @column等ctrl字段
 			ctrlMap[k] = v
 		} else {
 			if isList {
 				switch k {
-				case "page", "count", "query": // todo 调整常量
+				case consts.Page, consts.Count, consts.Query:
 					// 分页字段不传递到sqlExecutor
 					continue
 				}

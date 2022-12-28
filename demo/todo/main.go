@@ -39,12 +39,12 @@ func main() {
 	s.Group("/", func(group *ghttp.RouterGroup) {
 
 		group.Middleware(func(r *ghttp.Request) {
-			// 模拟认证, 获取用户信息, 此处Authorization传递userId
-
+			// 模拟认证, 获取用户信息, 此处为简化直接Authorization传递userId, 实际项目中请勿这么操作
 			authorization := r.Request.Header.Get("Authorization")
+
 			if authorization != "" {
 				ctx := r.Context()
-				ctx = context.WithValue(ctx, config.UserIdKey, &app.CurrentUser{UserId: authorization})
+				ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: authorization})
 				r.SetCtx(ctx)
 			} else {
 				if r.URL.Path != "/get" { // 此处限制非查询的都需要登录, 可结合实际调整
@@ -90,7 +90,7 @@ func commonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err
 			if config.Debug { //调试模式开启, 使用orderedmap输出结果
 				reqSortMap := orderedmap.New()
 
-				err := json.Unmarshal(req.GetBody(), reqSortMap)
+				err = json.Unmarshal(req.GetBody(), reqSortMap)
 				if err != nil {
 					g.Log().Error(req.Context(), err)
 				}
@@ -126,9 +126,10 @@ func commonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err
 				g.Log().Stack(false).Error(req.Context(), err)
 			}
 		}
+		res.Set("ok", code == 200)
 		res.Set("code", code)
 		res.Set("msg", msg)
-		res.Set("_span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
+		res.Set("span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
 		req.Response.WriteJson(res.String())
 	}
 }

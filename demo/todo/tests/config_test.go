@@ -5,7 +5,7 @@ import (
 	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/db"
-	"github.com/glennliao/apijson-go/handlers"
+	"github.com/glennliao/apijson-go/query"
 	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
@@ -43,12 +43,12 @@ func init() {
 
 // iAmWM 使用汪淼账号
 func iAmWM() {
-	ctx = context.WithValue(context.TODO(), config.UserIdKey, &app.CurrentUser{UserId: UserIdWM})
+	ctx = context.WithValue(context.TODO(), app.UserIdKey, &app.CurrentUser{UserId: UserIdWM})
 }
 
 // iAmSQ 使用史强账号
 func iAmSQ() {
-	ctx = context.WithValue(context.TODO(), config.UserIdKey, &app.CurrentUser{UserId: UserIdSQ})
+	ctx = context.WithValue(context.TODO(), app.UserIdKey, &app.CurrentUser{UserId: UserIdSQ})
 }
 
 // 未登录用户
@@ -58,7 +58,11 @@ func iAmUnKnow() {
 
 func queryByJsonStr(req string) (res g.Map, err error) {
 	reqMap := gjson.New(req).Map()
-	return handlers.Get(ctx, reqMap)
+	q := query.New(ctx, reqMap)
+	q.AccessVerify = config.AccessVerify
+	q.AccessCondition = config.AccessConditionFunc
+	//q.PrintProcessLog = true
+	return q.Result()
 }
 
 func actionByJsonStr(req string, method string) (res g.Map, err error) {

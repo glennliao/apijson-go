@@ -4,6 +4,8 @@ const MaxTreeWidth = 5
 const MaxTreeDeep = 5
 
 const (
-	ListKeySuffix      = "[]"
-	FunctionsKeySuffix = "()"
+	ListKeySuffix       = "[]"
+	RefKeySuffix        = "@"
+	FunctionsKeySuffix  = "()"
+	FunctionOriReqParam = "$req"
 )

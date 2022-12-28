@@ -8,6 +8,10 @@ import (
 	"github.com/samber/lo"
 )
 
+// 自定义设置从ctx获取用户id和角色的key
+
+const UserIdKey = "ajg.userId"
+
 type CurrentUser struct {
 	UserId string
 }
@@ -17,7 +21,7 @@ const PARTNER = "PARTNER" // 伙伴角色, 可查看指定与自己有关的todo
 // 以下角色、权限判断有些复杂，if判断太多， 可能需要考虑弄个规则引擎将配置化数据自动转成条件判断
 
 func Role(ctx context.Context, req config.RoleReq) (string, error) {
-	_, ok := ctx.Value(config.UserIdKey).(*CurrentUser)
+	_, ok := ctx.Value(UserIdKey).(*CurrentUser)
 
 	if !ok {
 		return consts.UNKNOWN, nil //未登录
@@ -61,7 +65,7 @@ func Role(ctx context.Context, req config.RoleReq) (string, error) {
 
 func AccessCondition(ctx context.Context, req config.AccessConditionReq) (g.Map, error) {
 
-	user, ok := ctx.Value(config.UserIdKey).(*CurrentUser)
+	user, ok := ctx.Value(UserIdKey).(*CurrentUser)
 
 	if !ok {
 		return nil, nil

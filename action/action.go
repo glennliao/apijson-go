@@ -10,22 +10,6 @@ import (
 	"strings"
 )
 
-type Structure struct {
-	Must   []string `json:"MUST,omitempty"`
-	Refuse []string `json:"REFUSE,omitempty"`
-
-	Unique []string `json:"UNIQUE,omitempty"`
-
-	// 不存在时添加
-	Insert g.Map `json:"INSERT,omitempty"`
-	// 不存在时就添加，存在时就修改
-	Update g.Map `json:"UPDATE,omitempty"`
-	// 存在时替换
-	Replace g.Map `json:"REPLACE,omitempty"`
-	// 存在时移除
-	Remove []string `json:"REMOVE,omitempty"`
-}
-
 // Action 非get查询的request表中的请求
 type Action struct {
 	ctx        context.Context
@@ -36,7 +20,7 @@ type Action struct {
 
 	err error
 
-	children map[string]Node
+	children map[string]*Node
 	keyNode  map[string]*Node
 }
 
@@ -55,7 +39,7 @@ func New(ctx context.Context, method string, req g.Map) *Action {
 		tagRequest: request,
 		method:     method,
 		req:        req,
-		children:   map[string]Node{},
+		children:   map[string]*Node{},
 		keyNode:    map[string]*Node{},
 	}
 	return a
@@ -71,22 +55,12 @@ func (a *Action) parse() error {
 		if strings.HasSuffix(key, "[]") {
 			structuresKey = structuresKey[0 : len(structuresKey)-2]
 		}
-		structureMap, ok := structures[key]
+		structure, ok := structures[key]
 		if !ok {
-			if structureMap, ok = structures[structuresKey]; !ok { //User[]可读取User或者User[]
+			if structure, ok = structures[structuresKey]; !ok { //User[]可读取User或者User[]
 				return gerror.New("structure错误: 400, 缺少" + key)
 			}
 		}
-
-		structure := Structure{}
-		err := gconv.Scan(structureMap, &structure)
-		if err != nil {
-			return err
-		}
-
-		// todo 初始化时完成map2struct,不用每次都scan生成
-		structure.Must = strings.Split(structure.Must[0], ",")
-		structure.Refuse = strings.Split(structure.Refuse[0], ",")
 
 		var list []g.Map
 		_v, ok := v.(g.Map)
@@ -100,12 +74,12 @@ func (a *Action) parse() error {
 		node.ctx = a.ctx
 		a.keyNode[key] = &node
 		node.keyNode = a.keyNode
-		err = node.parse(a.ctx, a.method)
+		err := node.parse(a.ctx, a.method)
 		if err != nil {
 			return err
 		}
 
-		a.children[key] = node
+		a.children[key] = &node
 	}
 
 	return nil
@@ -120,6 +94,28 @@ func (a *Action) Result() (g.Map, error) {
 
 	ret := g.Map{}
 
+	for _, hook := range hooks {
+		if hook.BeforeExec != nil {
+			for _, k := range a.tagRequest.ExecQueue {
+				node := a.children[k]
+				err = hook.BeforeExec(node, a.method)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+		}
+	}
+
+	for _, k := range a.tagRequest.ExecQueue {
+
+		node := a.children[k]
+		err = node.reqUpdate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx *gdb.TX) error {
 		for _, k := range a.tagRequest.ExecQueue {
 
@@ -131,6 +127,23 @@ func (a *Action) Result() (g.Map, error) {
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, hook := range hooks {
+		if hook.AfterExec != nil {
+			for _, k := range a.tagRequest.ExecQueue {
+				node := a.children[k]
+				err = hook.AfterExec(node, a.method)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+		}
+	}
 
 	return ret, err
 }
