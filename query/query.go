@@ -14,15 +14,21 @@ import (
 type Query struct {
 	ctx context.Context
 
-	req      g.Map // json请求内容
-	rootNode *Node // 节点树根节点
+	// json请求内容
+	req g.Map
+	// 节点树根节点
+	rootNode *Node
 
-	pathNodes map[string]*Node // 用于根据path获取节点
+	// 用于根据path获取节点
+	pathNodes map[string]*Node
 
 	startAt time.Time
 	endAt   time.Time
 
 	err error
+
+	// 输出过程
+	PrintProcessLog bool
 
 	// 是否权限验证
 	AccessVerify bool
@@ -31,8 +37,6 @@ type Query struct {
 }
 
 func New(ctx context.Context, req g.Map) *Query {
-
-	g.Log().Debugf(ctx, "【query】 ============ [begin]")
 
 	return &Query{
 		ctx:       ctx,
@@ -82,7 +86,9 @@ func (q *Query) fetch() {
 		}
 	}
 
-	g.Log().Debugf(q.ctx, "fetch queue： %s", strings.Join(fetchQueue, " > "))
+	if q.PrintProcessLog {
+		g.Log().Debugf(q.ctx, "fetch queue： %s", strings.Join(fetchQueue, " > "))
+	}
 
 	for _, path := range fetchQueue {
 		q.pathNodes[path].fetch()
@@ -93,7 +99,10 @@ func (q *Query) fetch() {
 
 func (q *Query) Result() (g.Map, error) {
 
-	g.Log().Debugf(q.ctx, "【query】 ============ [buildNodeTree]")
+	if q.PrintProcessLog {
+		g.Log().Debugf(q.ctx, "【query】 ============ [begin]")
+		g.Log().Debugf(q.ctx, "【query】 ============ [buildNodeTree]")
+	}
 
 	// 构建节点树,并校验结构是否符合,  不符合则返回错误, 结束本次查询
 	q.rootNode = newNode(q, "", "", q.req)
@@ -104,17 +113,21 @@ func (q *Query) Result() (g.Map, error) {
 		return nil, err
 	}
 
-	if config.Debug {
+	if q.PrintProcessLog {
 		printNode(q.rootNode, 0)
 	}
 
-	g.Log().Debugf(q.ctx, "【query】 ============ [parse]")
+	if q.PrintProcessLog {
+		g.Log().Debugf(q.ctx, "【query】 ============ [parse]")
+	}
 
 	setNodeRole(q.rootNode, "", "")
 
 	q.rootNode.parse()
 
-	g.Log().Debugf(q.ctx, "【query】 ============ [fetch]")
+	if q.PrintProcessLog {
+		g.Log().Debugf(q.ctx, "【query】 ============ [fetch]")
+	}
 
 	q.fetch()
 
@@ -136,6 +149,9 @@ func (q *Query) Result() (g.Map, error) {
 		return ret, err
 	}
 
-	g.Log().Debugf(q.ctx, "【query】 ^=======================^")
+	if q.PrintProcessLog {
+		g.Log().Debugf(q.ctx, "【query】 ^=======================^")
+	}
+
 	return resultMap.(g.Map), err
 }

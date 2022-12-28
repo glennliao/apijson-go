@@ -24,12 +24,12 @@ type Node struct {
 	Where  []g.Map // 条件
 	RowKey string  // 主键
 
-	structure Structure
+	structure *db.Structure
 
 	keyNode map[string]*Node
 }
 
-func newNode(key string, req []g.Map, structure Structure) Node {
+func newNode(key string, req []g.Map, structure *db.Structure) Node {
 	return Node{
 		Key: key, req: req, structure: structure,
 	}
@@ -72,7 +72,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 
 	key := n.Key
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
-		key = key[0 : len(key)-2] // todo 提取util, 获取非数组的key
+		key = key[0 : len(key)-2]
 	}
 	access, err := db.GetAccess(key, true)
 
@@ -216,6 +216,7 @@ func (n *Node) checkReq() error {
 	return nil
 }
 
+// reqUpdate 处理 Update/Insert等
 func (n *Node) reqUpdate() error {
 
 	for i, _ := range n.req {
@@ -224,11 +225,11 @@ func (n *Node) reqUpdate() error {
 			if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
 				functionName, paramKeys := functions.ParseFunctionsStr(updateVal.(string))
 				var param = g.Map{}
-				for _, key := range paramKeys {
-					if key == "$req" {
-						param[key] = n.Data[i]
+				for _, paramKey := range paramKeys {
+					if paramKey == consts.FunctionOriReqParam {
+						param[paramKey] = n.Data[i]
 					} else {
-						param[key] = n.Data[i][key]
+						param[paramKey] = n.Data[i][paramKey]
 					}
 				}
 				k := key[0 : len(key)-2]
@@ -250,10 +251,20 @@ func (n *Node) reqUpdate() error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+// reqUpdate 处理 Update/Insert等  (事务内)
+func (n *Node) reqUpdateBeforeDo() error {
+
+	for i, _ := range n.req {
+
 		for k, v := range n.Data[i] {
-			if strings.HasSuffix(k, "@") {
+			if strings.HasSuffix(k, consts.RefKeySuffix) {
 				refNodeKey, refCol := parseRefCol(v.(string))
-				if strings.HasSuffix(refNodeKey, "[]") { // 双列表
+				if strings.HasSuffix(refNodeKey, consts.ListKeySuffix) { // 双列表
 					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
 				} else {
 					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
@@ -265,17 +276,18 @@ func (n *Node) reqUpdate() error {
 	return nil
 }
 
-func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err error) {
+func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map, err error) {
 
-	// todo 此处运行会导致事务时长与hook时长相关,特别是hook中运行了io类型的操作, 故需要调整到事务外去执行, 且如果事务失败, 则不执行after, 可以改成增加error
 	for _, hook := range hooks {
-		if hook.Before != nil {
-			err := hook.Before(n, method)
+		if hook.BeforeDo != nil {
+			err = hook.BeforeDo(n, method)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
+
+	var count int64
 
 	switch method {
 	case consts.MethodPost:
@@ -295,7 +307,9 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 
 		}
 
-		id, count, err := db.Insert(ctx, n.TableName, n.Data)
+		var id int64
+
+		id, count, err = db.Insert(ctx, n.TableName, n.Data)
 		if err != nil {
 			return nil, err
 		}
@@ -317,7 +331,7 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 		}
 
 	case consts.MethodPut:
-		count, err := db.Update(ctx, n.TableName, n.Data[i], n.Where[i])
+		count, err = db.Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}
@@ -327,7 +341,7 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 			"count": count,
 		}
 	case consts.MethodDelete:
-		count, err := db.Delete(ctx, n.TableName, n.Where[i])
+		count, err = db.Delete(ctx, n.TableName, n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}
@@ -343,8 +357,8 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 	}
 
 	for _, hook := range hooks {
-		if hook.After != nil {
-			err := hook.After(n, method)
+		if hook.AfterDo != nil {
+			err = hook.AfterDo(n, method)
 			if err != nil {
 				return nil, err
 			}
@@ -356,13 +370,10 @@ func (n *Node) do(ctx context.Context, method string, i int) (ret g.Map, err err
 
 func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 
-	// 参数替换
-	err := n.reqUpdate() // todo 处理放到事务外, 减短事务时长
+	err := n.reqUpdateBeforeDo()
 	if err != nil {
 		return nil, err
 	}
-
-	// 执行操作
 
 	if method == consts.MethodPost { // 新增时可以合并新增
 		ret, err := n.do(ctx, method, 0)
@@ -372,12 +383,11 @@ func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 		return ret, nil
 	} else {
 		for i, _ := range n.req {
-			_, err = n.do(ctx, method, i)
+			_, err := n.do(ctx, method, i)
 			if err != nil {
 				return nil, err
 			}
 		}
-
 	}
 
 	return g.Map{

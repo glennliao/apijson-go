@@ -78,7 +78,9 @@ new -> buildChild -> parse -> fetch -> result
 
 func newNode(query *Query, key string, path string, nodeReq any) *Node {
 
-	g.Log().Debugf(query.ctx, "【node】(%s) <new> ", path)
+	if query.PrintProcessLog {
+		g.Log().Debugf(query.ctx, "【node】(%s) <new> ", path)
+	}
 
 	node := &Node{
 		ctx:          query.ctx,
@@ -186,7 +188,9 @@ func (n *Node) buildChild() error {
 
 func (n *Node) parse() {
 
-	g.Log().Debugf(n.ctx, "【node】(%s) <parse> ", n.Path)
+	if n.queryContext.PrintProcessLog {
+		g.Log().Debugf(n.ctx, "【node】(%s) <parse> ", n.Path)
+	}
 
 	switch n.Type {
 	case NodeTypeQuery:
@@ -337,11 +341,11 @@ func (n *Node) parse() {
 		if n.isList { // []节点
 
 			page := g.Map{}
-			if v, exists := n.req["page"]; exists {
-				page["page"] = gconv.Int(v)
+			if v, exists := n.req[consts.Page]; exists {
+				page[consts.Page] = gconv.Int(v)
 			}
-			if v, exists := n.req["count"]; exists {
-				page["count"] = gconv.Int(v)
+			if v, exists := n.req[consts.Count]; exists {
+				page[consts.Count] = gconv.Int(v)
 			}
 
 			hasPrimary := false // 是否存在主查询表
@@ -365,7 +369,7 @@ func (n *Node) parse() {
 				}
 			}
 
-			if n.Key == "[]" && !hasPrimary {
+			if n.Key == consts.ListKeySuffix && !hasPrimary {
 				panic(gerror.Newf("node must have  primary table: (%s)", n.Path))
 			}
 		}
@@ -377,7 +381,9 @@ func (n *Node) parse() {
 			g.Dump(key)
 		}
 	}
-	g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
+	if n.queryContext.PrintProcessLog {
+		g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
+	}
 
 }
 
@@ -386,10 +392,14 @@ func (n *Node) fetch() {
 	defer func() {
 		n.finish = true
 		n.endAt = time.Now()
-		g.Log().Debugf(n.ctx, "【node】(%s) <fetch-endAt> ", n.Path)
+		if n.queryContext.PrintProcessLog {
+			g.Log().Debugf(n.ctx, "【node】(%s) <fetch-endAt> ", n.Path)
+		}
 	}()
 
-	g.Log().Debugf(n.ctx, "【node】(%s) <fetch> hasFinish: 【%v】", n.Path, n.finish)
+	if n.queryContext.PrintProcessLog {
+		g.Log().Debugf(n.ctx, "【node】(%s) <fetch> hasFinish: 【%v】", n.Path, n.finish)
+	}
 
 	if n.finish {
 		g.Log().Error(n.ctx, "再次执行", n.Path)
@@ -458,22 +468,22 @@ func (n *Node) fetch() {
 
 			for k, v := range n.page {
 				switch k {
-				case "page":
+				case consts.Page:
 					page = gconv.Int(v)
 
-				case "count":
+				case consts.Count:
 					count = gconv.Int(v)
 				}
 			}
 
 			for k, v := range n.req {
 				switch k {
-				case "page":
+				case consts.Page:
 					page = gconv.Int(v)
 
-				case "count":
+				case consts.Count:
 					count = gconv.Int(v)
-				case "query":
+				case consts.Query:
 					switch gconv.String(v) {
 					case "1", "2":
 						n.needTotal = true
@@ -517,7 +527,7 @@ func (n *Node) fetch() {
 					var err error
 					n.ret.([]g.Map)[i][k], err = functions.Call(n.ctx, functionName, param)
 					if err != nil {
-						panic(err) // todo
+						panic(err)
 					}
 				}
 			} else {
@@ -533,14 +543,14 @@ func (n *Node) fetch() {
 				var err error
 				n.ret.(g.Map)[k], err = functions.Call(n.ctx, functionName, param)
 				if err != nil {
-					panic(err) // todo
+					panic(err)
 				}
 			}
 		}
 
 	case NodeTypeRef:
 		for _, refNode := range n.refKeyMap {
-			if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, "[]") {
+			if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, consts.ListKeySuffix) {
 				n.total = refNode.node.total
 			}
 		}
