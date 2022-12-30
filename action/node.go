@@ -6,6 +6,7 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/glennliao/apijson-go/functions"
+	"github.com/glennliao/apijson-go/query/executor/gf_orm"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -309,7 +310,8 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 
 		var id int64
 
-		id, count, err = db.Insert(ctx, n.TableName, n.Data)
+		id, count, err = gf_orm.Insert(ctx, n.TableName, n.Data)
+
 		if err != nil {
 			return nil, err
 		}
@@ -331,7 +333,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 		}
 
 	case consts.MethodPut:
-		count, err = db.Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
+		count, err = gf_orm.Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}
@@ -341,7 +343,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			"count": count,
 		}
 	case consts.MethodDelete:
-		count, err = db.Delete(ctx, n.TableName, n.Where[dataIndex])
+		count, err = gf_orm.Delete(ctx, n.TableName, n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}

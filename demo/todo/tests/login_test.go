@@ -20,7 +20,8 @@ func TestLoginExample(t *testing.T) {
 
 		req := `
 			{
-				"NoticeInner": {}
+				"NoticeInner": {},
+"User":{}
 			}
 		`
 		cnt, err := g.DB().Model("notice_inner").Count()

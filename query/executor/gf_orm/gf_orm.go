@@ -1,9 +1,13 @@
-package db
+package gf_orm
 
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/db"
+	"github.com/glennliao/apijson-go/query/executor"
 	"github.com/gogf/gf/v2/database/gdb"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -17,7 +21,8 @@ type SqlExecutor struct {
 	Role string
 
 	//保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
-	Where [][]any
+	Where           [][]any
+	accessCondition g.Map
 
 	Columns []string
 	Order   string
@@ -28,10 +33,10 @@ type SqlExecutor struct {
 
 	accessVerify bool
 
-	access *Access
+	access *db.Access
 }
 
-func NewSqlExecutor(ctx context.Context, accessVerify bool, role string, access *Access) (*SqlExecutor, error) {
+func New(ctx context.Context, accessVerify bool, role string, access *db.Access) (executor.QueryExecutor, error) {
 
 	return &SqlExecutor{
 		ctx:             ctx,
@@ -55,14 +60,17 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 		case strings.HasSuffix(key, "{}"):
 			e.parseMultiCondition(key[0:len(key)-2], condition)
 
-		case strings.HasSuffix(key, Like):
-			e.Where = append(e.Where, []any{key[0 : len(key)-1], SqlLike, gconv.String(condition)})
+		case strings.HasSuffix(key, consts.OpLike):
+			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlLike, gconv.String(condition)})
 
-		case strings.HasSuffix(key, Regexp):
-			e.Where = append(e.Where, []any{key[0 : len(key)-1], SqlRegexp, gconv.String(condition)})
+		case strings.HasSuffix(key, consts.OpRegexp):
+			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
+
+		case key == "@raw" && !accessVerify:
+			e.accessCondition = condition.(g.Map)
 
 		default:
-			e.Where = append(e.Where, []any{key, SqlEqual, condition})
+			e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})
 		}
 	}
 
@@ -85,9 +93,9 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 			}
 
 			op := where[1].(string)
-			if op == SqlLike {
+			if op == consts.SqlLike {
 				condition := where[2].(string)
-				op = Like
+				op = consts.OpLike
 				if strings.HasPrefix(condition, "%") {
 					op = "%" + op
 				}
@@ -230,11 +238,11 @@ func (e *SqlExecutor) build() *gdb.Model {
 		} else {
 
 			switch op {
-			case SqlLike:
+			case consts.SqlLike:
 				whereBuild = whereBuild.WhereLike(key, value.(string))
-			case SqlRegexp:
-				whereBuild = whereBuild.Where(key+" "+SqlRegexp, value.(string))
-			case SqlEqual:
+			case consts.SqlRegexp:
+				whereBuild = whereBuild.Where(key+" "+consts.SqlRegexp, value.(string))
+			case consts.SqlEqual:
 				whereBuild = whereBuild.Where(key, value)
 			}
 
@@ -242,6 +250,9 @@ func (e *SqlExecutor) build() *gdb.Model {
 	}
 
 	m = m.Where(whereBuild)
+	if e.accessCondition != nil {
+		m = m.Where(e.accessCondition)
+	}
 
 	if e.Group != "" {
 		m = m.Group(e.Group)
@@ -261,7 +272,7 @@ func (e *SqlExecutor) column() []string {
 	if e.Columns != nil {
 		columns = e.Columns
 	} else {
-		columns = getTableColumns(tableName)
+		columns = db.GetTableColumns(tableName)
 	}
 
 	var fields = make([]string, 0, len(columns))
@@ -289,6 +300,10 @@ func (e *SqlExecutor) column() []string {
 	}
 
 	return fields
+}
+
+func (e *SqlExecutor) EmptyResult() {
+	e.WithEmptyResult = true
 }
 
 func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int64, err error) {
@@ -332,4 +347,87 @@ func (e *SqlExecutor) One() (g.Map, error) {
 	one, err := m.One()
 
 	return one.Map(), err
+}
+
+func Insert(ctx context.Context, table string, data any) (int64, int64, error) {
+
+	ret, err := g.DB().Insert(ctx, table, data)
+	if err != nil {
+		return 0, 0, err
+	}
+	id, err := ret.LastInsertId()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	count, err := ret.RowsAffected()
+	return id, count, nil
+}
+
+func Update(ctx context.Context, table string, data g.Map, where g.Map) (int64, error) {
+
+	m := g.DB().Model(table).Ctx(ctx)
+
+	for k, v := range where {
+		if strings.HasSuffix(k, "{}") {
+			if vStr, ok := v.(string); ok {
+				if vStr == "" {
+					return 0, gerror.New("where的值不能为空")
+				}
+			}
+			m = m.WhereIn(k[0:len(k)-2], v)
+			delete(where, k)
+			continue
+		}
+		if v.(string) == "" || v == nil { //暂只处理字符串为空的情况
+			return 0, gerror.New("where的值不能为空")
+		}
+	}
+
+	_ret, err := m.Where(where).Update(data)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := _ret.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return count, err
+
+}
+
+func Delete(ctx context.Context, table string, where g.Map) (int64, error) {
+
+	if len(where) == 0 {
+		return 0, gerror.New("where不能为空")
+	}
+
+	m := g.DB().Model(table).Ctx(ctx)
+
+	for k, v := range where {
+		if strings.HasSuffix(k, "{}") {
+			m = m.WhereIn(k[0:len(k)-2], v)
+			delete(where, k)
+			continue
+		}
+		if v.(string) == "" || v == nil { //暂只处理字符串为空的情况
+			return 0, gerror.New("where的值不能为空")
+		}
+	}
+
+	_ret, err := m.Where(where).Delete()
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := _ret.RowsAffected()
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, err
+
 }

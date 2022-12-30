@@ -27,6 +27,7 @@ func checkTag(req g.Map, method string) (*db.Request, error) {
 
 func parseRefCol(refStr string) (refPath string, refCol string) {
 	// "id@":"[]/User/userId"
+
 	refCol = filepath.Base(refStr)                  // userId
 	refPath = refStr[0 : len(refStr)-len(refCol)-1] // []/User
 	return refPath, refCol

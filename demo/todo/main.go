@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/db"
-	"github.com/glennliao/apijson-go/handlers"
 	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -38,35 +37,37 @@ func main() {
 
 	s.Group("/", func(group *ghttp.RouterGroup) {
 
-		group.Middleware(func(r *ghttp.Request) {
-			// 模拟认证, 获取用户信息, 此处为简化直接Authorization传递userId, 实际项目中请勿这么操作
-			authorization := r.Request.Header.Get("Authorization")
+		group.Middleware(auth)
 
-			if authorization != "" {
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: authorization})
-				r.SetCtx(ctx)
-			} else {
-				if r.URL.Path != "/get" { // 此处限制非查询的都需要登录, 可结合实际调整
-					r.Response.WriteJson(g.Map{
-						"code": 401,
-						"msg":  "未登录",
-					})
-					return
-				}
-			}
-
-			r.Middleware.Next()
-		})
-
-		group.POST("/get", commonResponse(handlers.Get))
-		group.POST("/post", commonResponse(handlers.Post))
-		group.POST("/head", commonResponse(handlers.Head))
-		group.POST("/put", commonResponse(handlers.Put))
-		group.POST("/delete", commonResponse(handlers.Delete))
+		group.POST("/get", commonResponse(app.Get))
+		group.POST("/post", commonResponse(app.Post))
+		group.POST("/head", commonResponse(app.Head))
+		group.POST("/put", commonResponse(app.Put))
+		group.POST("/delete", commonResponse(app.Delete))
 	})
 
 	s.Run()
+}
+
+func auth(r *ghttp.Request) {
+	// 模拟认证, 获取用户信息, 此处为简化直接Authorization传递userId, 实际项目中请勿这么操作
+	authorization := r.Request.Header.Get("Authorization")
+
+	if authorization != "" {
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: authorization})
+		r.SetCtx(ctx)
+	} else {
+		if r.URL.Path != "/get" { // 此处限制非查询的都需要登录, 可结合实际调整
+			r.Response.WriteJson(g.Map{
+				"code": 401,
+				"msg":  "未登录",
+			})
+			return
+		}
+	}
+
+	r.Middleware.Next()
 }
 
 // commonResponse 创建统一响应

@@ -7,3 +7,14 @@ const (
 	Count = "count" // page size
 	Query = "query"
 )
+
+const (
+	OpLike   = "$"
+	OpRegexp = "~"
+)
+
+const (
+	SqlLike   = "LIKE"
+	SqlEqual  = "="
+	SqlRegexp = "REGEXP"
+)

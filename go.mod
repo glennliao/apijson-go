@@ -3,7 +3,7 @@ module github.com/glennliao/apijson-go
 go 1.18
 
 require (
-	github.com/gogf/gf/v2 v2.2.2
+	github.com/gogf/gf/v2 v2.2.5
 	github.com/samber/lo v1.33.0
 )
 

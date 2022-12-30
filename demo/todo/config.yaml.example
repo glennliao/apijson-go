@@ -2,6 +2,9 @@ server:
   address: ":8080"
   dumpRouterMap: false
 
+logger:
+  default:
+    level: all
 
 database:
   logger:

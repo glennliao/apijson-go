@@ -1,4 +1,4 @@
-package handlers
+package app
 
 import (
 	"context"

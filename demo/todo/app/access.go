@@ -74,12 +74,18 @@ func AccessCondition(ctx context.Context, req config.AccessConditionReq) (g.Map,
 	switch req.Table {
 	case "t_user":
 		if req.NodeRole == consts.OWNER {
-			// a=b
-			// a in []b
-			// a = (sql)
-			// a in [sql]
-			// a not in sql
-			return g.Map{"user_id": user.UserId, "@sql": []string{"a in ?", "asd"}}, nil
+			return g.Map{
+				"user_id": user.UserId,
+
+				"@raw": g.Map{
+					"id > 0": "",
+				},
+				// g.Map{
+				//    "uid <=" : 1000,
+				//    "age >=" : 18,
+				//    "x in (?)":[]string{"1","2","3"}
+				//}
+			}, nil
 		}
 	case "t_todo":
 		if req.NodeRole == consts.OWNER {

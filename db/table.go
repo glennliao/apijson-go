@@ -20,7 +20,7 @@ type (
 
 var tableMap = map[string]Table{}
 
-func getTableColumns(tableName string) (columns []string) {
+func GetTableColumns(tableName string) (columns []string) {
 	for _, column := range tableMap[tableName].Columns {
 		columns = append(columns, column.Name)
 	}

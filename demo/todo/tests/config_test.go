@@ -70,7 +70,7 @@ func actionByJsonStr(req string, method string) (res g.Map, err error) {
 	return action.New(ctx, method, reqMap).Result()
 }
 
-func countTodoByUser(userId string) int {
+func countTodoByUser(userId string) int64 {
 	m := g.Model("todo").Ctx(ctx)
 	if userId != "" {
 		m = m.Where(g.Map{"user_id": userId})
