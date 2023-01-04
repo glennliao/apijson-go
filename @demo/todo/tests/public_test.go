@@ -23,13 +23,13 @@ func TestPublicExample(t *testing.T) {
 
 		// ============================================================
 		Convey("未登录用户访问", func() {
-			iAmUnKnow()
+			ctx := iAmUnKnow()
 
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 			So(err, ShouldBeNil)
 
 			notice := gconv.Map(out["Notice"])
-			g.Dump(notice)
+			//g.Dump(notice)
 
 			SoMsg("未获取到数据", len(lo.Keys(notice)), ShouldBeGreaterThan, 0)
 
@@ -37,13 +37,13 @@ func TestPublicExample(t *testing.T) {
 
 		// ============================================================
 		Convey("登录用户访问", func() {
-			iAmWM()
+			ctx := iAmWM()
 
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 			So(err, ShouldBeNil)
 
 			notice := gconv.Map(out["Notice"])
-			g.Dump(notice)
+			//g.Dump(notice)
 
 			SoMsg("未获取到数据", len(lo.Keys(notice)), ShouldBeGreaterThan, 0)
 

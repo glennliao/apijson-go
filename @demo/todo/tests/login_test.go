@@ -30,9 +30,9 @@ func TestLoginExample(t *testing.T) {
 
 		// ============================================================
 		Convey("未登录用户访问", func() {
-			iAmUnKnow()
+			ctx := iAmUnKnow()
 
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 			So(err, ShouldNotBeNil)
 
 			notice := gconv.Map(out["NoticeInner"])
@@ -44,9 +44,9 @@ func TestLoginExample(t *testing.T) {
 
 		// ============================================================
 		Convey("登录用户访问", func() {
-			iAmWM()
+			ctx := iAmWM()
 
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 			So(err, ShouldBeNil)
 
 			notice := gconv.Map(out["NoticeInner"])

@@ -20,7 +20,8 @@ func TestTodoWithUser(t *testing.T) {
 			}
 		}
 `
-		out, err := queryByJsonStr(req)
+		ctx := iAmUnKnow()
+		out, err := queryByJsonStr(ctx, req)
 		So(err, ShouldBeNil)
 
 		todo, user := out["Todo"].(g.Map), out["User"].(g.Map)
@@ -52,7 +53,8 @@ func TestTodoListWithUser(t *testing.T) {
 			}
 		}
 `
-		out, err := queryByJsonStr(req)
+		ctx := iAmUnKnow()
+		out, err := queryByJsonStr(ctx, req)
 		So(err, ShouldBeNil)
 
 		data := out["[]"]
@@ -87,7 +89,7 @@ func TestTodoListByUser(t *testing.T) {
 			}
 		}
 `
-		out, err := queryByJsonStr(req)
+		out, err := queryByJsonStr(iAmUnKnow(), req)
 		So(err, ShouldBeNil)
 
 		data, user := out["[]"], out["User"]
@@ -129,7 +131,7 @@ func TestTodoRef(t *testing.T) {
 			}
 		}
 `
-		out, err := queryByJsonStr(req)
+		out, err := queryByJsonStr(iAmUnKnow(), req)
 		So(err, ShouldBeNil)
 
 		{
@@ -188,7 +190,7 @@ func TestTodoOneMany(t *testing.T) {
 			}
 		}
 `
-		out, err := queryByJsonStr(req)
+		out, err := queryByJsonStr(iAmUnKnow(), req)
 		So(err, ShouldBeNil)
 		So(len(out), ShouldEqual, 1)
 

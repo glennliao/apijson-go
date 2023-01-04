@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gctx"
 	"github.com/gogf/gf/v2/util/gconv"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -12,6 +13,7 @@ func TestQueryExample(t *testing.T) {
 	Convey("QueryExample", t, func() {
 		// ============================================================
 		Convey("total", func() {
+			ctx := gctx.New()
 
 			cnt, err := g.DB().Model("notice").Ctx(ctx).Count()
 			So(err, ShouldBeNil)
@@ -23,7 +25,7 @@ func TestQueryExample(t *testing.T) {
 					"total@":"Notice[]/total"
 				}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 
 			So(err, ShouldBeNil)
 			So(hasKey(out, "total"), ShouldBeTrue)
@@ -37,7 +39,7 @@ func TestQueryExample(t *testing.T) {
 
 func TestTodoGet(t *testing.T) {
 	Convey("TodoGet", t, func() {
-		//iAmWM()
+		ctx := iAmWM()
 		userId := UserIdWM
 
 		req := fmt.Sprintf(`
@@ -48,7 +50,7 @@ func TestTodoGet(t *testing.T) {
 				}
 		`, userId)
 
-		out, err := queryByJsonStr(req)
+		out, err := queryByJsonStr(ctx, req)
 		So(err, ShouldBeNil)
 		So(hasKey(out, "Todo"), ShouldBeTrue)
 
@@ -59,7 +61,7 @@ func TestTodoGet(t *testing.T) {
 
 func TestTodoList(t *testing.T) {
 	Convey("TodoList", t, func() {
-		iAmWM()
+		ctx := iAmWM()
 
 		userId := UserIdWM
 
@@ -76,7 +78,7 @@ func TestTodoList(t *testing.T) {
 			}
 		`, userId)
 
-		out, err := queryByJsonStr(req)
+		out, err := queryByJsonStr(ctx, req)
 		So(err, ShouldBeNil)
 		data := out["[]"]
 		So(data, ShouldNotBeNil)
@@ -110,7 +112,7 @@ func TestListTodoWithPage(t *testing.T) {
 			}
 		}
 `
-		out, err := queryByJsonStr(req)
+		out, err := queryByJsonStr(iAmUnKnow(), req)
 		So(err, ShouldBeNil)
 
 		list := out["[]"].([]g.Map)

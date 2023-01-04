@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gctx"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
@@ -42,7 +43,7 @@ func TestAccessExtFiledRightLike(t *testing.T) {
 			}
 			`, date)
 
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(gctx.New(), req)
 			So(err, ShouldBeNil)
 			return out
 		}

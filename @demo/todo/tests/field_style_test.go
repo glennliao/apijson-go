@@ -36,7 +36,7 @@ func TestFieldStyle(t *testing.T) {
 						}
 			}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(iAmUnKnow(), req)
 			//g.Dump(out)
 
 			So(err, ShouldBeNil)
@@ -63,7 +63,7 @@ func TestFieldStyle(t *testing.T) {
 						}
 			}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(iAmUnKnow(), req)
 			//g.Dump(out)
 
 			So(err, ShouldBeNil)

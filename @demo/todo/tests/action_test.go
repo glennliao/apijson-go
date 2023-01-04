@@ -2,75 +2,15 @@ package tests
 
 import (
 	"fmt"
-	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	. "github.com/smartystreets/goconvey/convey"
+	"net/http"
 	"testing"
 )
 
-func TestSome(t *testing.T) {
-	iAmWM()
-	m := g.DB().Model("t_todo").Ctx(ctx)
-
-	Convey("单表单条数据操作", t, func() {
-		Convey("新增", func() {
-
-			cnt1, err := m.Clone().Count(g.Map{
-				"user_id": UserIdWM,
-			})
-			So(err, ShouldBeNil)
-
-			req := `
-				{
-					"Todo": {
-						"title": "去找林云喝茶 ♪(^∇^*)"
-					},
-					"TodoLog":{
-						"log":"created by one"
-					},
-					"TodoLog[]":[
-						{"log":"created by list[0]"},
-						{"log":"created by list[1]"}
-					],
-					"tag": "Todo",
-					"version": 2
-				}
-			`
-
-			out, err := actionByJsonStr(req, consts.MethodPost)
-			So(err, ShouldBeNil)
-
-			//g.Dump(out)
-			todo := out["Todo"].(g.Map)
-			todoId := todo["todoId"].(string)
-
-			cnt2, err := m.Clone().Count(g.Map{
-				"user_id": UserIdWM,
-			})
-			So(err, ShouldBeNil)
-			So(cnt2-cnt1, ShouldEqual, 1)
-
-			cnt, err := g.DB().Model("t_todo_log").Ctx(ctx).Count(g.Map{
-				"todo_id": todoId,
-				"log":     "created by one",
-			})
-			So(err, ShouldBeNil)
-			So(cnt, ShouldEqual, 1)
-
-			cnt, err = g.DB().Model("t_todo_log").Ctx(ctx).WhereLike("log", "created by list%").Count(g.Map{
-				"todo_id": todoId,
-			})
-			So(err, ShouldBeNil)
-			So(cnt, ShouldEqual, 2)
-
-		})
-	})
-
-}
-
 func TestActionOneTableOneLine(t *testing.T) {
-	iAmWM()
+	ctx := iAmWM()
 	todoId := ""
 	Convey("单表单条数据操作", t, func() {
 
@@ -94,7 +34,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(ctx, req, http.MethodPost)
 			So(err, ShouldBeNil)
 
 			//g.Dump(out)
@@ -123,7 +63,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(fmt.Sprintf(req, todoId), consts.MethodPut)
+			_, err := actionByJsonStr(ctx, fmt.Sprintf(req, todoId), http.MethodPut)
 			So(err, ShouldBeNil)
 
 			one, err := m.Clone().One(g.Map{
@@ -145,7 +85,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(fmt.Sprintf(req, todoId), consts.MethodDelete)
+			_, err := actionByJsonStr(ctx, fmt.Sprintf(req, todoId), http.MethodDelete)
 			So(err, ShouldBeNil)
 
 			one, err := m.Clone().One(g.Map{
@@ -162,7 +102,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 }
 
 func TestActionMoreTableMoreLine(t *testing.T) {
-	iAmWM()
+	ctx := iAmWM()
 	todoId := ""
 	Convey("多表多数据操作", t, func() {
 
@@ -193,7 +133,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(ctx, req, http.MethodPost)
 			So(err, ShouldBeNil)
 
 			//g.Dump(out)
@@ -253,7 +193,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 							}
 			`
 
-			_, err = actionByJsonStr(fmt.Sprintf(req, allIdStr, oneId.Int(), many0.Int(), many1.Int()), consts.MethodPut)
+			_, err = actionByJsonStr(ctx, fmt.Sprintf(req, allIdStr, oneId.Int(), many0.Int(), many1.Int()), http.MethodPut)
 			So(err, ShouldBeNil)
 
 			cnt, err := g.DB().Model("t_todo_log").Ctx(ctx).Count(g.Map{
@@ -305,7 +245,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 							}
 			`
 
-			_, err = actionByJsonStr(fmt.Sprintf(req, allIdStr), consts.MethodDelete)
+			_, err = actionByJsonStr(ctx, fmt.Sprintf(req, allIdStr), http.MethodDelete)
 			So(err, ShouldBeNil)
 
 			cnt, err := g.DB().Model("t_todo_log").Ctx(ctx).Count(g.Map{
@@ -319,7 +259,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 }
 
 func TestActionDEmptyRowKey(t *testing.T) {
-	iAmWM()
+	ctx := iAmWM()
 	Convey("条件为空的情况", t, func() {
 
 		// ===================================================================
@@ -335,7 +275,7 @@ func TestActionDEmptyRowKey(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(req, consts.MethodPut)
+			_, err := actionByJsonStr(ctx, req, http.MethodPut)
 			So(err, ShouldNotBeNil)
 
 		})
@@ -351,7 +291,7 @@ func TestActionDEmptyRowKey(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(req, consts.MethodDelete)
+			_, err := actionByJsonStr(ctx, req, http.MethodDelete)
 			So(err, ShouldNotBeNil)
 
 		})

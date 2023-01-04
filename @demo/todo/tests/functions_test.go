@@ -1,15 +1,15 @@
 package tests
 
 import (
-	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	. "github.com/smartystreets/goconvey/convey"
+	"net/http"
 	"testing"
 )
 
 func TestFunctionsQuery(t *testing.T) {
-	iAmWM()
+	ctx := iAmWM()
 	Convey("functions in query", t, func() {
 
 		// ===================================================================
@@ -21,7 +21,7 @@ func TestFunctionsQuery(t *testing.T) {
 					"hello()":"sayHello"
 				}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 
 			So(err, ShouldBeNil)
 			So(hasKey(out, "hello"), ShouldBeTrue)
@@ -35,7 +35,7 @@ func TestFunctionsQuery(t *testing.T) {
 					"hello()":"sayHello()"
 				}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 
 			So(err, ShouldBeNil)
 			So(hasKey(out, "hello"), ShouldBeTrue)
@@ -50,7 +50,7 @@ func TestFunctionsQuery(t *testing.T) {
 					}
 				}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 
 			//g.Dump(out)
 
@@ -71,7 +71,7 @@ func TestFunctionsQuery(t *testing.T) {
 					}
 				}
 			`
-			out, err := queryByJsonStr(req)
+			out, err := queryByJsonStr(ctx, req)
 
 			//g.Dump(out)
 
@@ -85,7 +85,7 @@ func TestFunctionsQuery(t *testing.T) {
 }
 
 func TestFunctionsInAction(t *testing.T) {
-	iAmSQ()
+	ctx := iAmSQ()
 	Convey("functions in action", t, func() {
 		// ===================================================================
 		Convey("check", func() {
@@ -100,7 +100,7 @@ func TestFunctionsInAction(t *testing.T) {
 				}
 			`
 
-			_, err := actionByJsonStr(req, consts.MethodPost)
+			_, err := actionByJsonStr(ctx, req, http.MethodPost)
 
 			So(err, ShouldNotBeNil)
 
@@ -118,7 +118,7 @@ func TestFunctionsInAction(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(ctx, req, http.MethodPost)
 			//g.Dump(out)
 			So(err, ShouldBeNil)
 

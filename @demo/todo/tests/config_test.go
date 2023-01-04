@@ -13,8 +13,6 @@ import (
 	"todo/app"
 )
 
-var ctx = gctx.New()
-
 const (
 	UserIdWM = "10001"
 	UserIdSQ = "10002"
@@ -43,21 +41,21 @@ func init() {
 }
 
 // iAmWM 使用汪淼账号
-func iAmWM() {
-	ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: UserIdWM})
+func iAmWM() context.Context {
+	return context.WithValue(gctx.New(), app.UserIdKey, &app.CurrentUser{UserId: UserIdWM})
 }
 
 // iAmSQ 使用史强账号
-func iAmSQ() {
-	ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: UserIdSQ})
+func iAmSQ() context.Context {
+	return context.WithValue(gctx.New(), app.UserIdKey, &app.CurrentUser{UserId: UserIdSQ})
 }
 
 // 未登录用户
-func iAmUnKnow() {
-	ctx = gctx.New()
+func iAmUnKnow() context.Context {
+	return gctx.New()
 }
 
-func queryByJsonStr(req string) (res g.Map, err error) {
+func queryByJsonStr(ctx context.Context, req string) (res g.Map, err error) {
 	reqMap := gjson.New(req).Map()
 	q := query.New(ctx, reqMap)
 	q.AccessVerify = config.AccessVerify
@@ -66,12 +64,12 @@ func queryByJsonStr(req string) (res g.Map, err error) {
 	return q.Result()
 }
 
-func actionByJsonStr(req string, method string) (res g.Map, err error) {
+func actionByJsonStr(ctx context.Context, req string, method string) (res g.Map, err error) {
 	reqMap := gjson.New(req).Map()
 	return action.New(ctx, method, reqMap).Result()
 }
 
-func countTodoByUser(userId string) int64 {
+func countTodoByUser(ctx context.Context, userId string) int64 {
 	m := g.Model("todo").Ctx(ctx)
 	if userId != "" {
 		m = m.Where(g.Map{"user_id": userId})

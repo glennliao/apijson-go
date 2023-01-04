@@ -19,7 +19,7 @@ func TestFailExample(t *testing.T) {
 					}
 				}
 			`
-			_, err := queryByJsonStr(req)
+			_, err := queryByJsonStr(iAmUnKnow(), req)
 			So(err, ShouldNotBeNil)
 		})
 		// ============================================================
@@ -37,7 +37,7 @@ func TestFailExample(t *testing.T) {
 					}
 				}
 			`
-			_, err := queryByJsonStr(req)
+			_, err := queryByJsonStr(iAmUnKnow(), req)
 			So(err, ShouldNotBeNil)
 		})
 	})
