@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/glennliao/apijson-go/functions"
@@ -129,8 +130,8 @@ func (n *Node) buildChild() error {
 	}
 
 	// 最大深度检查
-	if len(strings.Split(n.Path, "/")) > consts.MaxTreeDeep {
-		return gerror.Newf("deep(%s) > %d", n.Path, consts.MaxTreeDeep)
+	if len(strings.Split(n.Path, "/")) > config.MaxTreeDeep {
+		return gerror.Newf("deep(%s) > %d", n.Path, config.MaxTreeDeep)
 	}
 
 	children := make(map[string]*Node)
@@ -171,12 +172,12 @@ func (n *Node) buildChild() error {
 	if len(children) > 0 {
 
 		// 最大宽度检查, 目前为某节点的宽度, 应该计算为整棵树的最大宽度
-		if len(children) > consts.MaxTreeWidth {
+		if len(children) > config.MaxTreeWidth {
 			path := n.Path
 			if path == "" {
 				path = "root"
 			}
-			return gerror.Newf("width(%s) > %d", path, consts.MaxTreeWidth)
+			return gerror.Newf("width(%s) > %d", path, config.MaxTreeWidth)
 		}
 
 		n.children = children

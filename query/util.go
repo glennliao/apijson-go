@@ -8,6 +8,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
+	"net/http"
 	"strings"
 )
 
@@ -69,7 +70,7 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 }
 
 func hasAccess(node *Node, table string) (hasAccess bool, accessWhere g.Map, err error) {
-	accessRoles, tableName, err := db.GetAccessRole(table, consts.MethodGet)
+	accessRoles, tableName, err := db.GetAccessRole(table, http.MethodGet)
 	if err != nil {
 		return false, nil, err
 	}
@@ -82,7 +83,7 @@ func hasAccess(node *Node, table string) (hasAccess bool, accessWhere g.Map, err
 	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.AccessConditionReq{
 		Table:               tableName,
 		TableAccessRoleList: accessRoles,
-		Method:              consts.MethodGet,
+		Method:              http.MethodGet,
 		NodeReq:             node.req,
 		NodeRole:            node.role,
 	})

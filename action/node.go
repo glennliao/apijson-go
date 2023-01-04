@@ -12,6 +12,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
+	"net/http"
 	"strings"
 )
 
@@ -52,11 +53,11 @@ func (n *Node) parseReq(method string) {
 			} else {
 				key = config.GetDbFieldStyle()(n.ctx, n.TableName, key)
 
-				if method == consts.MethodDelete {
+				if method == http.MethodDelete {
 					n.Where[i][key] = val
 				} else {
 					if key == n.RowKey || key == n.RowKey+"{}" {
-						if method == consts.MethodPut {
+						if method == http.MethodPut {
 							n.Where[i][key] = val
 						}
 						// Post 暂原则上不让传递这个rowKey值
@@ -98,11 +99,11 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	var accessRoles []string
 
 	switch method {
-	case consts.MethodPost:
+	case http.MethodPost:
 		accessRoles = access.Post
-	case consts.MethodPut:
+	case http.MethodPut:
 		accessRoles = access.Put
-	case consts.MethodDelete:
+	case http.MethodDelete:
 		accessRoles = access.Delete
 	}
 
@@ -170,7 +171,7 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 			return err
 		}
 
-		if method == consts.MethodPost {
+		if method == http.MethodPost {
 			for k, v := range where {
 				n.Data[i][k] = v
 			}
@@ -288,7 +289,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 	var count int64
 
 	switch method {
-	case consts.MethodPost:
+	case http.MethodPost:
 
 		var rowKeyVal g.Map
 
@@ -344,7 +345,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			}
 		}
 
-	case consts.MethodPut:
+	case http.MethodPut:
 		count, err = gf_orm.Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
 		if err != nil {
 			return nil, err
@@ -354,7 +355,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			"code":  200,
 			"count": count,
 		}
-	case consts.MethodDelete:
+	case http.MethodDelete:
 		count, err = gf_orm.Delete(ctx, n.TableName, n.Where[dataIndex])
 		if err != nil {
 			return nil, err
@@ -385,7 +386,7 @@ func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 		return nil, err
 	}
 
-	if method == consts.MethodPost { // 新增时可以合并新增
+	if method == http.MethodPost { // 新增时可以合并新增
 		ret, err := n.do(ctx, method, 0)
 		if err != nil {
 			return nil, err
