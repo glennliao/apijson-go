@@ -23,7 +23,7 @@
 
 ## [ ] xxx 阶段
 
-- [ ] 提供 web UI 用于 _access 和 _request 的管理
+- [x] 提供 web UI 用于 _access 和 _request 的管理
 - [ ] get请求的复杂度计算, 超过复杂度则拒绝执行(树节点计算)
 - [ ] 完善 apijson 规范的兼容实现
 

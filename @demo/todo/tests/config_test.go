@@ -9,10 +9,11 @@ import (
 	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gctx"
 	"todo/app"
 )
 
-var ctx = context.TODO()
+var ctx = gctx.New()
 
 const (
 	UserIdWM = "10001"
@@ -43,17 +44,17 @@ func init() {
 
 // iAmWM 使用汪淼账号
 func iAmWM() {
-	ctx = context.WithValue(context.TODO(), app.UserIdKey, &app.CurrentUser{UserId: UserIdWM})
+	ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: UserIdWM})
 }
 
 // iAmSQ 使用史强账号
 func iAmSQ() {
-	ctx = context.WithValue(context.TODO(), app.UserIdKey, &app.CurrentUser{UserId: UserIdSQ})
+	ctx = context.WithValue(ctx, app.UserIdKey, &app.CurrentUser{UserId: UserIdSQ})
 }
 
 // 未登录用户
 func iAmUnKnow() {
-	ctx = context.TODO()
+	ctx = gctx.New()
 }
 
 func queryByJsonStr(req string) (res g.Map, err error) {

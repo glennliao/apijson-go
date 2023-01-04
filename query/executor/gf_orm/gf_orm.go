@@ -197,7 +197,7 @@ func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
 
 func (e *SqlExecutor) build() *gdb.Model {
 	tableName := e.access.Name
-	m := g.DB().Model(tableName)
+	m := g.DB().Model(tableName).Ctx(e.ctx)
 
 	if e.Order != "" {
 		m = m.Order(e.Order)

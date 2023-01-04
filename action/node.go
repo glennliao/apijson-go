@@ -7,6 +7,7 @@ import (
 	"github.com/glennliao/apijson-go/db"
 	"github.com/glennliao/apijson-go/functions"
 	"github.com/glennliao/apijson-go/query/executor/gf_orm"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -224,7 +225,7 @@ func (n *Node) reqUpdate() error {
 		for key, updateVal := range n.structure.Update {
 
 			if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
-				functionName, paramKeys := functions.ParseFunctionsStr(updateVal.(string))
+				functionName, paramKeys := util.ParseFunctionsStr(updateVal.(string))
 				var param = g.Map{}
 				for _, paramKey := range paramKeys {
 					if paramKey == consts.FunctionOriReqParam {
@@ -264,7 +265,7 @@ func (n *Node) reqUpdateBeforeDo() error {
 
 		for k, v := range n.Data[i] {
 			if strings.HasSuffix(k, consts.RefKeySuffix) {
-				refNodeKey, refCol := parseRefCol(v.(string))
+				refNodeKey, refCol := util.ParseRefCol(v.(string))
 				if strings.HasSuffix(refNodeKey, consts.ListKeySuffix) { // 双列表
 					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
 				} else {
@@ -279,13 +280,9 @@ func (n *Node) reqUpdateBeforeDo() error {
 
 func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map, err error) {
 
-	for _, hook := range hooks {
-		if hook.BeforeDo != nil {
-			err = hook.BeforeDo(n, method)
-			if err != nil {
-				return nil, err
-			}
-		}
+	err = EmitHook(ctx, BeforeDo, n, method)
+	if err != nil {
+		return nil, err
 	}
 
 	var count int64
@@ -294,18 +291,29 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 	case consts.MethodPost:
 
 		var rowKeyVal g.Map
-		for i, _ := range n.Data {
-			rowKeyVal, err = rowKeyGen(ctx, n.TableName, n.Data[i])
-			if err != nil {
-				return nil, err
-			}
 
-			if rowKeyVal != nil {
-				for k, v := range rowKeyVal {
-					n.Data[i][k] = v
+		access, err := db.GetAccess(n.Key, true)
+		if err != nil {
+			return nil, err
+		}
+
+		if access.RowKeyGen != "" {
+			for i, _ := range n.Data {
+
+				rowKeyVal, err = rowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
+				if err != nil {
+					return nil, err
 				}
-			}
 
+				for k, v := range rowKeyVal {
+					if k == "rowKey" {
+						n.Data[i][access.RowKey] = v
+					} else {
+						n.Data[i][k] = v
+					}
+				}
+
+			}
 		}
 
 		var id int64
@@ -327,7 +335,11 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			jsonStyle := config.GetJsonFieldStyle()
 			if rowKeyVal != nil {
 				for k, v := range rowKeyVal {
-					ret[jsonStyle(ctx, n.TableName, k)] = v
+					if k == "rowKey" {
+						ret[jsonStyle(ctx, n.TableName, access.RowKey)] = v
+					} else {
+						ret[jsonStyle(ctx, n.TableName, k)] = v
+					}
 				}
 			}
 		}
@@ -358,13 +370,9 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 		return nil, gerror.New("undefined method:" + method)
 	}
 
-	for _, hook := range hooks {
-		if hook.AfterDo != nil {
-			err = hook.AfterDo(n, method)
-			if err != nil {
-				return nil, err
-			}
-		}
+	err = EmitHook(ctx, AfterDo, n, method)
+	if err != nil {
+		return nil, err
 	}
 
 	return

@@ -7,6 +7,7 @@ import (
 	"github.com/glennliao/apijson-go/functions"
 	"github.com/glennliao/apijson-go/query/executor"
 	"github.com/glennliao/apijson-go/query/executor/gf_orm"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -264,7 +265,7 @@ func (n *Node) parse() {
 					refStr = filepath.Dir(n.Path) + refStr
 				}
 
-				refPath, refCol := parseRefCol(refStr)
+				refPath, refCol := util.ParseRefCol(refStr)
 
 				if !hasRefBrother {
 					if filepath.Dir(n.Path) == filepath.Dir(refPath) {
@@ -313,7 +314,7 @@ func (n *Node) parse() {
 		if strings.HasPrefix(refStr, "/") { // 这里/开头是相对同级
 			refStr = filepath.Dir(n.Path) + refStr
 		}
-		refPath, refCol := parseRefCol(refStr)
+		refPath, refCol := util.ParseRefCol(refStr)
 		if refPath == n.Path { // 不能依赖自身
 			panic(gerror.Newf("node cannot ref self: (%s)", refPath))
 		}
@@ -377,7 +378,7 @@ func (n *Node) parse() {
 		}
 
 	case NodeTypeFunc:
-		functionName, _ := functions.ParseFunctionsStr(n.simpleReqVal)
+		functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
 		n.simpleReqVal = functionName
 
 	}
@@ -511,7 +512,7 @@ func (n *Node) fetch() {
 
 			k = k[0 : len(k)-2]
 
-			functionName, paramKeys := functions.ParseFunctionsStr(v.(string))
+			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
 
 			if n.isList {
 				for i, item := range n.ret.([]g.Map) {

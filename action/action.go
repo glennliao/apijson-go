@@ -2,6 +2,7 @@ package action
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -52,7 +53,7 @@ func (a *Action) parse() error {
 	for key, v := range a.req {
 
 		structuresKey := key
-		if strings.HasSuffix(key, "[]") {
+		if strings.HasSuffix(key, consts.ListKeySuffix) {
 			structuresKey = structuresKey[0 : len(structuresKey)-2]
 		}
 		structure, ok := structures[key]
@@ -94,16 +95,11 @@ func (a *Action) Result() (g.Map, error) {
 
 	ret := g.Map{}
 
-	for _, hook := range hooks {
-		if hook.BeforeExec != nil {
-			for _, k := range a.tagRequest.ExecQueue {
-				node := a.children[k]
-				err = hook.BeforeExec(node, a.method)
-				if err != nil {
-					return nil, err
-				}
-			}
-
+	for _, k := range a.tagRequest.ExecQueue {
+		node := a.children[k]
+		err = EmitHook(a.ctx, BeforeExec, node, a.method)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -132,16 +128,11 @@ func (a *Action) Result() (g.Map, error) {
 		return nil, err
 	}
 
-	for _, hook := range hooks {
-		if hook.AfterExec != nil {
-			for _, k := range a.tagRequest.ExecQueue {
-				node := a.children[k]
-				err = hook.AfterExec(node, a.method)
-				if err != nil {
-					return nil, err
-				}
-			}
-
+	for _, k := range a.tagRequest.ExecQueue {
+		node := a.children[k]
+		err = EmitHook(a.ctx, AfterExec, node, a.method)
+		if err != nil {
+			return nil, err
 		}
 	}
 

@@ -13,7 +13,7 @@ func TestQueryExample(t *testing.T) {
 		// ============================================================
 		Convey("total", func() {
 
-			cnt, err := g.DB().Model("notice").Count()
+			cnt, err := g.DB().Model("notice").Ctx(ctx).Count()
 			So(err, ShouldBeNil)
 			SoMsg("数据库中不能没有数据,不然无法测试", cnt, ShouldBeGreaterThan, 0)
 

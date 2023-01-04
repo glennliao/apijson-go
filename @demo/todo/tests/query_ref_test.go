@@ -29,8 +29,7 @@ func TestTodoWithUser(t *testing.T) {
 
 		So(user["userId"], ShouldNotBeEmpty)
 
-		fmt.Println()
-		row, err := g.DB().Model("t_user").Where("user_id", user["userId"]).One()
+		row, err := g.DB().Model("t_user").Ctx(ctx).Where("user_id", user["userId"]).One()
 		So(err, ShouldBeNil)
 
 		//field := config.GetDbFieldStyle()(ctx, "t_todo", "userId")

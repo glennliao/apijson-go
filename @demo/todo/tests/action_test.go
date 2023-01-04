@@ -9,6 +9,66 @@ import (
 	"testing"
 )
 
+func TestSome(t *testing.T) {
+	iAmWM()
+	m := g.DB().Model("t_todo").Ctx(ctx)
+
+	Convey("单表单条数据操作", t, func() {
+		Convey("新增", func() {
+
+			cnt1, err := m.Clone().Count(g.Map{
+				"user_id": UserIdWM,
+			})
+			So(err, ShouldBeNil)
+
+			req := `
+				{
+					"Todo": {
+						"title": "去找林云喝茶 ♪(^∇^*)"
+					},
+					"TodoLog":{
+						"log":"created by one"
+					},
+					"TodoLog[]":[
+						{"log":"created by list[0]"},
+						{"log":"created by list[1]"}
+					],
+					"tag": "Todo",
+					"version": 2
+				}
+			`
+
+			out, err := actionByJsonStr(req, consts.MethodPost)
+			So(err, ShouldBeNil)
+
+			//g.Dump(out)
+			todo := out["Todo"].(g.Map)
+			todoId := todo["todoId"].(string)
+
+			cnt2, err := m.Clone().Count(g.Map{
+				"user_id": UserIdWM,
+			})
+			So(err, ShouldBeNil)
+			So(cnt2-cnt1, ShouldEqual, 1)
+
+			cnt, err := g.DB().Model("t_todo_log").Ctx(ctx).Count(g.Map{
+				"todo_id": todoId,
+				"log":     "created by one",
+			})
+			So(err, ShouldBeNil)
+			So(cnt, ShouldEqual, 1)
+
+			cnt, err = g.DB().Model("t_todo_log").Ctx(ctx).WhereLike("log", "created by list%").Count(g.Map{
+				"todo_id": todoId,
+			})
+			So(err, ShouldBeNil)
+			So(cnt, ShouldEqual, 2)
+
+		})
+	})
+
+}
+
 func TestActionOneTableOneLine(t *testing.T) {
 	iAmWM()
 	todoId := ""

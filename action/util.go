@@ -5,7 +5,6 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
-	"path/filepath"
 )
 
 func checkTag(req g.Map, method string) (*db.Request, error) {
@@ -23,12 +22,4 @@ func checkTag(req g.Map, method string) (*db.Request, error) {
 	}
 
 	return request, nil
-}
-
-func parseRefCol(refStr string) (refPath string, refCol string) {
-	// "id@":"[]/User/userId"
-
-	refCol = filepath.Base(refStr)                  // userId
-	refPath = refStr[0 : len(refStr)-len(refCol)-1] // []/User
-	return refPath, refCol
 }
