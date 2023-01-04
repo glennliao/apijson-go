@@ -2,10 +2,10 @@ package tests
 
 import (
 	"fmt"
-	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	. "github.com/smartystreets/goconvey/convey"
+	"net/http"
 	"testing"
 )
 
@@ -38,7 +38,7 @@ func TestSome(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(req, http.MethodPost)
 			So(err, ShouldBeNil)
 
 			//g.Dump(out)
@@ -94,7 +94,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(req, http.MethodPost)
 			So(err, ShouldBeNil)
 
 			//g.Dump(out)
@@ -123,7 +123,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(fmt.Sprintf(req, todoId), consts.MethodPut)
+			_, err := actionByJsonStr(fmt.Sprintf(req, todoId), http.MethodPut)
 			So(err, ShouldBeNil)
 
 			one, err := m.Clone().One(g.Map{
@@ -145,7 +145,7 @@ func TestActionOneTableOneLine(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(fmt.Sprintf(req, todoId), consts.MethodDelete)
+			_, err := actionByJsonStr(fmt.Sprintf(req, todoId), http.MethodDelete)
 			So(err, ShouldBeNil)
 
 			one, err := m.Clone().One(g.Map{
@@ -193,7 +193,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(req, http.MethodPost)
 			So(err, ShouldBeNil)
 
 			//g.Dump(out)
@@ -253,7 +253,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 							}
 			`
 
-			_, err = actionByJsonStr(fmt.Sprintf(req, allIdStr, oneId.Int(), many0.Int(), many1.Int()), consts.MethodPut)
+			_, err = actionByJsonStr(fmt.Sprintf(req, allIdStr, oneId.Int(), many0.Int(), many1.Int()), http.MethodPut)
 			So(err, ShouldBeNil)
 
 			cnt, err := g.DB().Model("t_todo_log").Ctx(ctx).Count(g.Map{
@@ -305,7 +305,7 @@ func TestActionMoreTableMoreLine(t *testing.T) {
 							}
 			`
 
-			_, err = actionByJsonStr(fmt.Sprintf(req, allIdStr), consts.MethodDelete)
+			_, err = actionByJsonStr(fmt.Sprintf(req, allIdStr), http.MethodDelete)
 			So(err, ShouldBeNil)
 
 			cnt, err := g.DB().Model("t_todo_log").Ctx(ctx).Count(g.Map{
@@ -335,7 +335,7 @@ func TestActionDEmptyRowKey(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(req, consts.MethodPut)
+			_, err := actionByJsonStr(req, http.MethodPut)
 			So(err, ShouldNotBeNil)
 
 		})
@@ -351,7 +351,7 @@ func TestActionDEmptyRowKey(t *testing.T) {
 				}
 `
 
-			_, err := actionByJsonStr(req, consts.MethodDelete)
+			_, err := actionByJsonStr(req, http.MethodDelete)
 			So(err, ShouldNotBeNil)
 
 		})

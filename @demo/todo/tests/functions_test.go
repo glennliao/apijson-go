@@ -1,10 +1,10 @@
 package tests
 
 import (
-	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	. "github.com/smartystreets/goconvey/convey"
+	"net/http"
 	"testing"
 )
 
@@ -100,7 +100,7 @@ func TestFunctionsInAction(t *testing.T) {
 				}
 			`
 
-			_, err := actionByJsonStr(req, consts.MethodPost)
+			_, err := actionByJsonStr(req, http.MethodPost)
 
 			So(err, ShouldNotBeNil)
 
@@ -118,7 +118,7 @@ func TestFunctionsInAction(t *testing.T) {
 				}
 			`
 
-			out, err := actionByJsonStr(req, consts.MethodPost)
+			out, err := actionByJsonStr(req, http.MethodPost)
 			//g.Dump(out)
 			So(err, ShouldBeNil)
 
