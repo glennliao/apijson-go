@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -73,7 +74,7 @@ func (q *Query) fetch() {
 
 	var prerequisites [][]string
 	analysisRef(q.rootNode, &prerequisites)
-	fetchQueue, err := analysisOrder(prerequisites)
+	fetchQueue, err := util.AnalysisOrder(prerequisites)
 
 	if err != nil {
 		q.err = err

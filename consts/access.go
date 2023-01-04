@@ -7,11 +7,3 @@ const (
 	ADMIN   = "ADMIN"   // 管理员
 	DENY    = "DENY"    // 无法访问, 无正常角色则不返回数据, 不返回默认角色的数据
 )
-
-const (
-	MethodGet    = "GET"
-	MethodHead   = "HEAD"
-	MethodPost   = "POST"
-	MethodPut    = "PUT"
-	MethodDelete = "DELETE"
-)

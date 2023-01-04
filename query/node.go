@@ -2,9 +2,13 @@ package query
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/db"
 	"github.com/glennliao/apijson-go/functions"
+	"github.com/glennliao/apijson-go/query/executor"
+	"github.com/glennliao/apijson-go/query/executor/gf_orm"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -44,7 +48,7 @@ type Node struct {
 	simpleReqVal string //非对象结构
 
 	// 节点数据执行器
-	sqlExecutor *db.SqlExecutor
+	executor executor.QueryExecutor
 
 	startAt time.Time
 	endAt   time.Time
@@ -126,8 +130,8 @@ func (n *Node) buildChild() error {
 	}
 
 	// 最大深度检查
-	if len(strings.Split(n.Path, "/")) > consts.MaxTreeDeep {
-		return gerror.Newf("deep(%s) > %d", n.Path, consts.MaxTreeDeep)
+	if len(strings.Split(n.Path, "/")) > config.MaxTreeDeep {
+		return gerror.Newf("deep(%s) > %d", n.Path, config.MaxTreeDeep)
 	}
 
 	children := make(map[string]*Node)
@@ -168,12 +172,12 @@ func (n *Node) buildChild() error {
 	if len(children) > 0 {
 
 		// 最大宽度检查, 目前为某节点的宽度, 应该计算为整棵树的最大宽度
-		if len(children) > consts.MaxTreeWidth {
+		if len(children) > config.MaxTreeWidth {
 			path := n.Path
 			if path == "" {
 				path = "root"
 			}
-			return gerror.Newf("width(%s) > %d", path, consts.MaxTreeWidth)
+			return gerror.Newf("width(%s) > %d", path, config.MaxTreeWidth)
 		}
 
 		n.children = children
@@ -226,26 +230,26 @@ func (n *Node) parse() {
 			accessWhereCondition = condition
 		}
 
-		executor, err := db.NewSqlExecutor(n.ctx, n.queryContext.AccessVerify, n.role, access)
+		queryExecutor, err := gf_orm.New(n.ctx, n.queryContext.AccessVerify, n.role, access)
 		if err != nil {
 			n.err = err
 			return
 		}
 
-		n.sqlExecutor = executor
+		n.executor = queryExecutor
 
 		// 查询条件
 		refKeyMap, conditionMap, ctrlMap := parseQueryNodeReq(n.req, n.isList)
 
-		n.sqlExecutor.ParseCtrl(ctrlMap)
+		n.executor.ParseCtrl(ctrlMap)
 
-		err = n.sqlExecutor.ParseCondition(conditionMap, true)
+		err = n.executor.ParseCondition(conditionMap, true)
 		if err != nil {
 			n.err = err
 			return
 		}
 
-		err = n.sqlExecutor.ParseCondition(accessWhereCondition, false)
+		err = n.executor.ParseCondition(accessWhereCondition, false)
 		if err != nil {
 			n.err = err
 			return
@@ -253,7 +257,7 @@ func (n *Node) parse() {
 
 		n.primaryTableKey = n.Key
 
-		if len(refKeyMap) > 0 { // 需要应用别处
+		if len(refKeyMap) > 0 { // 需要引用别处
 			n.refKeyMap = make(map[string]NodeRef)
 			hasRefBrother := false // 是否引用兄弟节点, 列表中的主表不能依赖兄弟节点
 
@@ -262,7 +266,7 @@ func (n *Node) parse() {
 					refStr = filepath.Dir(n.Path) + refStr
 				}
 
-				refPath, refCol := parseRefCol(refStr)
+				refPath, refCol := util.ParseRefCol(refStr)
 
 				if !hasRefBrother {
 					if filepath.Dir(n.Path) == filepath.Dir(refPath) {
@@ -311,7 +315,7 @@ func (n *Node) parse() {
 		if strings.HasPrefix(refStr, "/") { // 这里/开头是相对同级
 			refStr = filepath.Dir(n.Path) + refStr
 		}
-		refPath, refCol := parseRefCol(refStr)
+		refPath, refCol := util.ParseRefCol(refStr)
 		if refPath == n.Path { // 不能依赖自身
 			panic(gerror.Newf("node cannot ref self: (%s)", refPath))
 		}
@@ -375,11 +379,9 @@ func (n *Node) parse() {
 		}
 
 	case NodeTypeFunc:
-		functionName, paramKeys := functions.ParseFunctionsStr(n.simpleReqVal)
+		functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
 		n.simpleReqVal = functionName
-		for _, key := range paramKeys {
-			g.Dump(key)
-		}
+
 	}
 	if n.queryContext.PrintProcessLog {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
@@ -416,7 +418,6 @@ func (n *Node) fetch() {
 		for refK, refNode := range n.refKeyMap {
 			ret, err := refNode.node.Result()
 			if err != nil {
-				//g.Log().Error(n.ctx, "", err)
 				n.err = err
 				return
 			}
@@ -426,11 +427,11 @@ func (n *Node) fetch() {
 
 				valList := getColList(list, refNode.column)
 				if len(valList) == 0 { // 未查询到主表, 故当前不再查询
-					n.sqlExecutor.WithEmptyResult = true
+					n.executor.EmptyResult()
 					break
 				}
 
-				err := n.sqlExecutor.ParseCondition(g.Map{
+				err = n.executor.ParseCondition(g.Map{
 					refK + "{}": valList, //  @ 与 {}&等的结合 id{}@的处理
 				}, false)
 
@@ -442,7 +443,7 @@ func (n *Node) fetch() {
 			} else {
 
 				if ret == nil { // 未查询到主表, 故当前不再查询
-					n.sqlExecutor.WithEmptyResult = true
+					n.executor.EmptyResult()
 					break
 				}
 
@@ -453,7 +454,7 @@ func (n *Node) fetch() {
 				var refConditionMap = g.Map{
 					refK: refVal,
 				}
-				err := n.sqlExecutor.ParseCondition(refConditionMap, false)
+				err = n.executor.ParseCondition(refConditionMap, false)
 				if err != nil {
 					n.err = err
 					return
@@ -496,9 +497,9 @@ func (n *Node) fetch() {
 				count = 0
 			}
 
-			n.ret, n.total, n.err = n.sqlExecutor.List(page, count, n.needTotal)
+			n.ret, n.total, n.err = n.executor.List(page, count, n.needTotal)
 		} else {
-			n.ret, n.err = n.sqlExecutor.One()
+			n.ret, n.err = n.executor.One()
 		}
 		if n.err != nil {
 			return
@@ -512,7 +513,7 @@ func (n *Node) fetch() {
 
 			k = k[0 : len(k)-2]
 
-			functionName, paramKeys := functions.ParseFunctionsStr(v.(string))
+			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
 
 			if n.isList {
 				for i, item := range n.ret.([]g.Map) {

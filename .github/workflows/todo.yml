@@ -36,9 +36,9 @@ jobs:
       - name: Test
         run: |
           
-          mysql -uroot -h 127.0.0.1 --port 3306 -pyourpassword my_apijson < demo/todo/doc/todo.sql
+          mysql -uroot -h 127.0.0.1 --port 3306 -pyourpassword my_apijson < @demo/todo/doc/todo.sql
           
-          cd ./demo/todo
+          cd ./@demo/todo
           mv config.yaml.example config.yaml
           
           cd tests

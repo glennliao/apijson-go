@@ -2,11 +2,12 @@ package db
 
 import (
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/samber/lo"
+	"net/http"
 )
 
 var accessMap = map[string]Access{}
@@ -30,8 +31,7 @@ type Access struct {
 	CreatedAt *gtime.Time
 	Detail    string
 
-	// ext
-
+	RowKeyGen string // 主键生成策略
 	RowKey    string
 	FieldsGet map[string]FieldsGetValue
 }
@@ -86,17 +86,18 @@ func loadAccessMap() {
 	accessMap = _accessMap
 }
 
-func GetAccess(table string, accessVerify bool) (*Access, error) {
-	access, ok := accessMap[table]
+func GetAccess(tableAlias string, accessVerify bool) (*Access, error) {
+	tableAlias, _ = util.ParseNodeKey(tableAlias)
+	access, ok := accessMap[tableAlias]
 
 	if !ok {
 		if accessVerify {
-			return nil, gerror.Newf("access[%s]: 404", table)
+			return nil, gerror.Newf("access[%s]: 404", tableAlias)
 		}
 		return &Access{
 			Debug: 0,
-			Name:  table,
-			Alias: table,
+			Name:  tableAlias,
+			Alias: tableAlias,
 		}, nil
 	}
 
@@ -111,15 +112,15 @@ func GetAccessRole(table string, method string) ([]string, string, error) {
 	}
 
 	switch method {
-	case consts.MethodGet:
+	case http.MethodGet:
 		return access.Get, access.Name, nil
-	case consts.MethodHead:
+	case http.MethodHead:
 		return access.Head, access.Name, nil
-	case consts.MethodPost:
+	case http.MethodPost:
 		return access.Post, access.Name, nil
-	case consts.MethodPut:
+	case http.MethodPut:
 		return access.Put, access.Name, nil
-	case consts.MethodDelete:
+	case http.MethodDelete:
 		return access.Delete, access.Name, nil
 	}
 

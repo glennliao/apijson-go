@@ -1,0 +1,17 @@
+server:
+  address: ":8080"
+  dumpRouterMap: false
+
+logger:
+  default:
+    level: all
+
+database:
+  logger:
+    level: "all"
+    stdout: true
+  default:
+    debug: true
+    timezone: Asia/Shanghai
+    link: "mysql:root:yourpassword@tcp(127.0.0.1:3306)/my_apijson?charset=utf8mb4&parseTime=True&loc=Local"
+
