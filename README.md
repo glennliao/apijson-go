@@ -5,21 +5,21 @@
 
 > 目前处于 【下水阶段】, 欢迎测试、issue、建议、pr
 
-[RoadMap 阶段规划](./doc/roadmap.md)
+[RoadMap 阶段规划](./@doc/roadmap.md)
 
 # 快速体验
 <a href="https://gitpod.io/#https://github.com/glennliao/apijson-go"  target="_blank"><img src="https://gitpod.io/button/open-in-gitpod.svg" /> </a>
 
-创建后 执行 demo/todo/tests 下的 *_test.go 访问测试
+创建后 执行 @demo/todo/tests 下的 *_test.go 访问测试
 
 
 # 使用指南
 暂参考demo目录下的todo
 
 ## 文档参考
-1. [Get开放查询](./doc/query.md)
-2. [非开放请求](./doc/action.md)
-3. [权限控制](./doc/access.md)
+1. [Get开放查询](./@doc/query.md)
+2. [非开放请求](./@doc/action.md)
+3. [权限控制](./@doc/access.md)
 
 
 # 开发指南

@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/glennliao/apijson-go/functions"
+	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"strings"

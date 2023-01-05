@@ -2,8 +2,8 @@ package query
 
 import (
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
-	"github.com/glennliao/apijson-go/db"
 	"github.com/gogf/gf/v2/container/gset"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"

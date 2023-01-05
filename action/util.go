@@ -1,7 +1,7 @@
 package action
 
 import (
-	"github.com/glennliao/apijson-go/db"
+	"github.com/glennliao/apijson-go/config/db"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
