@@ -3,10 +3,10 @@ package action
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/config/db"
+	"github.com/glennliao/apijson-go/config/executor"
+	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/glennliao/apijson-go/consts"
-	"github.com/glennliao/apijson-go/db"
-	"github.com/glennliao/apijson-go/functions"
-	"github.com/glennliao/apijson-go/query/executor/gf_orm"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -28,13 +28,14 @@ type Node struct {
 	RowKey string  // 主键
 
 	structure *db.Structure
+	executor  string
 
 	keyNode map[string]*Node
 }
 
-func newNode(key string, req []g.Map, structure *db.Structure) Node {
+func newNode(key string, req []g.Map, structure *db.Structure, executor string) Node {
 	return Node{
-		Key: key, req: req, structure: structure,
+		Key: key, req: req, structure: structure, executor: executor,
 	}
 }
 
@@ -301,7 +302,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 		if access.RowKeyGen != "" {
 			for i, _ := range n.Data {
 
-				rowKeyVal, err = rowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
+				rowKeyVal, err = config.RowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
 				if err != nil {
 					return nil, err
 				}
@@ -319,7 +320,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 
 		var id int64
 
-		id, count, err = gf_orm.Insert(ctx, n.TableName, n.Data)
+		id, count, err = executor.GetActionExecutor(n.executor).Insert(ctx, n.TableName, n.Data)
 
 		if err != nil {
 			return nil, err
@@ -346,7 +347,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 		}
 
 	case http.MethodPut:
-		count, err = gf_orm.Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
+		count, err = executor.GetActionExecutor(n.executor).Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}
@@ -356,7 +357,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			"count": count,
 		}
 	case http.MethodDelete:
-		count, err = gf_orm.Delete(ctx, n.TableName, n.Where[dataIndex])
+		count, err = executor.GetActionExecutor(n.executor).Delete(ctx, n.TableName, n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}

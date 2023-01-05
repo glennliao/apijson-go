@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/db"
+	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/query"
 	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
 	"github.com/gogf/gf/v2/encoding/gjson"
@@ -12,6 +12,7 @@ import (
 	"github.com/gogf/gf/v2/os/gctx"
 	"todo/app"
 )
+import _ "github.com/glennliao/apijson-go/framework/gf_orm"
 
 const (
 	UserIdWM = "10001"

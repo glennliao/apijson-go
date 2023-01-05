@@ -2,8 +2,8 @@ package action
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
-	"github.com/glennliao/apijson-go/db"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -71,7 +71,7 @@ func (a *Action) parse() error {
 			list = gconv.SliceMap(v)
 		}
 
-		node := newNode(key, list, structure)
+		node := newNode(key, list, structure, a.tagRequest.Executor[key])
 		node.ctx = a.ctx
 		a.keyNode[key] = &node
 		node.keyNode = a.keyNode

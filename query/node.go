@@ -3,11 +3,10 @@ package query
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/config/db"
+	"github.com/glennliao/apijson-go/config/executor"
+	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/glennliao/apijson-go/consts"
-	"github.com/glennliao/apijson-go/db"
-	"github.com/glennliao/apijson-go/functions"
-	"github.com/glennliao/apijson-go/query/executor"
-	"github.com/glennliao/apijson-go/query/executor/gf_orm"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -230,7 +229,7 @@ func (n *Node) parse() {
 			accessWhereCondition = condition
 		}
 
-		queryExecutor, err := gf_orm.New(n.ctx, n.queryContext.AccessVerify, n.role, access)
+		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.AccessVerify, n.role, access)
 		if err != nil {
 			n.err = err
 			return

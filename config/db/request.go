@@ -23,6 +23,7 @@ type Request struct {
 	CreatedAt   *gtime.Time
 	// 节点执行顺序
 	ExecQueue []string
+	Executor  map[string]string
 }
 
 type Structure struct {

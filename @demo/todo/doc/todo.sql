@@ -11,7 +11,7 @@
  Target Server Version : 50737
  File Encoding         : 65001
 
- Date: 04/01/2023 15:59:33
+ Date: 05/01/2023 14:32:02
 */
 
 SET NAMES utf8mb4;
@@ -38,6 +38,7 @@ CREATE TABLE `_access`  (
                             `row_key` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '@ext 关联主键字段名,联合主键时使用,分割',
                             `fields_get` json NULL COMMENT '@ext get查询时字段配置',
                             `row_key_gen` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+                            `executor` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '执行器name',
                             PRIMARY KEY (`id`) USING BTREE,
                             UNIQUE INDEX `name_UNIQUE`(`name`) USING BTREE,
                             UNIQUE INDEX `alias_UNIQUE`(`alias`) USING BTREE
@@ -46,13 +47,13 @@ CREATE TABLE `_access`  (
 -- ----------------------------
 -- Records of _access
 -- ----------------------------
-INSERT INTO `_access` VALUES (2, 0, 't_user', 'User', '[\"OWNER\",\"PARTNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2021-07-28 22:02:41', '用户信息表', 'id', '{\"LOGIN\": {\"in\": {\"id\": [\"=\"]}, \"out\": {\"id\": \"\"}}, \"OWNER\": {\"in\": {\"user_id\": [\"=\"], \"username\": [\"*\"], \"created_at\": [\"$%\", \"=\"]}, \"out\": {\"id\": \"\", \"user_id\": \"\", \"username\": \"\", \"created_at\": \"\"}}, \"default\": {\"in\": {\"user_id\": [\"=\"], \"username\": [\"*\"], \"created_at\": [\"$%\", \"=\"]}, \"out\": {\"id\": \"\", \"username\": \"\"}}}', NULL);
-INSERT INTO `_access` VALUES (4, 0, 't_todo', 'Todo', '[\"OWNER\",\"PARTNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2021-07-28 22:02:41', '代办事项表', 'todo_id', '{\"default\": {\"in\": {\"note\": [\"*\"], \"title\": [\"*\"], \"partner\": [\"*\"], \"user_id\": [\"=\", \"$%\"], \"created_at\": [\"$%\", \"=\"]}, \"out\": {\"title\": \"\", \"user_id\": \"\", \"created_at\": \"\"}, \"inOptions\": [{\"label\": \"deleted_at\", \"value\": \"deleted_at\", \"checked\": true}, {\"label\": \"partner\", \"value\": \"partner\", \"checked\": false}, {\"label\": \"todo_id\", \"value\": \"todo_id\", \"checked\": true}, {\"label\": \"id\", \"value\": \"id\", \"checked\": true}, {\"label\": \"user_id\", \"value\": \"user_id\", \"checked\": false}, {\"label\": \"title\", \"value\": \"title\", \"checked\": false}, {\"label\": \"note\", \"value\": \"note\", \"checked\": false}, {\"label\": \"created_at\", \"value\": \"created_at\", \"checked\": false}], \"outOptions\": [{\"label\": \"deleted_at\", \"value\": \"deleted_at\", \"checked\": true}, {\"label\": \"partner\", \"value\": \"partner\", \"checked\": true}, {\"label\": \"todo_id\", \"value\": \"todo_id\", \"checked\": true}, {\"label\": \"id\", \"value\": \"id\", \"checked\": true}, {\"label\": \"user_id\", \"value\": \"user_id\", \"checked\": false}, {\"label\": \"title\", \"value\": \"title\", \"checked\": false}, {\"label\": \"note\", \"value\": \"note\", \"checked\": true}, {\"label\": \"created_at\", \"value\": \"created_at\", \"checked\": false}]}}', 'time');
-INSERT INTO `_access` VALUES (5, 0, '_function', 'Function', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[]', '[]', '[]', '2018-11-29 00:38:15', '', 'id', '{}', NULL);
-INSERT INTO `_access` VALUES (6, 0, 'privacy', 'Privacy', '[\"OWNER\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2022-10-26 10:56:15', NULL, 'id', '{}', NULL);
-INSERT INTO `_access` VALUES (8, 0, 'notice', 'Notice', '[\"UNKNOWN\",\"LOGIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2022-10-26 10:56:35', NULL, 'id', '{}', NULL);
-INSERT INTO `_access` VALUES (12, 0, 'notice_inner', 'NoticeInner', '[\"LOGIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2022-10-26 10:56:53', NULL, 'id', '{}', NULL);
-INSERT INTO `_access` VALUES (16, 0, 't_todo_log', 'TodoLog', '[\"OWNER\",\"PARTNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\"]', '[\"OWNER\",\"ADMIN\",\"LOGIN\"]', '2021-07-28 22:02:41', '代办事项表', 'id', '{\"default\": {\"in\": {\"remark\": []}, \"out\": {}}}', NULL);
+INSERT INTO `_access` VALUES (2, 0, 't_user', 'User', '[\"OWNER\",\"PARTNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2021-07-28 22:02:41', '用户信息表', 'id', '{\"LOGIN\": {\"in\": {\"id\": [\"=\"]}, \"out\": {\"id\": \"\"}}, \"OWNER\": {\"in\": {\"user_id\": [\"=\"], \"username\": [\"*\"], \"created_at\": [\"$%\", \"=\"]}, \"out\": {\"id\": \"\", \"user_id\": \"\", \"username\": \"\", \"created_at\": \"\"}}, \"default\": {\"in\": {\"user_id\": [\"=\"], \"username\": [\"*\"], \"created_at\": [\"$%\", \"=\"]}, \"out\": {\"id\": \"\", \"username\": \"\"}}}', NULL, NULL);
+INSERT INTO `_access` VALUES (4, 0, 't_todo', 'Todo', '[\"OWNER\",\"PARTNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2021-07-28 22:02:41', '代办事项表', 'todo_id', '{\"default\": {\"in\": {\"note\": [\"*\"], \"title\": [\"*\"], \"partner\": [\"*\"], \"user_id\": [\"=\", \"$%\"], \"created_at\": [\"$%\", \"=\"]}, \"out\": {\"title\": \"\", \"user_id\": \"\", \"created_at\": \"\"}, \"inOptions\": [{\"label\": \"deleted_at\", \"value\": \"deleted_at\", \"checked\": true}, {\"label\": \"partner\", \"value\": \"partner\", \"checked\": false}, {\"label\": \"todo_id\", \"value\": \"todo_id\", \"checked\": true}, {\"label\": \"id\", \"value\": \"id\", \"checked\": true}, {\"label\": \"user_id\", \"value\": \"user_id\", \"checked\": false}, {\"label\": \"title\", \"value\": \"title\", \"checked\": false}, {\"label\": \"note\", \"value\": \"note\", \"checked\": false}, {\"label\": \"created_at\", \"value\": \"created_at\", \"checked\": false}], \"outOptions\": [{\"label\": \"deleted_at\", \"value\": \"deleted_at\", \"checked\": true}, {\"label\": \"partner\", \"value\": \"partner\", \"checked\": true}, {\"label\": \"todo_id\", \"value\": \"todo_id\", \"checked\": true}, {\"label\": \"id\", \"value\": \"id\", \"checked\": true}, {\"label\": \"user_id\", \"value\": \"user_id\", \"checked\": false}, {\"label\": \"title\", \"value\": \"title\", \"checked\": false}, {\"label\": \"note\", \"value\": \"note\", \"checked\": true}, {\"label\": \"created_at\", \"value\": \"created_at\", \"checked\": false}]}}', 'time', NULL);
+INSERT INTO `_access` VALUES (5, 0, '_function', 'Function', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[]', '[]', '[]', '2018-11-29 00:38:15', '', 'id', '{}', NULL, NULL);
+INSERT INTO `_access` VALUES (6, 0, 'privacy', 'Privacy', '[\"OWNER\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2022-10-26 10:56:15', NULL, 'id', '{}', NULL, NULL);
+INSERT INTO `_access` VALUES (8, 0, 'notice', 'Notice', '[\"UNKNOWN\",\"LOGIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2022-10-26 10:56:35', NULL, 'id', '{}', NULL, NULL);
+INSERT INTO `_access` VALUES (12, 0, 'notice_inner', 'NoticeInner', '[\"LOGIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"CONTACT\",\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '[\"OWNER\",\"ADMIN\"]', '2022-10-26 10:56:53', NULL, 'id', '{}', NULL, NULL);
+INSERT INTO `_access` VALUES (16, 0, 't_todo_log', 'TodoLog', '[\"OWNER\",\"PARTNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"LOGIN\",\"OWNER\",\"ADMIN\"]', '[\"UNKNOWN\",\"LOGIN\",\"OWNER\"]', '[\"OWNER\",\"ADMIN\",\"LOGIN\"]', '2021-07-28 22:02:41', '代办事项表', 'id', '{\"default\": {\"in\": {\"remark\": []}, \"out\": {}}}', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for _function
@@ -97,28 +98,29 @@ CREATE TABLE `_request`  (
                              `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT 'GET,HEAD可用任意结构访问任意开放内容，不需要这个字段。\n其它的操作因为写入了结构和内容，所以都需要，按照不同的version选择对应的structure。\n\n自动化版本管理：\nRequest JSON最外层可以传  “version”:Integer 。\n1.未传或 <= 0，用最新版。 “@order”:”version-“\n2.已传且 > 0，用version以上的可用版本的最低版本。 “@order”:”version+”, “version{}”:”>={version}”',
                              `method` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'GETS' COMMENT '只限于GET,HEAD外的操作方法。',
                              `tag` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '标签',
-                             `structure` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '结构。\nTODO 里面的 PUT 改为 UPDATE，避免和请求 PUT 搞混。',
+                             `structure` json NOT NULL COMMENT '结构。\nTODO 里面的 PUT 改为 UPDATE，避免和请求 PUT 搞混。',
                              `detail` varchar(10000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '详细说明',
                              `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
                              `exec_queue` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '@ext 节点执行顺序 执行队列, 因为请求的结构是确定的, 所以固定住节点的执行顺序,不用每次计算',
+                             `executor` json NULL COMMENT '执行器映射 格式为Tag:executor;Tag2:executor 未配置为default',
                              PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '请求参数校验配置(必须)。\r\n最好编辑完后删除主键，这样就是只读状态，不能随意更改。需要更改就重新加上主键。\r\n\r\n每次启动服务器时加载整个表到内存。\r\n这个表不可省略，model内注解的权限只是客户端能用的，其它可以保证即便服务端代码错误时也不会误删数据。' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of _request
 -- ----------------------------
-INSERT INTO `_request` VALUES (3, 0, 1, 'PUT', 'User', '{\"REFUSE\": \"username\", \"UPDATE\": {\"@role\": \"OWNER\"}}', 'user 修改自身数据', '2021-07-29 20:49:20', NULL);
-INSERT INTO `_request` VALUES (4, 0, 1, 'POST', 'Todo', '{\"MUST\": \"title\", \"UPDATE\": {\"@role\": \"OWNER\",\"check()\":\"checkTodoTitle(title)\",\"title()\":\"updateTodoTitle(title)\"}, \"REFUSE\": \"id,user_id\"}', '增加todo', '2021-07-29 21:18:50', NULL);
-INSERT INTO `_request` VALUES (5, 0, 1, 'PUT', 'Todo', '{\"Todo\":{ \"MUST\":\"todoId\",\"REFUSE\": \"userId\", \"INSERT\": {\"@role\": \"OWNER\"}} }', '修改todo', '2021-07-29 22:05:57', NULL);
-INSERT INTO `_request` VALUES (6, 0, 1, 'DELETE', 'Todo', '{\"MUST\": \"todoId\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}', '删除todo', '2021-07-29 22:10:32', NULL);
-INSERT INTO `_request` VALUES (10, 0, 1, 'POST', 'Todo:[]', '{\"Todo[]\": [{\"MUST\": \"title\", \"REFUSE\": \"id\"}], \"UPDATE\": {\"@role\": \"OWNER\"}}', '批量增加todo', '2021-08-01 12:51:31', NULL);
-INSERT INTO `_request` VALUES (11, 0, 1, 'PUT', 'Todo:[]', '{\"Todo[]\":[{ \"MUST\":\"id\",\"REFUSE\": \"userId\", \"UPDATE\": {\"checkCanPut-()\": \"isUserCanPutTodo(id)\"}}] }', '每项单独设置', '2021-08-01 12:51:31', NULL);
-INSERT INTO `_request` VALUES (12, 0, 1, 'PUT', 'Todo[]', '{\"Todo\":{ \"MUST\":\"title\",\"REFUSE\": \"userId\", \"UPDATE\": {\"checkCanPut-()\": \"isUserCanPutTodo(id)\"}},\"Todo[]\":{\"MUST\":\"todoId\",\"REFUSE\":\"id\"} }', '指定全部改', '2021-08-01 12:51:31', 'Todo,Todo[]');
-INSERT INTO `_request` VALUES (13, 0, 1, 'DELETE', 'Todo[]', '{\"Todo\": {\"MUST\": \"todoId{}\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '删除todo', '2021-08-01 18:35:15', NULL);
-INSERT INTO `_request` VALUES (14, 0, 2, 'POST', 'Todo', '{\"Todo\":{\"MUST\":\"title\",\"UPDATE\":{\"@role\":\"OWNER\"},\"REFUSE\":\"id,user_id\"},\"TodoLog\":{\"MUST\":\"log\",\"UPDATE\":{\"@role\":\"OWNER\",\"todoId@\":\"Todo/todoId\"},\"REFUSE\":\"!\"},\"TodoLog[]\":{\"MUST\":\"log\",\"UPDATE\":{\"@role\":\"OWNER\",\"todoId@\":\"Todo/todoId\"},\"REFUSE\":\"!\"}}', '增加todo', '2021-07-29 21:18:50', 'Todo,TodoLog,TodoLog[]');
-INSERT INTO `_request` VALUES (16, 0, 1, 'DELETE', 'TodoLog[]', '{\"TodoLog\": {\"MUST\": \"id{}\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '删除todoLog', '2021-08-01 18:35:15', NULL);
-INSERT INTO `_request` VALUES (18, 0, 1, 'PUT', 'TodoLog[]', '{\"TodoLog\":{ \"MUST\":\"remark\",\"REFUSE\": \"userId\", \"UPDATE\": {},\"INSERT\": {\"@role\": \"OWNER\"}},\"TodoLog[]\":{\"MUST\":\"id,log\",\"REFUSE\":\"!\",\"INSERT\": {\"@role\": \"OWNER\"}} }', '指定全部改', '2021-08-01 12:51:31', 'TodoLog,TodoLog[]');
-INSERT INTO `_request` VALUES (20, 0, 1, 'DELETE', 'TodoLog', '{\"TodoLog\": {\"MUST\": \"id{}\", \"REFUSE\": \"!\", \"INSERT\": {\"@role\": \"OWNER\"}}}', '删除todoLog', '2021-08-01 18:35:15', NULL);
+INSERT INTO `_request` VALUES (3, 0, 1, 'PUT', 'User', '{\"REFUSE\": \"username\", \"UPDATE\": {\"@role\": \"OWNER\"}}', 'user 修改自身数据', '2021-07-29 20:49:20', NULL, NULL);
+INSERT INTO `_request` VALUES (4, 0, 1, 'POST', 'Todo', '{\"MUST\": \"title\", \"REFUSE\": \"id,user_id\", \"UPDATE\": {\"@role\": \"OWNER\", \"check()\": \"checkTodoTitle(title)\", \"title()\": \"updateTodoTitle(title)\"}}', '增加todo', '2021-07-29 21:18:50', NULL, NULL);
+INSERT INTO `_request` VALUES (5, 0, 1, 'PUT', 'Todo', '{\"Todo\": {\"MUST\": \"todoId\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"userId\"}}', '修改todo', '2021-07-29 22:05:57', NULL, NULL);
+INSERT INTO `_request` VALUES (6, 0, 1, 'DELETE', 'Todo', '{\"MUST\": \"todoId\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"!\"}', '删除todo', '2021-07-29 22:10:32', NULL, NULL);
+INSERT INTO `_request` VALUES (10, 0, 1, 'POST', 'Todo:[]', '{\"Todo[]\": [{\"MUST\": \"title\", \"REFUSE\": \"id\"}], \"UPDATE\": {\"@role\": \"OWNER\"}}', '批量增加todo', '2021-08-01 12:51:31', NULL, NULL);
+INSERT INTO `_request` VALUES (11, 0, 1, 'PUT', 'Todo:[]', '{\"Todo[]\": [{\"MUST\": \"id\", \"REFUSE\": \"userId\", \"UPDATE\": {\"checkCanPut-()\": \"isUserCanPutTodo(id)\"}}]}', '每项单独设置', '2021-08-01 12:51:31', NULL, NULL);
+INSERT INTO `_request` VALUES (12, 0, 1, 'PUT', 'Todo[]', '{\"Todo\": {\"MUST\": \"title\", \"REFUSE\": \"userId\", \"UPDATE\": {\"checkCanPut-()\": \"isUserCanPutTodo(id)\"}}, \"Todo[]\": {\"MUST\": \"todoId\", \"REFUSE\": \"id\"}}', '指定全部改', '2021-08-01 12:51:31', 'Todo,Todo[]', NULL);
+INSERT INTO `_request` VALUES (13, 0, 1, 'DELETE', 'Todo[]', '{\"Todo\": {\"MUST\": \"todoId{}\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"!\"}}', '删除todo', '2021-08-01 18:35:15', NULL, NULL);
+INSERT INTO `_request` VALUES (14, 0, 2, 'POST', 'Todo', '{\"Todo\": {\"MUST\": \"title\", \"REFUSE\": \"id,user_id\", \"UPDATE\": {\"@role\": \"OWNER\"}}, \"TodoLog\": {\"MUST\": \"log\", \"REFUSE\": \"!\", \"UPDATE\": {\"@role\": \"OWNER\", \"todoId@\": \"Todo/todoId\"}}, \"TodoLog[]\": {\"MUST\": \"log\", \"REFUSE\": \"!\", \"UPDATE\": {\"@role\": \"OWNER\", \"todoId@\": \"Todo/todoId\"}}}', '增加todo', '2021-07-29 21:18:50', 'Todo,TodoLog,TodoLog[]', NULL);
+INSERT INTO `_request` VALUES (16, 0, 1, 'DELETE', 'TodoLog[]', '{\"TodoLog\": {\"MUST\": \"id{}\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"!\"}}', '删除todoLog', '2021-08-01 18:35:15', NULL, NULL);
+INSERT INTO `_request` VALUES (18, 0, 1, 'PUT', 'TodoLog[]', '{\"TodoLog\": {\"MUST\": \"remark\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"userId\", \"UPDATE\": {}}, \"TodoLog[]\": {\"MUST\": \"id,log\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"!\"}}', '指定全部改', '2021-08-01 12:51:31', 'TodoLog,TodoLog[]', NULL);
+INSERT INTO `_request` VALUES (20, 0, 1, 'DELETE', 'TodoLog', '{\"TodoLog\": {\"MUST\": \"id{}\", \"INSERT\": {\"@role\": \"OWNER\"}, \"REFUSE\": \"!\"}}', '删除todoLog', '2021-08-01 18:35:15', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for notice
@@ -185,7 +187,7 @@ CREATE TABLE `t_todo`  (
                            `partner` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '与谁一起',
                            `todo_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
                            PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1628 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1710 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of t_todo
@@ -343,6 +345,14 @@ INSERT INTO `t_todo` VALUES (1612, '10001', '去找林云喝茶 ♪(^∇^*)', NU
 INSERT INTO `t_todo` VALUES (1614, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 14:19:43', NULL, NULL, '20230104141943');
 INSERT INTO `t_todo` VALUES (1616, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 14:28:58', NULL, NULL, '20230104142858');
 INSERT INTO `t_todo` VALUES (1618, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 14:31:16', NULL, NULL, '20230104143116');
+INSERT INTO `t_todo` VALUES (1632, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:02:15', NULL, NULL, '20230104160215');
+INSERT INTO `t_todo` VALUES (1636, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:05:19', NULL, NULL, '20230104160519');
+INSERT INTO `t_todo` VALUES (1638, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:05:33', NULL, NULL, '20230104160533');
+INSERT INTO `t_todo` VALUES (1644, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:05:54', NULL, NULL, '20230104160554');
+INSERT INTO `t_todo` VALUES (1652, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:06:34', NULL, NULL, '20230104160634');
+INSERT INTO `t_todo` VALUES (1656, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:06:59', NULL, NULL, '20230104160659');
+INSERT INTO `t_todo` VALUES (1658, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:12:54', NULL, NULL, '20230104161254');
+INSERT INTO `t_todo` VALUES (1664, '10001', '去找林云喝茶 ♪(^∇^*)', NULL, '2023-01-04 16:12:58', NULL, NULL, '20230104161258');
 
 -- ----------------------------
 -- Table structure for t_todo_log
@@ -355,7 +365,7 @@ CREATE TABLE `t_todo_log`  (
                                `created_at` datetime NULL DEFAULT NULL,
                                `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
                                PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 350 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 464 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of t_todo_log
@@ -475,6 +485,18 @@ INSERT INTO `t_todo_log` VALUES (336, '20230104143116', 'created by list[1]', '2
 INSERT INTO `t_todo_log` VALUES (338, '20230104155756', 'created by one', '2023-01-04 15:57:56', NULL);
 INSERT INTO `t_todo_log` VALUES (340, '20230104155756', 'created by list[0]', '2023-01-04 15:57:56', NULL);
 INSERT INTO `t_todo_log` VALUES (342, '20230104155756', 'created by list[1]', '2023-01-04 15:57:56', NULL);
+INSERT INTO `t_todo_log` VALUES (356, '20230104160215', 'created by one', '2023-01-04 16:02:15', NULL);
+INSERT INTO `t_todo_log` VALUES (358, '20230104160215', 'created by list[0]', '2023-01-04 16:02:15', NULL);
+INSERT INTO `t_todo_log` VALUES (360, '20230104160215', 'created by list[1]', '2023-01-04 16:02:15', NULL);
+INSERT INTO `t_todo_log` VALUES (380, '20230104160554', 'created by one', '2023-01-04 16:05:54', NULL);
+INSERT INTO `t_todo_log` VALUES (382, '20230104160554', 'created by list[0]', '2023-01-04 16:05:54', NULL);
+INSERT INTO `t_todo_log` VALUES (384, '20230104160554', 'created by list[1]', '2023-01-04 16:05:54', NULL);
+INSERT INTO `t_todo_log` VALUES (392, '20230104160634', 'created by one', '2023-01-04 16:06:34', NULL);
+INSERT INTO `t_todo_log` VALUES (394, '20230104160634', 'created by list[0]', '2023-01-04 16:06:34', NULL);
+INSERT INTO `t_todo_log` VALUES (396, '20230104160634', 'created by list[1]', '2023-01-04 16:06:34', NULL);
+INSERT INTO `t_todo_log` VALUES (416, '20230104161258', 'created by one', '2023-01-04 16:12:58', NULL);
+INSERT INTO `t_todo_log` VALUES (418, '20230104161258', 'created by list[0]', '2023-01-04 16:12:58', NULL);
+INSERT INTO `t_todo_log` VALUES (420, '20230104161258', 'created by list[1]', '2023-01-04 16:12:58', NULL);
 
 -- ----------------------------
 -- Table structure for t_user

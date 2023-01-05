@@ -5,29 +5,29 @@
 
 > 目前处于 【下水阶段】, 欢迎测试、issue、建议、pr
 
-[RoadMap 阶段规划](./doc/roadmap.md)
+[RoadMap 阶段规划](./@doc/roadmap.md)
 
 # 快速体验
 <a href="https://gitpod.io/#https://github.com/glennliao/apijson-go"  target="_blank"><img src="https://gitpod.io/button/open-in-gitpod.svg" /> </a>
 
-创建后 执行 demo/todo/tests 下的 *_test.go 访问测试
+创建后 执行 @demo/todo/tests 下的 *_test.go 访问测试
 
 
 # 使用指南
 暂参考demo目录下的todo
 
 ## 文档参考
-1. [Get开放查询](./doc/query.md)
-2. [非开放请求](./doc/action.md)
-3. [权限控制](./doc/access.md)
+1. [Get开放查询](./@doc/query.md)
+2. [非开放请求](./@doc/action.md)
+3. [权限控制](./@doc/access.md)
 
 
 # 开发指南
 1. go >= 1.18
 2. 创建 mysql 数据库
-3. 导入 demo/todo/doc/todo.sql文件
-4. demo/todo/config.yaml.example 改成 demo/todo/config.yaml, 然后修改配置文件 config.yaml 中数据库连接
-5. 在demo/todo 目录运行 go run main.go 或者 查看测试 demo/todo/tests
+3. 导入 @demo/todo/doc/todo.sql文件
+4. @demo/todo/config.yaml.example 改成 @demo/todo/config.yaml, 然后修改配置文件 config.yaml 中数据库连接
+5. 在@demo/todo 目录运行 go run main.go 或者 查看测试 @demo/todo/tests
 
 
 
