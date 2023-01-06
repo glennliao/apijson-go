@@ -3,9 +3,29 @@ package util
 import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/errors/gerror"
+	"github.com/gogf/gf/v2/frame/g"
 	"path/filepath"
 	"strings"
 )
+
+func IsFirstUp(str string) bool {
+	firstLetter := str[0]
+	return firstLetter >= 'A' && firstLetter <= 'Z'
+}
+
+// HasFirstUpKey 用户判断是否存在查询节点
+func HasFirstUpKey(m g.Map) bool {
+	for k := range m {
+		if IsFirstUp(k) {
+			return true
+		}
+	}
+	return false
+}
+
+func RemoveSuffix(key string, suffix string) string {
+	return key[0 : len(key)-len(suffix)]
+}
 
 func ParseNodeKey(inK string) (k string, isList bool) {
 	k = inK

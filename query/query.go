@@ -39,63 +39,19 @@ type Query struct {
 
 func New(ctx context.Context, req g.Map) *Query {
 
-	return &Query{
-		ctx:       ctx,
-		req:       req,
-		startAt:   time.Now(),
-		pathNodes: map[string]*Node{},
-	}
+	q := &Query{}
+	q.init(ctx, req)
+
+	return q
 }
 
-// 输出节点信息
-func printNode(n *Node, deep int) {
+func (q *Query) init(ctx context.Context, req g.Map) {
 
-	for i := 0; i < deep; i++ {
-		fmt.Print("|")
-	}
+	q.ctx = ctx
+	q.req = req
 
-	desc := gconv.String(n.Type)
-	if n.isList {
-		desc += "[]"
-	}
-
-	format := fmt.Sprintf("- %%-%ds | %%s\n", 20-deep)
-
-	fmt.Printf(format, n.Key, desc)
-
-	for _, node := range n.children {
-		printNode(node, deep+1)
-	}
-
-}
-
-func (q *Query) fetch() {
-	// 分析依赖关系
-
-	var prerequisites [][]string
-	analysisRef(q.rootNode, &prerequisites)
-	fetchQueue, err := util.AnalysisOrder(prerequisites)
-
-	if err != nil {
-		q.err = err
-		return
-	}
-
-	for k, _ := range q.pathNodes {
-		if !lo.Contains(fetchQueue, k) {
-			fetchQueue = append(fetchQueue, k)
-		}
-	}
-
-	if q.PrintProcessLog {
-		g.Log().Debugf(q.ctx, "fetch queue： %s", strings.Join(fetchQueue, " > "))
-	}
-
-	for _, path := range fetchQueue {
-		q.pathNodes[path].fetch()
-	}
-
-	q.rootNode.fetch()
+	q.startAt = time.Now()
+	q.pathNodes = make(map[string]*Node)
 }
 
 func (q *Query) Result() (g.Map, error) {
@@ -115,7 +71,7 @@ func (q *Query) Result() (g.Map, error) {
 	}
 
 	if q.PrintProcessLog {
-		printNode(q.rootNode, 0)
+		q.printNode(q.rootNode, 0)
 	}
 
 	if q.PrintProcessLog {
@@ -155,4 +111,54 @@ func (q *Query) Result() (g.Map, error) {
 	}
 
 	return resultMap.(g.Map), err
+}
+
+func (q *Query) fetch() {
+	// 分析依赖关系
+
+	var prerequisites [][]string
+	analysisRef(q.rootNode, &prerequisites)
+	fetchQueue, err := util.AnalysisOrder(prerequisites)
+
+	if err != nil {
+		q.err = err
+		return
+	}
+
+	for k, _ := range q.pathNodes {
+		if !lo.Contains(fetchQueue, k) {
+			fetchQueue = append(fetchQueue, k)
+		}
+	}
+
+	if q.PrintProcessLog {
+		g.Log().Debugf(q.ctx, "fetch queue： %s", strings.Join(fetchQueue, " > "))
+	}
+
+	for _, path := range fetchQueue {
+		q.pathNodes[path].fetch()
+	}
+
+	q.rootNode.fetch()
+}
+
+// 输出节点信息
+func (q *Query) printNode(n *Node, deep int) {
+
+	for i := 0; i < deep; i++ {
+		fmt.Print("|")
+	}
+
+	desc := gconv.String(n.Type)
+	if n.isList {
+		desc += "[]"
+	}
+
+	format := fmt.Sprintf("- %%-%ds | %%s\n", 20-deep)
+
+	fmt.Printf(format, n.Key, desc)
+
+	for _, node := range n.children {
+		q.printNode(node, deep+1)
+	}
 }

@@ -197,7 +197,7 @@ func (n *Node) checkReq() error {
 		}
 
 		// refuse
-		if n.structure.Refuse[0] == "!" {
+		if len(n.structure.Refuse) > 0 && n.structure.Refuse[0] == "!" {
 			if len(n.structure.Must) == 0 {
 				return gerror.New("structure错误: 400, REFUSE为!时必须指定MUST" + n.Key)
 			}

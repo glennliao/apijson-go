@@ -12,21 +12,6 @@ import (
 	"strings"
 )
 
-func isFirstUp(str string) bool {
-	firstLetter := str[0]
-	return firstLetter >= 'A' && firstLetter <= 'Z'
-}
-
-// hasFirstUpKey 用户判断是否存在查询节点
-func hasFirstUpKey(m g.Map) bool {
-	for k := range m {
-		if isFirstUp(k) {
-			return true
-		}
-	}
-	return false
-}
-
 // parseTableKey 解析表名
 func parseTableKey(k string, p string) (tableName string) {
 	tableName = k
