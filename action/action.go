@@ -138,3 +138,20 @@ func (a *Action) Result() (g.Map, error) {
 
 	return ret, err
 }
+
+func checkTag(req g.Map, method string) (*db.Request, error) {
+	_tag, ok := req["tag"]
+	if !ok {
+		return nil, gerror.New("tag 缺失")
+	}
+
+	tag := gconv.String(_tag)
+	version := req["version"]
+
+	request, err := db.GetRequest(tag, method, gconv.String(version))
+	if err != nil {
+		return nil, err
+	}
+
+	return request, nil
+}

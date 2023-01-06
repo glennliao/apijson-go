@@ -21,6 +21,10 @@ func CaseSnake(ctx context.Context, table string, column string) string {
 	return gstr.CaseSnake(column)
 }
 
+func Ori(ctx context.Context, table string, column string) string {
+	return column
+}
+
 // jsonFieldStyle 数据库返回的字段
 var jsonFieldStyleFunc FieldStyle = CaseCamel
 
@@ -40,9 +44,7 @@ func SetDbFieldStyle(style FieldStyle) {
 // GetJsonFieldStyle 设置返回的 json字段风格,
 func GetJsonFieldStyle() FieldStyle {
 	if jsonFieldStyleFunc == nil {
-		return func(ctx context.Context, table string, column string) string {
-			return column
-		}
+		return Ori
 	}
 	return jsonFieldStyleFunc
 }
@@ -50,9 +52,7 @@ func GetJsonFieldStyle() FieldStyle {
 // GetDbFieldStyle 设置数据库的字段风格
 func GetDbFieldStyle() FieldStyle {
 	if dbFieldStyleFunc == nil {
-		return func(ctx context.Context, table string, column string) string {
-			return column
-		}
+		return Ori
 	}
 	return dbFieldStyleFunc
 }

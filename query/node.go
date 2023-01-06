@@ -96,18 +96,26 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 
 	// 节点类型判断
 	if key != "" {
-		if isFirstUp(key) { // 大写开头, 为查询节点(对应数据库)
+
+		k, isList := util.ParseNodeKey(key)
+
+		if util.IsFirstUp(k) { // 大写开头, 为查询节点(对应数据库)
 			node.Type = NodeTypeQuery
-		} else if strings.HasSuffix(key, consts.RefKeySuffix) {
+		} else if strings.HasSuffix(k, consts.RefKeySuffix) {
 			node.Type = NodeTypeRef
-		} else if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
+		} else if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
 			node.Type = NodeTypeFunc
 		} else {
-			node.Type = NodeTypeStruct
-			// 结构节点下应该必须存在查询节点
+			node.Type = NodeTypeStruct // 结构节点下应该必须存在查询节点
+
+			if !query.AccessVerify {
+				if lo.Contains(db.GetTableNameList(), k) {
+					node.Type = NodeTypeQuery
+				}
+			}
 		}
 
-		if strings.HasSuffix(key, consts.ListKeySuffix) || strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) {
+		if isList || strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) {
 			node.isList = true
 		}
 	}
@@ -124,7 +132,7 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 
 func (n *Node) buildChild() error {
 
-	if n.Type == NodeTypeQuery && !hasFirstUpKey(n.req) { // 查询节点嵌套查询节点, 目前不支持
+	if n.Type == NodeTypeQuery && !util.HasFirstUpKey(n.req) { // 查询节点嵌套查询节点, 目前不支持
 		return nil
 	}
 
@@ -141,7 +149,7 @@ func (n *Node) buildChild() error {
 			continue
 		}
 
-		if n.Type == NodeTypeQuery && !isFirstUp(key) { // 查询节点嵌套查询节点, 目前不支持
+		if n.Type == NodeTypeQuery && !util.IsFirstUp(key) { // 查询节点嵌套查询节点, 目前不支持
 			continue
 		}
 

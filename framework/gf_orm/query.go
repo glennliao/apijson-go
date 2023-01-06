@@ -6,6 +6,7 @@ import (
 	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -57,7 +58,7 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 	for key, condition := range conditions {
 		switch {
 		case strings.HasSuffix(key, "{}"):
-			e.parseMultiCondition(key[0:len(key)-2], condition)
+			e.parseMultiCondition(util.RemoveSuffix(key, "{}"), condition)
 
 		case strings.HasSuffix(key, consts.OpLike):
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlLike, gconv.String(condition)})
@@ -74,6 +75,10 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 	}
 
 	if !accessVerify {
+		return nil
+	}
+
+	if !e.accessVerify { // 可任意字段搜索
 		return nil
 	}
 
@@ -241,6 +246,8 @@ func (e *SqlExecutor) build() *gdb.Model {
 				whereBuild = whereBuild.WhereLike(key, value.(string))
 			case consts.SqlRegexp:
 				whereBuild = whereBuild.Where(key+" "+consts.SqlRegexp, value.(string))
+			case "in":
+				whereBuild = whereBuild.WhereIn(key, value)
 			case consts.SqlEqual:
 				whereBuild = whereBuild.Where(key, value)
 			}
@@ -285,7 +292,9 @@ func (e *SqlExecutor) column() []string {
 		if !strings.Contains(column, " AS ") {
 			field := fieldStyle(e.ctx, tableName, column)
 			if field != column {
-				column = column + " AS " + field
+				column = "`" + column + "`" + " AS " + field
+			} else {
+				column = "`" + column + "`"
 			}
 		} else {
 			fieldName = strings.TrimSpace(strings.Split(fieldName, "AS")[0])
