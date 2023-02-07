@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/samber/lo"
 )
 
 type (
@@ -25,6 +26,10 @@ func GetTableColumns(tableName string) (columns []string) {
 		columns = append(columns, column.Name)
 	}
 	return
+}
+
+func GetTableNameList() []string {
+	return lo.Keys(tableMap)
 }
 
 func loadTableMeta() {
