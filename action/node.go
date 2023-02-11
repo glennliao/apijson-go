@@ -19,6 +19,7 @@ import (
 type Node struct {
 	req       []g.Map
 	ctx       context.Context
+	action    *Action
 	Key       string
 	TableName string
 	Role      string
@@ -96,21 +97,23 @@ func (n *Node) parse(ctx context.Context, method string) error {
 		return err
 	}
 
-	// 1. 检查权限, 无权限就不用做参数检查了
-	var accessRoles []string
+	if n.action.AccessVerify {
+		// 1. 检查权限, 无权限就不用做参数检查了
+		var accessRoles []string
 
-	switch method {
-	case http.MethodPost:
-		accessRoles = access.Post
-	case http.MethodPut:
-		accessRoles = access.Put
-	case http.MethodDelete:
-		accessRoles = access.Delete
-	}
+		switch method {
+		case http.MethodPost:
+			accessRoles = access.Post
+		case http.MethodPut:
+			accessRoles = access.Put
+		case http.MethodDelete:
+			accessRoles = access.Delete
+		}
 
-	err = n.checkAccess(ctx, method, accessRoles)
-	if err != nil {
-		return err
+		err = n.checkAccess(ctx, method, accessRoles)
+		if err != nil {
+			return err
+		}
 	}
 
 	// 2. 检查参数

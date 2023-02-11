@@ -23,6 +23,8 @@ type Action struct {
 
 	children map[string]*Node
 	keyNode  map[string]*Node
+
+	AccessVerify bool
 }
 
 func New(ctx context.Context, method string, req g.Map) *Action {
@@ -73,6 +75,7 @@ func (a *Action) parse() error {
 
 		node := newNode(key, list, structure, a.tagRequest.Executor[key])
 		node.ctx = a.ctx
+		node.action = a
 		a.keyNode[key] = &node
 		node.keyNode = a.keyNode
 		err := node.parse(a.ctx, a.method)
@@ -112,7 +115,7 @@ func (a *Action) Result() (g.Map, error) {
 		}
 	}
 
-	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx *gdb.TX) error {
+	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx gdb.TX) error {
 		for _, k := range a.tagRequest.ExecQueue {
 
 			node := a.children[k]

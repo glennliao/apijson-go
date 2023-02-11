@@ -29,16 +29,19 @@ func Head(ctx context.Context, req g.Map) (res g.Map, err error) {
 
 func Post(ctx context.Context, req g.Map) (res g.Map, err error) {
 	act := action.New(ctx, http.MethodPost, req)
+	act.AccessVerify = config.AccessVerify
 	return act.Result()
 }
 
 func Put(ctx context.Context, req g.Map) (res g.Map, err error) {
 	act := action.New(ctx, http.MethodPut, req)
+	act.AccessVerify = config.AccessVerify
 	return act.Result()
 }
 
 func Delete(ctx context.Context, req g.Map) (res g.Map, err error) {
 	act := action.New(ctx, http.MethodDelete, req)
+	act.AccessVerify = config.AccessVerify
 	return act.Result()
 }
 
