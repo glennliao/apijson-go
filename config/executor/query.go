@@ -3,15 +3,15 @@ package executor
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config/db"
-	"github.com/gogf/gf/v2/frame/g"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/samber/lo"
 )
 
 type QueryExecutor interface {
-	ParseCondition(conditions g.MapStrAny, accessVerify bool) error
-	ParseCtrl(ctrl g.Map) error
-	List(page int, count int, needTotal bool) (list []g.Map, total int64, err error)
-	One() (g.Map, error)
+	ParseCondition(conditions model.MapStrAny, accessVerify bool) error
+	ParseCtrl(ctrl model.Map) error
+	List(page int, count int, needTotal bool) (list []model.Map, total int64, err error)
+	One() (model.Map, error)
 	EmptyResult()
 }
 

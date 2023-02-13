@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -16,7 +17,7 @@ type Query struct {
 	ctx context.Context
 
 	// json请求内容
-	req g.Map
+	req model.Map
 	// 节点树根节点
 	rootNode *Node
 
@@ -37,7 +38,7 @@ type Query struct {
 	AccessCondition config.AccessCondition
 }
 
-func New(ctx context.Context, req g.Map) *Query {
+func New(ctx context.Context, req model.Map) *Query {
 
 	q := &Query{}
 	q.init(ctx, req)
@@ -45,7 +46,7 @@ func New(ctx context.Context, req g.Map) *Query {
 	return q
 }
 
-func (q *Query) init(ctx context.Context, req g.Map) {
+func (q *Query) init(ctx context.Context, req model.Map) {
 
 	q.ctx = ctx
 	q.req = req
@@ -54,7 +55,7 @@ func (q *Query) init(ctx context.Context, req g.Map) {
 	q.pathNodes = make(map[string]*Node)
 }
 
-func (q *Query) Result() (g.Map, error) {
+func (q *Query) Result() (model.Map, error) {
 
 	if q.PrintProcessLog {
 		g.Log().Debugf(q.ctx, "【query】 ============ [begin]")
@@ -99,7 +100,7 @@ func (q *Query) Result() (g.Map, error) {
 			return nil, q.rootNode.err
 		}
 
-		ret := g.Map{}
+		ret := model.Map{}
 		for k, node := range q.rootNode.children {
 			ret[k] = node.err
 		}
@@ -110,7 +111,7 @@ func (q *Query) Result() (g.Map, error) {
 		g.Log().Debugf(q.ctx, "【query】 ^=======================^")
 	}
 
-	return resultMap.(g.Map), err
+	return resultMap.(model.Map), err
 }
 
 func (q *Query) fetch() {

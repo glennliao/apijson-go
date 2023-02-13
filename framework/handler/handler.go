@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/query"
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -16,30 +17,30 @@ import (
 	"time"
 )
 
-func Get(ctx context.Context, req g.Map) (res g.Map, err error) {
+func Get(ctx context.Context, req model.Map) (res model.Map, err error) {
 	q := query.New(ctx, req)
 	q.AccessVerify = config.AccessVerify
 	q.AccessCondition = config.AccessConditionFunc
 	return q.Result()
 }
 
-func Head(ctx context.Context, req g.Map) (res g.Map, err error) {
+func Head(ctx context.Context, req model.Map) (res model.Map, err error) {
 	return nil, err
 }
 
-func Post(ctx context.Context, req g.Map) (res g.Map, err error) {
+func Post(ctx context.Context, req model.Map) (res model.Map, err error) {
 	act := action.New(ctx, http.MethodPost, req)
 	act.AccessVerify = config.AccessVerify
 	return act.Result()
 }
 
-func Put(ctx context.Context, req g.Map) (res g.Map, err error) {
+func Put(ctx context.Context, req model.Map) (res model.Map, err error) {
 	act := action.New(ctx, http.MethodPut, req)
 	act.AccessVerify = config.AccessVerify
 	return act.Result()
 }
 
-func Delete(ctx context.Context, req g.Map) (res g.Map, err error) {
+func Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
 	act := action.New(ctx, http.MethodDelete, req)
 	act.AccessVerify = config.AccessVerify
 	return act.Result()
@@ -53,7 +54,7 @@ func Bind(group *ghttp.RouterGroup) {
 	group.POST("/delete", CommonResponse(Delete))
 }
 
-func CommonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err error)) func(req *ghttp.Request) {
+func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error)) func(req *ghttp.Request) {
 	return func(req *ghttp.Request) {
 		res := gmap.ListMap{}
 		code := 200
@@ -99,7 +100,7 @@ func CommonResponse(handler func(ctx context.Context, req g.Map) (res g.Map, err
 }
 
 // 调试模式开启, 使用orderedmap输出结果
-func sortMap(ctx context.Context, body []byte, res *gmap.ListMap, ret g.Map) *orderedmap.OrderedMap {
+func sortMap(ctx context.Context, body []byte, res *gmap.ListMap, ret model.Map) *orderedmap.OrderedMap {
 	reqSortMap := orderedmap.New()
 	err := reqSortMap.UnmarshalJSON(body)
 	if err != nil {

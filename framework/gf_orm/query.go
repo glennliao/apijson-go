@@ -6,6 +6,7 @@ import (
 	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
@@ -22,7 +23,7 @@ type SqlExecutor struct {
 
 	//保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
 	Where           [][]any
-	accessCondition g.Map
+	accessCondition model.Map
 
 	Columns []string
 	Order   string
@@ -53,7 +54,7 @@ func New(ctx context.Context, accessVerify bool, role string, access *db.Access)
 
 // ParseCondition 解析查询条件
 // accessVerify 内部调用时, 不校验是否可使用该种查询方式
-func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) error {
+func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bool) error {
 
 	for key, condition := range conditions {
 		switch {
@@ -67,7 +68,7 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
 
 		case key == "@raw" && !accessVerify:
-			e.accessCondition = condition.(g.Map)
+			e.accessCondition = condition.(model.Map)
 
 		default:
 			e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})
@@ -163,7 +164,7 @@ func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 
 // ParseCtrl 解析 @column,@group等控制类
-func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
+func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 
 	fieldStyle := config.GetDbFieldStyle()
 	tableName := e.access.Name
@@ -314,7 +315,7 @@ func (e *SqlExecutor) EmptyResult() {
 	e.WithEmptyResult = true
 }
 
-func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int64, err error) {
+func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []model.Map, total int64, err error) {
 
 	if e.WithEmptyResult {
 		return nil, 0, err
@@ -340,10 +341,14 @@ func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, t
 		return nil, 0, err
 	}
 
-	return all.List(), total, nil
+	for _, item := range all.List() {
+		list = append(list, item)
+	}
+
+	return list, total, nil
 }
 
-func (e *SqlExecutor) One() (g.Map, error) {
+func (e *SqlExecutor) One() (model.Map, error) {
 	if e.WithEmptyResult {
 		return nil, nil
 	}

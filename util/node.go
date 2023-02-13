@@ -2,8 +2,8 @@ package util
 
 import (
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/frame/g"
 	"path/filepath"
 	"strings"
 )
@@ -14,7 +14,7 @@ func IsFirstUp(str string) bool {
 }
 
 // HasFirstUpKey 用户判断是否存在查询节点
-func HasFirstUpKey(m g.Map) bool {
+func HasFirstUpKey(m model.Map) bool {
 	for k := range m {
 		if IsFirstUp(k) {
 			return true

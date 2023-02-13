@@ -7,9 +7,9 @@ import (
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
 	"net/http"
@@ -17,16 +17,16 @@ import (
 )
 
 type Node struct {
-	req       []g.Map
+	req       []model.Map
 	ctx       context.Context
 	action    *Action
 	Key       string
 	TableName string
 	Role      string
 
-	Data   []g.Map // 需写入数据库的数据
-	Where  []g.Map // 条件
-	RowKey string  // 主键
+	Data   []model.Map // 需写入数据库的数据
+	Where  []model.Map // 条件
+	RowKey string      // 主键
 
 	structure *db.Structure
 	executor  string
@@ -34,20 +34,20 @@ type Node struct {
 	keyNode map[string]*Node
 }
 
-func newNode(key string, req []g.Map, structure *db.Structure, executor string) Node {
+func newNode(key string, req []model.Map, structure *db.Structure, executor string) Node {
 	return Node{
 		Key: key, req: req, structure: structure, executor: executor,
 	}
 }
 
 func (n *Node) parseReq(method string) {
-	n.Data = []g.Map{}
-	n.Where = []g.Map{}
+	n.Data = []model.Map{}
+	n.Where = []model.Map{}
 
 	for i, item := range n.req {
 
-		n.Data = append(n.Data, g.Map{})
-		n.Where = append(n.Where, g.Map{})
+		n.Data = append(n.Data, model.Map{})
+		n.Where = append(n.Where, model.Map{})
 
 		for key, val := range item {
 			if key == consts.Role {
@@ -231,7 +231,7 @@ func (n *Node) reqUpdate() error {
 
 			if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
 				functionName, paramKeys := util.ParseFunctionsStr(updateVal.(string))
-				var param = g.Map{}
+				var param = model.Map{}
 				for _, paramKey := range paramKeys {
 					if paramKey == consts.FunctionOriReqParam {
 						param[paramKey] = n.Data[i]
@@ -283,7 +283,7 @@ func (n *Node) reqUpdateBeforeDo() error {
 	return nil
 }
 
-func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map, err error) {
+func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.Map, err error) {
 
 	err = EmitHook(ctx, BeforeDo, n, method)
 	if err != nil {
@@ -295,7 +295,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 	switch method {
 	case http.MethodPost:
 
-		var rowKeyVal g.Map
+		var rowKeyVal model.Map
 
 		access, err := db.GetAccess(n.Key, true)
 		if err != nil {
@@ -329,7 +329,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			return nil, err
 		}
 
-		ret = g.Map{
+		ret = model.Map{
 			"code":  200,
 			"count": count,
 			"id":    id,
@@ -355,7 +355,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			return nil, err
 		}
 
-		ret = g.Map{
+		ret = model.Map{
 			"code":  200,
 			"count": count,
 		}
@@ -365,7 +365,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 			return nil, err
 		}
 
-		ret = g.Map{
+		ret = model.Map{
 			"code":  200,
 			"count": count,
 		}
@@ -383,7 +383,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret g.Map,
 	return
 }
 
-func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
+func (n *Node) execute(ctx context.Context, method string) (model.Map, error) {
 
 	err := n.reqUpdateBeforeDo()
 	if err != nil {
@@ -405,7 +405,7 @@ func (n *Node) execute(ctx context.Context, method string) (g.Map, error) {
 		}
 	}
 
-	return g.Map{
+	return model.Map{
 		"code": 200,
 	}, nil
 }

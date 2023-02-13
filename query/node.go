@@ -7,6 +7,7 @@ import (
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -37,13 +38,13 @@ type Node struct {
 
 	// 是否为列表节点
 	isList bool
-	page   g.Map // 分页参数
+	page   model.Map // 分页参数
 
 	// 访问当前节点的角色
 	role string
 
 	// 节点的请求数据
-	req          g.Map
+	req          model.Map
 	simpleReqVal string //非对象结构
 
 	// 节点数据执行器
@@ -120,7 +121,7 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 		}
 	}
 
-	if req, ok := nodeReq.(g.Map); ok {
+	if req, ok := nodeReq.(model.Map); ok {
 		node.req = req
 
 	} else {
@@ -213,7 +214,7 @@ func (n *Node) parse() {
 			return
 		}
 
-		var accessWhereCondition g.Map
+		var accessWhereCondition model.MapStrAny
 
 		setNodeRole(n, access.Name, n.role)
 
@@ -351,7 +352,7 @@ func (n *Node) parse() {
 
 		if n.isList { // []节点
 
-			page := g.Map{}
+			page := model.Map{}
 			if v, exists := n.req[consts.Page]; exists {
 				page[consts.Page] = gconv.Int(v)
 			}
@@ -430,7 +431,7 @@ func (n *Node) fetch() {
 			}
 
 			if refNode.node.isList {
-				list := ret.([]g.Map)
+				list := ret.([]model.Map)
 
 				valList := getColList(list, refNode.column)
 				if len(valList) == 0 { // 未查询到主表, 故当前不再查询
@@ -438,7 +439,7 @@ func (n *Node) fetch() {
 					break
 				}
 
-				err = n.executor.ParseCondition(g.Map{
+				err = n.executor.ParseCondition(model.MapStrAny{
 					refK + "{}": valList, //  @ 与 {}&等的结合 id{}@的处理
 				}, false)
 
@@ -454,11 +455,11 @@ func (n *Node) fetch() {
 					break
 				}
 
-				item := ret.(g.Map)
+				item := ret.(model.Map)
 
 				refVal := item[refNode.column]
 
-				var refConditionMap = g.Map{
+				var refConditionMap = model.MapStrAny{
 					refK: refVal,
 				}
 				err = n.executor.ParseCondition(refConditionMap, false)
@@ -523,8 +524,8 @@ func (n *Node) fetch() {
 			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
 
 			if n.isList {
-				for i, item := range n.ret.([]g.Map) {
-					var param = g.Map{}
+				for i, item := range n.ret.([]model.Map) {
+					var param = model.Map{}
 					for _, key := range paramKeys {
 						if key == consts.FunctionOriReqParam {
 							param[key] = item
@@ -533,23 +534,23 @@ func (n *Node) fetch() {
 						}
 					}
 					var err error
-					n.ret.([]g.Map)[i][k], err = functions.Call(n.ctx, functionName, param)
+					n.ret.([]model.Map)[i][k], err = functions.Call(n.ctx, functionName, param)
 					if err != nil {
 						panic(err)
 					}
 				}
 			} else {
-				var param = g.Map{}
+				var param = model.Map{}
 				for _, key := range paramKeys {
 					if key == consts.FunctionOriReqParam {
-						param[key] = n.ret.(g.Map)
+						param[key] = n.ret.(model.Map)
 					} else {
-						param[key] = n.ret.(g.Map)[key]
+						param[key] = n.ret.(model.Map)[key]
 					}
 
 				}
 				var err error
-				n.ret.(g.Map)[k], err = functions.Call(n.ctx, functionName, param)
+				n.ret.(model.Map)[k], err = functions.Call(n.ctx, functionName, param)
 				if err != nil {
 					panic(err)
 				}
@@ -569,7 +570,7 @@ func (n *Node) fetch() {
 			n.total = n.children[n.primaryTableKey].total
 		}
 	case NodeTypeFunc:
-		param := g.Map{}
+		param := model.Map{}
 		n.ret, n.err = functions.Call(n.ctx, n.simpleReqVal, param)
 	}
 
@@ -584,11 +585,11 @@ func (n *Node) Result() (any, error) {
 	switch n.Type {
 	case NodeTypeQuery:
 		if n.isList {
-			if n.ret == nil || n.ret.([]g.Map) == nil {
-				return []g.Map{}, n.err
+			if n.ret == nil || n.ret.([]model.Map) == nil {
+				return []model.Map{}, n.err
 			}
 		} else {
-			if n.ret == nil || n.ret.(g.Map) == nil {
+			if n.ret == nil || n.ret.(model.Map) == nil {
 				return nil, n.err
 			}
 		}
@@ -599,18 +600,18 @@ func (n *Node) Result() (any, error) {
 		}
 	case NodeTypeStruct:
 		if n.isList {
-			var retList []g.Map
+			var retList []model.Map
 
-			var primaryList []g.Map
+			var primaryList []model.Map
 
 			if n.children[n.primaryTableKey].ret != nil {
-				primaryList = n.children[n.primaryTableKey].ret.([]g.Map)
+				primaryList = n.children[n.primaryTableKey].ret.([]model.Map)
 
 				for i := 0; i < len(primaryList); i++ {
 
 					pItem := primaryList[i]
 
-					item := g.Map{
+					item := model.Map{
 						n.primaryTableKey: pItem,
 					}
 
@@ -619,9 +620,9 @@ func (n *Node) Result() (any, error) {
 						if childNode.primaryTableKey == "" {
 							if childNode.ret != nil {
 
-								var resultList []g.Map
+								var resultList []model.Map
 
-								for _, depRetItem := range childNode.ret.([]g.Map) {
+								for _, depRetItem := range childNode.ret.([]model.Map) {
 									match := true
 									for refK, refNode := range childNode.refKeyMap {
 										if pItem[refNode.column] != depRetItem[refK] {
@@ -654,7 +655,7 @@ func (n *Node) Result() (any, error) {
 			n.ret = retList
 		} else {
 
-			retMap := g.Map{}
+			retMap := model.Map{}
 			for k, node := range n.children {
 				var err error
 				if strings.HasSuffix(k, consts.RefKeySuffix) {

@@ -3,11 +3,14 @@ module github.com/glennliao/apijson-go
 go 1.18
 
 require (
+	github.com/glennliao/table-sync v0.0.0-00010101000000-000000000000
 	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.3.1
 	github.com/gogf/gf/v2 v2.3.1
 	github.com/iancoleman/orderedmap v0.2.0
 	github.com/samber/lo v1.33.0
 )
+
+replace github.com/glennliao/table-sync => ../table-sync
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
@@ -28,7 +31,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
 	golang.org/x/exp v0.0.0-20221110155412-d0897a79cd37 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
+	golang.org/x/net v0.0.0-20220407224826-aac1ed45d8e3 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.3.8-0.20211105212822-18b340fc7af2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

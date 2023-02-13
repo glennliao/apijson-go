@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -17,7 +18,7 @@ type Action struct {
 	tagRequest *db.Request
 	method     string
 
-	req g.Map
+	req model.Map
 
 	err error
 
@@ -27,7 +28,7 @@ type Action struct {
 	AccessVerify bool
 }
 
-func New(ctx context.Context, method string, req g.Map) *Action {
+func New(ctx context.Context, method string, req model.Map) *Action {
 
 	request, err := checkTag(req, method)
 	if err != nil {
@@ -65,12 +66,14 @@ func (a *Action) parse() error {
 			}
 		}
 
-		var list []g.Map
-		_v, ok := v.(g.Map)
+		var list []model.Map
+		_v, ok := v.(model.Map)
 		if ok { // 将所有node都假设成列表, 如果单个则看成一个元素的批量
-			list = []g.Map{_v}
+			list = []model.Map{_v}
 		} else {
-			list = gconv.SliceMap(v)
+			for _, m := range gconv.Maps(v) {
+				list = append(list, m)
+			}
 		}
 
 		node := newNode(key, list, structure, a.tagRequest.Executor[key])
@@ -89,14 +92,14 @@ func (a *Action) parse() error {
 	return nil
 }
 
-func (a *Action) Result() (g.Map, error) {
+func (a *Action) Result() (model.Map, error) {
 
 	err := a.parse()
 	if err != nil {
 		return nil, err
 	}
 
-	ret := g.Map{}
+	ret := model.Map{}
 
 	for _, k := range a.tagRequest.ExecQueue {
 		node := a.children[k]
@@ -142,7 +145,7 @@ func (a *Action) Result() (g.Map, error) {
 	return ret, err
 }
 
-func checkTag(req g.Map, method string) (*db.Request, error) {
+func checkTag(req model.Map, method string) (*db.Request, error) {
 	_tag, ok := req["tag"]
 	if !ok {
 		return nil, gerror.New("tag 缺失")

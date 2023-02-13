@@ -4,6 +4,7 @@ import (
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gset"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -25,10 +26,10 @@ func parseTableKey(k string, p string) (tableName string) {
 }
 
 // parseQueryNodeReq 解析节点请求内容
-func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.Map, ctrlMap g.Map) {
-	refMap = g.MapStrStr{}
-	ctrlMap = g.Map{}
-	where = g.Map{}
+func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, where model.MapStrAny, ctrlMap model.Map) {
+	refMap = model.MapStrStr{}
+	ctrlMap = model.Map{}
+	where = model.MapStrAny{}
 	for k, v := range reqMap {
 
 		if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
@@ -54,7 +55,7 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 	return
 }
 
-func hasAccess(node *Node, table string) (hasAccess bool, accessWhere g.Map, err error) {
+func hasAccess(node *Node, table string) (hasAccess bool, accessWhere model.MapStrAny, err error) {
 	accessRoles, tableName, err := db.GetAccessRole(table, http.MethodGet)
 	if err != nil {
 		return false, nil, err
@@ -77,7 +78,7 @@ func hasAccess(node *Node, table string) (hasAccess bool, accessWhere g.Map, err
 
 }
 
-func getColList(list []g.Map, col string) []any {
+func getColList(list []model.Map, col string) []any {
 
 	set := gset.New()
 	for _, item := range list {
