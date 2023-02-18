@@ -269,6 +269,7 @@ func (n *Node) reqUpdateBeforeDo() error {
 	for i, _ := range n.req {
 
 		for k, v := range n.Data[i] {
+			// 处理 ref
 			if strings.HasSuffix(k, consts.RefKeySuffix) {
 				refNodeKey, refCol := util.ParseRefCol(v.(string))
 				if strings.HasSuffix(refNodeKey, consts.ListKeySuffix) { // 双列表
@@ -285,7 +286,7 @@ func (n *Node) reqUpdateBeforeDo() error {
 
 func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.Map, err error) {
 
-	err = EmitHook(ctx, BeforeDo, n, method)
+	err = EmitHook(ctx, BeforeExecutorDo, n, method)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +312,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 				}
 
 				for k, v := range rowKeyVal {
-					if k == "rowKey" {
+					if k == consts.RowKey {
 						n.Data[i][access.RowKey] = v
 					} else {
 						n.Data[i][k] = v
@@ -340,7 +341,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 			jsonStyle := config.GetJsonFieldStyle()
 			if rowKeyVal != nil {
 				for k, v := range rowKeyVal {
-					if k == "rowKey" {
+					if k == consts.RowKey {
 						ret[jsonStyle(ctx, n.TableName, access.RowKey)] = v
 					} else {
 						ret[jsonStyle(ctx, n.TableName, k)] = v
@@ -375,7 +376,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 		return nil, gerror.New("undefined method:" + method)
 	}
 
-	err = EmitHook(ctx, AfterDo, n, method)
+	err = EmitHook(ctx, AfterExecutorDo, n, method)
 	if err != nil {
 		return nil, err
 	}

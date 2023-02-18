@@ -3,21 +3,21 @@ package action
 import "context"
 
 const (
-	BeforeExec = iota
-	AfterExec
-	BeforeDo
-	AfterDo
+	BeforeNodeExec = iota
+	AfterNodeExec
+	BeforeExecutorDo
+	AfterExecutorDo
 )
 
 type Hook struct {
 	For string //
 	// Exec 事务外
-	BeforeExec func(ctx context.Context, n *Node, method string) error
-	AfterExec  func(ctx context.Context, n *Node, method string) error
+	BeforeNodeExec func(ctx context.Context, n *Node, method string) error
+	AfterNodeExec  func(ctx context.Context, n *Node, method string) error
 
 	// Do 事务内
-	BeforeDo func(ctx context.Context, n *Node, method string) error
-	AfterDo  func(ctx context.Context, n *Node, method string) error
+	BeforeExecutorDo func(ctx context.Context, n *Node, method string) error
+	AfterExecutorDo  func(ctx context.Context, n *Node, method string) error
 }
 
 var hooksMap = map[string][]Hook{}
@@ -33,14 +33,14 @@ func EmitHook(ctx context.Context, hookAt int, node *Node, method string) error 
 
 		var handler func(ctx context.Context, n *Node, method string) error
 		switch hookAt {
-		case BeforeExec:
-			handler = hook.BeforeExec
-		case AfterExec:
-			handler = hook.AfterExec
-		case BeforeDo:
-			handler = hook.BeforeDo
-		case AfterDo:
-			handler = hook.AfterDo
+		case BeforeNodeExec:
+			handler = hook.BeforeNodeExec
+		case AfterNodeExec:
+			handler = hook.AfterNodeExec
+		case BeforeExecutorDo:
+			handler = hook.BeforeExecutorDo
+		case AfterExecutorDo:
+			handler = hook.AfterExecutorDo
 		}
 
 		if handler != nil {

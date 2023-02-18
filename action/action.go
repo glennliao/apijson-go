@@ -103,7 +103,7 @@ func (a *Action) Result() (model.Map, error) {
 
 	for _, k := range a.tagRequest.ExecQueue {
 		node := a.children[k]
-		err = EmitHook(a.ctx, BeforeExec, node, a.method)
+		err = EmitHook(a.ctx, BeforeNodeExec, node, a.method)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func (a *Action) Result() (model.Map, error) {
 
 	for _, k := range a.tagRequest.ExecQueue {
 		node := a.children[k]
-		err = EmitHook(a.ctx, AfterExec, node, a.method)
+		err = EmitHook(a.ctx, AfterNodeExec, node, a.method)
 		if err != nil {
 			return nil, err
 		}

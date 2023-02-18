@@ -6,3 +6,8 @@ const (
 	FunctionsKeySuffix  = "()"
 	FunctionOriReqParam = "$req"
 )
+
+const (
+	RowKey = "rowKey"
+	Raw    = "@raw"
+)

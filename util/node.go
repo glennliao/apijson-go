@@ -9,6 +9,9 @@ import (
 )
 
 func IsFirstUp(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
 	firstLetter := str[0]
 	return firstLetter >= 'A' && firstLetter <= 'Z'
 }

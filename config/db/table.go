@@ -35,15 +35,17 @@ func GetTableNameList() []string {
 func loadTableMeta() {
 	var ctx = context.TODO()
 
+	db := g.DB()
+
 	_tableMap := make(map[string]Table)
 
-	tables, err := g.DB().Tables(ctx)
+	tables, err := db.Tables(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, table := range tables {
-		fields, err := g.DB().TableFields(ctx, table)
+		fields, err := db.TableFields(ctx, table)
 		if err != nil {
 			panic(err)
 		}

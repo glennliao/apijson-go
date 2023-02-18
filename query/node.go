@@ -121,10 +121,12 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 		}
 	}
 
-	if req, ok := nodeReq.(model.Map); ok {
-		node.req = req
-
-	} else {
+	switch nodeReq.(type) {
+	case map[string]any:
+		node.req = model.Map(nodeReq.(map[string]any))
+	case model.Map:
+		node.req = nodeReq.(model.Map)
+	default:
 		node.simpleReqVal = gconv.String(nodeReq)
 	}
 

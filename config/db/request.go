@@ -82,7 +82,7 @@ func loadRequestMap() {
 			item.Structure[k] = &structure
 		}
 
-		if item.ExecQueue != nil {
+		if len(item.ExecQueue) > 0 {
 			item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
 		} else {
 			item.ExecQueue = []string{tag}
