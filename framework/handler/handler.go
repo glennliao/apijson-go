@@ -19,7 +19,7 @@ import (
 
 func Get(ctx context.Context, req model.Map) (res model.Map, err error) {
 	q := query.New(ctx, req)
-	q.AccessVerify = config.AccessVerify
+	q.NoAccessVerify = config.NoAccessVerify
 	q.AccessCondition = config.AccessConditionFunc
 	return q.Result()
 }
@@ -30,19 +30,19 @@ func Head(ctx context.Context, req model.Map) (res model.Map, err error) {
 
 func Post(ctx context.Context, req model.Map) (res model.Map, err error) {
 	act := action.New(ctx, http.MethodPost, req)
-	act.AccessVerify = config.AccessVerify
+	act.NoAccessVerify = config.NoAccessVerify
 	return act.Result()
 }
 
 func Put(ctx context.Context, req model.Map) (res model.Map, err error) {
 	act := action.New(ctx, http.MethodPut, req)
-	act.AccessVerify = config.AccessVerify
+	act.NoAccessVerify = config.NoAccessVerify
 	return act.Result()
 }
 
 func Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
 	act := action.New(ctx, http.MethodDelete, req)
-	act.AccessVerify = config.AccessVerify
+	act.NoAccessVerify = config.NoAccessVerify
 	return act.Result()
 }
 

@@ -97,7 +97,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 		return err
 	}
 
-	if n.action.AccessVerify {
+	if n.action.NoAccessVerify == false {
 		// 1. 检查权限, 无权限就不用做参数检查了
 		var accessRoles []string
 

@@ -109,7 +109,7 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 		} else {
 			node.Type = NodeTypeStruct // 结构节点下应该必须存在查询节点
 
-			if !query.AccessVerify {
+			if query.NoAccessVerify == false {
 				if lo.Contains(db.GetTableNameList(), k) {
 					node.Type = NodeTypeQuery
 				}
@@ -210,7 +210,7 @@ func (n *Node) parse() {
 	case NodeTypeQuery:
 		tableKey := parseTableKey(n.Key, n.Path)
 
-		access, err := db.GetAccess(tableKey, n.queryContext.AccessVerify)
+		access, err := db.GetAccess(tableKey, n.queryContext.NoAccessVerify)
 		if err != nil {
 			n.err = err
 			return
@@ -225,7 +225,7 @@ func (n *Node) parse() {
 			return
 		}
 
-		if n.queryContext.AccessVerify {
+		if n.queryContext.NoAccessVerify != false {
 			has, condition, err := hasAccess(n, tableKey)
 			if err != nil {
 				n.err = err
@@ -240,7 +240,7 @@ func (n *Node) parse() {
 			accessWhereCondition = condition
 		}
 
-		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.AccessVerify, n.role, access)
+		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.NoAccessVerify, n.role, access)
 		if err != nil {
 			n.err = err
 			return

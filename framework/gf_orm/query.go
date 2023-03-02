@@ -32,12 +32,12 @@ type SqlExecutor struct {
 	// 是否最终为空结果, 用于node中中断数据获取
 	WithEmptyResult bool
 
-	accessVerify bool
+	noAccessVerify bool
 
 	access *db.Access
 }
 
-func New(ctx context.Context, accessVerify bool, role string, access *db.Access) (executor.QueryExecutor, error) {
+func New(ctx context.Context, noAccessVerify bool, role string, access *db.Access) (executor.QueryExecutor, error) {
 
 	return &SqlExecutor{
 		ctx:             ctx,
@@ -47,7 +47,7 @@ func New(ctx context.Context, accessVerify bool, role string, access *db.Access)
 		Order:           "",
 		Group:           "",
 		WithEmptyResult: false,
-		accessVerify:    accessVerify,
+		noAccessVerify:  noAccessVerify,
 		access:          access,
 	}, nil
 }
@@ -67,7 +67,7 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 		case strings.HasSuffix(key, consts.OpRegexp):
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
 
-		case key == "@raw" && !accessVerify:
+		case key == consts.Raw && !accessVerify:
 			e.accessCondition = condition.(model.Map)
 
 		default:
@@ -79,7 +79,7 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 		return nil
 	}
 
-	if !e.accessVerify { // 可任意字段搜索
+	if e.noAccessVerify { // 可任意字段搜索
 		return nil
 	}
 
@@ -302,7 +302,7 @@ func (e *SqlExecutor) column() []string {
 		}
 
 		// 过滤可访问字段
-		if !e.accessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
+		if e.noAccessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
 			len(outFields) == 0 /* 数据库中未设置, 则看成全部可访问 */ {
 			fields = append(fields, column)
 		}

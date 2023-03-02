@@ -25,7 +25,10 @@ type Action struct {
 	children map[string]*Node
 	keyNode  map[string]*Node
 
-	AccessVerify bool
+	// 关闭 access 权限验证, 默认否
+	NoAccessVerify bool
+	// 关闭 request 验证开关, 默认否
+	NoRequestVerify bool
 }
 
 func New(ctx context.Context, method string, req model.Map) *Action {

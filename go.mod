@@ -1,16 +1,12 @@
 module github.com/glennliao/apijson-go
 
-go 1.18
-
 require (
-	github.com/glennliao/table-sync v0.0.0-00010101000000-000000000000
-	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.3.1
-	github.com/gogf/gf/v2 v2.3.1
+	github.com/glennliao/table-sync v0.2.0
+	github.com/gogf/gf/contrib/drivers/mysql/v2 v2.3.2
+	github.com/gogf/gf/v2 v2.3.2
 	github.com/iancoleman/orderedmap v0.2.0
 	github.com/samber/lo v1.33.0
 )
-
-replace github.com/glennliao/table-sync => ../table-sync
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
@@ -36,3 +32,5 @@ require (
 	golang.org/x/text v0.3.8-0.20211105212822-18b340fc7af2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+go 1.18

@@ -32,8 +32,8 @@ type Query struct {
 	// 输出过程
 	PrintProcessLog bool
 
-	// 是否权限验证
-	AccessVerify bool
+	// 关闭权限验证 , 默认否
+	NoAccessVerify bool
 	// 自定义可访问权限的限定, 例如添加用户id的where条件
 	AccessCondition config.AccessCondition
 }

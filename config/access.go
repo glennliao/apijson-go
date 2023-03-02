@@ -28,8 +28,8 @@ type AccessCondition func(ctx context.Context, req AccessConditionReq) (g.Map, e
 type DefaultRole func(ctx context.Context, req RoleReq) (string, error)
 
 var (
-	// AccessVerify 是否权限验证
-	AccessVerify = true
+	// AccessVerify 是否禁用权限验证
+	NoAccessVerify = true
 	// AccessConditionFunc 自定义权限限制条件
 	AccessConditionFunc AccessCondition
 	// DefaultRoleFunc 自定义获取节点的默认角色
