@@ -46,19 +46,47 @@ func Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
 	return act.Result()
 }
 
-func Bind(group *ghttp.RouterGroup) {
-	group.POST("/get", CommonResponse(Get))
-	group.POST("/post", CommonResponse(Post))
-	group.POST("/head", CommonResponse(Head))
-	group.POST("/put", CommonResponse(Put))
-	group.POST("/delete", CommonResponse(Delete))
+type Mode = func(data gmap.ListMap, meta gmap.ListMap) gmap.ListMap
+
+func SpreadMode(data gmap.ListMap, meta gmap.ListMap) gmap.ListMap {
+
+	res := gmap.ListMap{}
+	for _, k := range data.Keys() {
+		res.Set(k, data.Get(k))
+	}
+	for _, k := range meta.Keys() {
+		res.Set(k, meta.Get(k))
+	}
+
+	return res
 }
 
-func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error)) func(req *ghttp.Request) {
+func InDataMode(data gmap.ListMap, meta gmap.ListMap) gmap.ListMap {
+	res := gmap.ListMap{}
+	res.Set("data", data)
+	for _, k := range meta.Keys() {
+		res.Set(k, meta.Get(k))
+	}
+	return res
+}
+
+func Bind(group *ghttp.RouterGroup, mode ...Mode) {
+	if len(mode) == 0 {
+		mode = []Mode{InDataMode}
+	}
+	group.POST("/get", CommonResponse(Get, mode[0]))
+	group.POST("/post", CommonResponse(Post, mode[0]))
+	group.POST("/head", CommonResponse(Head, mode[0]))
+	group.POST("/put", CommonResponse(Put, mode[0]))
+	group.POST("/delete", CommonResponse(Delete, mode[0]))
+}
+
+func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode) func(req *ghttp.Request) {
 	return func(req *ghttp.Request) {
-		res := gmap.ListMap{}
+		metaRes := gmap.ListMap{}
 		code := 200
 		msg := "success"
+		nodeRes := gmap.ListMap{}
 
 		err := g.Try(req.Context(), func(ctx context.Context) {
 
@@ -72,10 +100,10 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 			}
 
 			if config.Debug {
-				sortMap(ctx, req.GetBody(), &res, ret)
+				sortMap(ctx, req.GetBody(), &metaRes, ret)
 			} else {
 				for k, v := range ret {
-					res.Set(k, v)
+					nodeRes.Set(k, v)
 				}
 			}
 
@@ -91,10 +119,12 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 			}
 		}
 
-		res.Set("ok", code == 200)
-		res.Set("code", code)
-		res.Set("msg", msg)
-		res.Set("span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
+		metaRes.Set("ok", code == 200)
+		metaRes.Set("code", code)
+		metaRes.Set("msg", msg)
+		metaRes.Set("span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
+
+		res := mode(nodeRes, metaRes)
 		req.Response.WriteJson(res.String())
 	}
 }

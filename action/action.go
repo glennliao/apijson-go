@@ -123,7 +123,6 @@ func (a *Action) Result() (model.Map, error) {
 
 	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx gdb.TX) error {
 		for _, k := range a.tagRequest.ExecQueue {
-
 			node := a.children[k]
 			ret[k], err = node.execute(ctx, a.method)
 			if err != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
 	"net/http"
 	"strings"
@@ -51,7 +50,7 @@ func (n *Node) parseReq(method string) {
 
 		for key, val := range item {
 			if key == consts.Role {
-				n.Role = gconv.String(val)
+				n.Role = util.String(val)
 			} else {
 				key = config.GetDbFieldStyle()(n.ctx, n.TableName, key)
 
@@ -61,8 +60,10 @@ func (n *Node) parseReq(method string) {
 					if key == n.RowKey || key == n.RowKey+"{}" {
 						if method == http.MethodPut {
 							n.Where[i][key] = val
+						} else {
+							n.Data[i][key] = val
 						}
-						// Post 暂原则上不让传递这个rowKey值
+						// Post 暂原则上不让传递这个rowKey值  // todo  可传递
 					} else {
 						n.Data[i][key] = val
 					}
@@ -129,12 +130,12 @@ func (n *Node) roleUpdate() error {
 
 	if val, exists := n.structure.Insert[consts.Role]; exists {
 		if n.Role == "" {
-			n.Role = gconv.String(val)
+			n.Role = util.String(val)
 		}
 	}
 
 	if val, exists := n.structure.Update[consts.Role]; exists {
-		n.Role = gconv.String(val)
+		n.Role = util.String(val)
 	}
 
 	return nil
