@@ -19,6 +19,15 @@ func Reg(name string, f Func) {
 	funcMap[name] = f
 }
 
+func RegHandler(name string, handler func(ctx context.Context, param g.Map) (res any, err error)) {
+	if _, exists := funcMap[name]; exists {
+		panic(fmt.Errorf(" function %s has exists", name))
+	}
+	funcMap[name] = struct {
+		Handler func(ctx context.Context, param g.Map) (res any, err error)
+	}{Handler: handler}
+}
+
 func Call(ctx context.Context, name string, param g.Map) (any, error) {
 	return funcMap[name].Handler(ctx, param)
 }

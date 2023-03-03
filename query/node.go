@@ -389,8 +389,9 @@ func (n *Node) parse() {
 		}
 
 	case NodeTypeFunc:
-		functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
-		n.simpleReqVal = functionName
+		// todo
+		//functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
+		//n.simpleReqVal = functionName
 
 	}
 	if n.queryContext.PrintProcessLog {
@@ -572,8 +573,15 @@ func (n *Node) fetch() {
 			n.total = n.children[n.primaryTableKey].total
 		}
 	case NodeTypeFunc:
+		functionName, paramKeys := util.ParseFunctionsStr(n.simpleReqVal)
+		//n.simpleReqVal = functionName
+		// todo 如何传递参数
 		param := model.Map{}
-		n.ret, n.err = functions.Call(n.ctx, n.simpleReqVal, param)
+		for _, key := range paramKeys {
+			param[key] = n.queryContext.pathNodes[key].simpleReqVal
+		}
+
+		n.ret, n.err = functions.Call(n.ctx, functionName, param)
 	}
 
 }
