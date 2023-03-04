@@ -1,10 +1,10 @@
-package handler
+package framework_goframe
 
 import (
 	"context"
 	"fmt"
+	"github.com/glennliao/apijson-go"
 	"github.com/glennliao/apijson-go/action"
-	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/query"
 	"github.com/gogf/gf/v2/container/gmap"
@@ -17,76 +17,63 @@ import (
 	"time"
 )
 
-func Get(ctx context.Context, req model.Map) (res model.Map, err error) {
-	q := query.New(ctx, req)
-	q.NoAccessVerify = config.NoAccessVerify
-	q.AccessCondition = config.AccessConditionFunc
-	return q.Result()
+type GF struct {
+	apijson *apijson.ApiJson
 }
 
-func Head(ctx context.Context, req model.Map) (res model.Map, err error) {
-	return nil, err
-}
-
-func Post(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodPost, req)
-	act.NoAccessVerify = config.NoAccessVerify
-	return act.Result()
-}
-
-func Put(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodPut, req)
-	act.NoAccessVerify = config.NoAccessVerify
-	return act.Result()
-}
-
-func Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodDelete, req)
-	act.NoAccessVerify = config.NoAccessVerify
-	return act.Result()
-}
-
-type Mode = func(data gmap.ListMap, meta gmap.ListMap) gmap.ListMap
-
-func SpreadMode(data gmap.ListMap, meta gmap.ListMap) gmap.ListMap {
-
-	res := gmap.ListMap{}
-	for _, k := range data.Keys() {
-		res.Set(k, data.Get(k))
+func New(a *apijson.ApiJson) *GF {
+	return &GF{
+		apijson: a,
 	}
-	for _, k := range meta.Keys() {
-		res.Set(k, meta.Get(k))
-	}
-
-	return res
 }
 
-func InDataMode(data gmap.ListMap, meta gmap.ListMap) gmap.ListMap {
-	res := gmap.ListMap{}
-	res.Set("data", data)
-	for _, k := range meta.Keys() {
-		res.Set(k, meta.Get(k))
-	}
-	return res
-}
-
-func Bind(group *ghttp.RouterGroup, mode ...Mode) {
+func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 	if len(mode) == 0 {
 		mode = []Mode{InDataMode}
 	}
-	group.POST("/get", CommonResponse(Get, mode[0]))
-	group.POST("/post", CommonResponse(Post, mode[0]))
-	group.POST("/head", CommonResponse(Head, mode[0]))
-	group.POST("/put", CommonResponse(Put, mode[0]))
-	group.POST("/delete", CommonResponse(Delete, mode[0]))
+	group.POST("/get", gf.commonResponse(gf.Get, mode[0]))
+	group.POST("/post", gf.commonResponse(gf.Post, mode[0]))
+	group.POST("/head", gf.commonResponse(gf.Head, mode[0]))
+	group.POST("/put", gf.commonResponse(gf.Put, mode[0]))
+	group.POST("/delete", gf.commonResponse(gf.Delete, mode[0]))
 }
 
-func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode) func(req *ghttp.Request) {
+func (g *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
+	q := query.New(ctx, req)
+	q.NoAccessVerify = g.apijson.Config().Access.NoVerify
+	q.Access = g.apijson.Config().Access
+	q.AccessCondition = g.apijson.Config().Access.ConditionFunc
+	return q.Result()
+}
+
+func (gf *GF) Head(ctx context.Context, req model.Map) (res model.Map, err error) {
+	return nil, err
+}
+
+func (gf *GF) Post(ctx context.Context, req model.Map) (res model.Map, err error) {
+	act := action.New(ctx, http.MethodPost, req)
+	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	return act.Result()
+}
+
+func (gf *GF) Put(ctx context.Context, req model.Map) (res model.Map, err error) {
+	act := action.New(ctx, http.MethodPut, req)
+	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	return act.Result()
+}
+
+func (gf *GF) Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
+	act := action.New(ctx, http.MethodDelete, req)
+	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	return act.Result()
+}
+
+func (gf *GF) commonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode) func(req *ghttp.Request) {
 	return func(req *ghttp.Request) {
-		metaRes := gmap.ListMap{}
+		metaRes := &gmap.ListMap{}
 		code := 200
 		msg := "success"
-		nodeRes := gmap.ListMap{}
+		nodeRes := &gmap.ListMap{}
 
 		err := g.Try(req.Context(), func(ctx context.Context) {
 
@@ -99,8 +86,8 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 				msg = err.Error()
 			}
 
-			if config.Debug {
-				sortMap(ctx, req.GetBody(), &metaRes, ret)
+			if gf.apijson.Debug {
+				sortMap(ctx, req.GetBody(), metaRes, ret)
 			} else {
 				for k, v := range ret {
 					nodeRes.Set(k, v)

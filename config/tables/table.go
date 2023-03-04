@@ -1,4 +1,4 @@
-package database
+package tables
 
 import (
 	"github.com/glennliao/table-sync/tablesync"

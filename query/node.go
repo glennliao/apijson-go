@@ -2,7 +2,6 @@ package query
 
 import (
 	"context"
-	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/config/functions"
@@ -140,9 +139,9 @@ func (n *Node) buildChild() error {
 	}
 
 	// 最大深度检查
-	if len(strings.Split(n.Path, "/")) > config.MaxTreeDeep {
-		return gerror.Newf("deep(%s) > %d", n.Path, config.MaxTreeDeep)
-	}
+	//if len(strings.Split(n.Path, "/")) > config.MaxTreeDeep {
+	//	return gerror.Newf("deep(%s) > %d", n.Path, config.MaxTreeDeep)
+	//}
 
 	children := make(map[string]*Node)
 
@@ -182,13 +181,13 @@ func (n *Node) buildChild() error {
 	if len(children) > 0 {
 
 		// 最大宽度检查, 目前为某节点的宽度, 应该计算为整棵树的最大宽度
-		if len(children) > config.MaxTreeWidth {
-			path := n.Path
-			if path == "" {
-				path = "root"
-			}
-			return gerror.Newf("width(%s) > %d", path, config.MaxTreeWidth)
-		}
+		//if len(children) > config.MaxTreeWidth {
+		//	path := n.Path
+		//	if path == "" {
+		//		path = "root"
+		//	}
+		//	return gerror.Newf("width(%s) > %d", path, config.MaxTreeWidth)
+		//}
 
 		n.children = children
 
@@ -237,7 +236,7 @@ func (n *Node) parse() {
 				return
 			}
 
-			accessWhereCondition = condition
+			accessWhereCondition = condition.Where() // todo
 		}
 
 		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.NoAccessVerify, n.role, access)

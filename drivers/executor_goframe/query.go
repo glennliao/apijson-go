@@ -1,4 +1,4 @@
-package gf_orm
+package executor_goframe
 
 import (
 	"context"
@@ -360,9 +360,4 @@ func (e *SqlExecutor) One() (model.Map, error) {
 	one, err := m.One()
 
 	return one.Map(), err
-}
-
-// init 暂先自动注册,后续改成可手动配置
-func init() {
-	executor.RegQueryExecutor("default", New)
 }

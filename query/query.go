@@ -36,6 +36,8 @@ type Query struct {
 	NoAccessVerify bool
 	// 自定义可访问权限的限定, 例如添加用户id的where条件
 	AccessCondition config.AccessCondition
+
+	Access *config.Access
 }
 
 func New(ctx context.Context, req model.Map) *Query {

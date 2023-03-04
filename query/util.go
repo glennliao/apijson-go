@@ -55,7 +55,7 @@ func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, w
 	return
 }
 
-func hasAccess(node *Node, table string) (hasAccess bool, accessWhere model.MapStrAny, err error) {
+func hasAccess(node *Node, table string) (hasAccess bool, accessWhere *config.ConditionRet, err error) {
 	accessRoles, tableName, err := db.GetAccessRole(table, http.MethodGet)
 	if err != nil {
 		return false, nil, err
@@ -66,8 +66,8 @@ func hasAccess(node *Node, table string) (hasAccess bool, accessWhere model.MapS
 		return false, nil, err
 	}
 
-	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.AccessConditionReq{
-		Table:               tableName,
+	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
+		AccessName:          tableName,
 		TableAccessRoleList: accessRoles,
 		Method:              http.MethodGet,
 		NodeReq:             node.req,
@@ -107,15 +107,15 @@ func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 		}
 	} else {
 		if ok {
-			node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
-				Table:    tableName,
-				NodeRole: gconv.String(role),
-			})
+			//node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
+			//	AccessName: tableName,
+			//	NodeRole:   gconv.String(role),
+			//})
 		} else {
-			node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
-				Table:    tableName,
-				NodeRole: parenNodeRole,
-			})
+			//node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
+			//	AccessName: tableName,
+			//	NodeRole:   parenNodeRole,
+			//})
 		}
 	}
 }

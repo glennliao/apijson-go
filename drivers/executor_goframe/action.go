@@ -1,8 +1,7 @@
-package gf_orm
+package executor_goframe
 
 import (
 	"context"
-	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -89,9 +88,4 @@ func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.M
 	}
 
 	return count, err
-}
-
-// init 暂先自动注册,后续改成可手动配置
-func init() {
-	executor.RegActionExecutor("default", &ActionExecutor{})
 }

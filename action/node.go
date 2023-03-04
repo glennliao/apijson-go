@@ -31,6 +31,8 @@ type Node struct {
 	executor  string
 
 	keyNode map[string]*Node
+
+	access *config.Access
 }
 
 func newNode(key string, req []model.Map, structure *db.Structure, executor string) Node {
@@ -143,10 +145,12 @@ func (n *Node) roleUpdate() error {
 
 func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []string) error {
 
-	role, err := config.DefaultRoleFunc(ctx, config.RoleReq{
-		Table:    n.TableName,
-		Method:   method,
-		NodeRole: n.Role,
+	// todo 可配置单次的内容, 而非直接使用整个的
+
+	role, err := n.action.Access.DefaultRoleFunc(ctx, config.RoleReq{
+		AccessName: n.TableName,
+		Method:     method,
+		NodeRole:   n.Role,
 	})
 
 	if err != nil {
@@ -164,8 +168,8 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 	}
 
 	for i, item := range n.req {
-		where, err := config.AccessConditionFunc(ctx, config.AccessConditionReq{
-			Table:               n.TableName,
+		where, err := n.action.Access.ConditionFunc(ctx, config.ConditionReq{
+			AccessName:          n.TableName,
 			TableAccessRoleList: accessRoles,
 			Method:              method,
 			NodeRole:            n.Role,
@@ -177,11 +181,11 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 		}
 
 		if method == http.MethodPost {
-			for k, v := range where {
+			for k, v := range where.Where() {
 				n.Data[i][k] = v
 			}
 		} else {
-			for k, v := range where {
+			for k, v := range where.Where() {
 				n.Where[i][k] = v
 			}
 		}
@@ -304,24 +308,24 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 			return nil, err
 		}
 
-		if access.RowKeyGen != "" {
-			for i, _ := range n.Data {
-
-				rowKeyVal, err = config.RowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
-				if err != nil {
-					return nil, err
-				}
-
-				for k, v := range rowKeyVal {
-					if k == consts.RowKey {
-						n.Data[i][access.RowKey] = v
-					} else {
-						n.Data[i][k] = v
-					}
-				}
-
-			}
-		}
+		//if access.RowKeyGen != "" {
+		//	for i, _ := range n.Data {
+		//
+		//		rowKeyVal, err = config.RowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
+		//		if err != nil {
+		//			return nil, err
+		//		}
+		//
+		//		for k, v := range rowKeyVal {
+		//			if k == consts.RowKey {
+		//				n.Data[i][access.RowKey] = v
+		//			} else {
+		//				n.Data[i][k] = v
+		//			}
+		//		}
+		//
+		//	}
+		//}
 
 		var id int64
 

@@ -2,6 +2,7 @@ package action
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
@@ -29,6 +30,8 @@ type Action struct {
 	NoAccessVerify bool
 	// 关闭 request 验证开关, 默认否
 	NoRequestVerify bool
+
+	Access *config.Access
 }
 
 func New(ctx context.Context, method string, req model.Map) *Action {
