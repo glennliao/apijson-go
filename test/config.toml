@@ -1,0 +1,15 @@
+[server]
+  address = ":8091"
+  dumpRouterMap = false
+  debug = false
+
+[logger]
+  level = "info"
+
+[database.logger]
+  level = "all"
+  stdout = true
+
+[database.default]
+  debug = true
+  link = "sqlite::@file(./db.sqlite3)"

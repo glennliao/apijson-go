@@ -27,6 +27,22 @@ func New(a *apijson.ApiJson) *GF {
 	}
 }
 
+func (gf *GF) Run(s ...*ghttp.Server) {
+
+	var server *ghttp.Server
+
+	if len(s) == 0 {
+		server = g.Server("apijson")
+	} else {
+		server = s[0]
+	}
+
+	server.Group("/", func(group *ghttp.RouterGroup) {
+		gf.Bind(group)
+	})
+	server.Run()
+}
+
 func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 	if len(mode) == 0 {
 		mode = []Mode{InDataMode}
@@ -38,11 +54,11 @@ func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 	group.POST("/delete", gf.commonResponse(gf.Delete, mode[0]))
 }
 
-func (g *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
+func (gf *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
 	q := query.New(ctx, req)
-	q.NoAccessVerify = g.apijson.Config().Access.NoVerify
-	q.Access = g.apijson.Config().Access
-	q.AccessCondition = g.apijson.Config().Access.ConditionFunc
+	q.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	q.Access = gf.apijson.Config().Access
+	q.AccessCondition = gf.apijson.Config().Access.ConditionFunc
 	return q.Result()
 }
 
