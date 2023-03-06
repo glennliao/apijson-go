@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/glennliao/apijson-go"
 	"github.com/glennliao/apijson-go/config/tables"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/table-sync/tablesync"
 	"github.com/gogf/gf/v2/frame/g"
 	"time"
@@ -36,5 +37,11 @@ func App(ctx context.Context, a *apijson.ApiJson) {
 	if err != nil {
 		panic(err)
 	}
+
+	a.Config().Functions.Bind("test", struct {
+		Handler func(ctx context.Context, param model.Map) (res any, err error)
+	}{Handler: func(ctx context.Context, param model.Map) (res any, err error) {
+		return "nihao", nil
+	}})
 
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -125,11 +124,25 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 		if isList || strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) {
 			node.isList = true
 		}
+
+		switch node.Type {
+		case NodeTypeQuery:
+			node.nodeHandler = newQueryNode(node)
+		case NodeTypeRef:
+			node.nodeHandler = newRefNode(node)
+		case NodeTypeStruct:
+			node.nodeHandler = newStructNode(node)
+		case NodeTypeFunc:
+			node.nodeHandler = newFuncNode(node)
+		}
+	} else {
+		// todo 统一
+		node.nodeHandler = newStructNode(node)
 	}
 
 	switch nodeReq.(type) {
 	case map[string]any:
-		node.req = model.Map(nodeReq.(map[string]any))
+		node.req = nodeReq.(map[string]any)
 	case model.Map:
 		node.req = nodeReq.(model.Map)
 	default:
@@ -214,191 +227,16 @@ func (n *Node) parse() {
 
 	switch n.Type {
 	case NodeTypeQuery:
-		tableKey := parseTableKey(n.Key, n.Path)
-
-		access, err := n.queryContext.Access.GetAccess(tableKey, n.queryContext.NoAccessVerify)
-		if err != nil {
-			n.err = err
-			return
-		}
-
-		var accessWhereCondition model.MapStrAny
-
-		setNodeRole(n, access.Name, n.role)
-
-		if n.role == consts.DENY {
-			n.err = gerror.New("deny node: " + n.Path)
-			return
-		}
-
-		if n.queryContext.NoAccessVerify == false {
-			has, condition, err := hasAccess(n, tableKey)
-			if err != nil {
-				n.err = err
-				return
-			}
-
-			if !has {
-				n.err = gerror.New("无权限访问:" + tableKey + " by " + n.role)
-				return
-			}
-
-			accessWhereCondition = condition.Where() // todo
-		}
-
-		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.NoAccessVerify, n.role, access, n.queryContext.Config)
-		if err != nil {
-			n.err = err
-			return
-		}
-
-		n.executor = queryExecutor
-
-		// 查询条件
-		refKeyMap, conditionMap, ctrlMap := parseQueryNodeReq(n.req, n.isList)
-
-		n.executor.ParseCtrl(ctrlMap)
-
-		err = n.executor.ParseCondition(conditionMap, true)
-		if err != nil {
-			n.err = err
-			return
-		}
-
-		err = n.executor.ParseCondition(accessWhereCondition, false)
-		if err != nil {
-			n.err = err
-			return
-		}
-
-		n.primaryTableKey = n.Key
-
-		if len(refKeyMap) > 0 { // 需要引用别处
-			n.refKeyMap = make(map[string]NodeRef)
-			hasRefBrother := false // 是否引用兄弟节点, 列表中的主表不能依赖兄弟节点
-
-			for refKey, refStr := range refKeyMap {
-				if strings.HasPrefix(refStr, "/") { // 这里/开头是相对同级
-					refStr = filepath.Dir(n.Path) + refStr
-				}
-
-				refPath, refCol := util.ParseRefCol(refStr)
-
-				if !hasRefBrother {
-					if filepath.Dir(n.Path) == filepath.Dir(refPath) {
-						hasRefBrother = true
-					}
-				}
-
-				if refPath == n.Path { // 不能依赖自身
-					n.err = gerror.Newf("node cannot ref self: (%s) {%s:%s}", refPath, refKey, refStr)
-					return
-				}
-
-				refNode := n.queryContext.pathNodes[refPath]
-				if refNode == nil {
-					n.err = gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path)
-					return
-				}
-
-				if refNode.err != nil {
-					n.err = refNode.err
-					return
-				}
-
-				for _, _refN := range refNode.refKeyMap {
-					if _refN.node.Path == n.Path {
-						n.err = gerror.Newf("circle ref %s & %s", refNode.Path, n.Path)
-						return
-					}
-				}
-
-				n.refKeyMap[refKey] = NodeRef{
-					column: refCol,
-					node:   refNode,
-				}
-
-			}
-
-			if hasRefBrother {
-				n.primaryTableKey = ""
-			}
-		}
+		n.nodeHandler.parse()
 
 	case NodeTypeRef:
-
-		refStr := n.simpleReqVal
-		if strings.HasPrefix(refStr, "/") { // 这里/开头是相对同级
-			refStr = filepath.Dir(n.Path) + refStr
-		}
-		refPath, refCol := util.ParseRefCol(refStr)
-		if refPath == n.Path { // 不能依赖自身
-			panic(gerror.Newf("node cannot ref self: (%s)", refPath))
-		}
-
-		refNode := n.queryContext.pathNodes[refPath]
-		if refNode == nil {
-			panic(gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path))
-		}
-
-		n.refKeyMap = make(map[string]NodeRef)
-
-		if strings.HasSuffix(n.simpleReqVal, "[]/total") {
-			setNeedTotal(refNode)
-		}
-
-		n.refKeyMap[n.Key] = NodeRef{
-			column: refCol,
-			node:   refNode,
-		}
+		n.nodeHandler.parse()
 
 	case NodeTypeStruct:
-
-		for _, childNode := range n.children {
-			childNode.parse()
-		}
-
-		if n.isList { // []节点
-
-			page := model.Map{}
-			if v, exists := n.req[consts.Page]; exists {
-				page[consts.Page] = gconv.Int(v)
-			}
-			if v, exists := n.req[consts.Count]; exists {
-				page[consts.Count] = gconv.Int(v)
-			}
-
-			hasPrimary := false // 是否存在主查询表
-			for _, child := range n.children {
-
-				if child.err != nil {
-					n.err = child.err
-					return
-				}
-
-				if child.primaryTableKey != "" {
-
-					if hasPrimary {
-						panic(gerror.Newf("node must only one primary table: (%s)", n.Path))
-					}
-
-					hasPrimary = true
-					n.primaryTableKey = child.Key
-					child.page = page
-
-				}
-			}
-
-			if n.Key == consts.ListKeySuffix && !hasPrimary {
-				panic(gerror.Newf("node must have  primary table: (%s)", n.Path))
-			}
-		}
+		n.nodeHandler.parse()
 
 	case NodeTypeFunc:
-		// todo
-		//functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
-		//n.simpleReqVal = functionName
-
+		n.nodeHandler.parse()
 	}
 	if n.queryContext.PrintProcessLog {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
@@ -431,164 +269,15 @@ func (n *Node) fetch() {
 
 	switch n.Type {
 	case NodeTypeQuery:
-
-		for refK, refNode := range n.refKeyMap {
-			ret, err := refNode.node.Result()
-			if err != nil {
-				n.err = err
-				return
-			}
-
-			if refNode.node.isList {
-				list := ret.([]model.Map)
-
-				valList := getColList(list, refNode.column)
-				if len(valList) == 0 { // 未查询到主表, 故当前不再查询
-					n.executor.SetEmptyResult()
-					break
-				}
-
-				err = n.executor.ParseCondition(model.MapStrAny{
-					refK + "{}": valList, //  @ 与 {}&等的结合 id{}@的处理
-				}, false)
-
-				if err != nil {
-					n.err = err
-					return
-				}
-
-			} else {
-
-				if ret == nil { // 未查询到主表, 故当前不再查询
-					n.executor.SetEmptyResult()
-					break
-				}
-
-				item := ret.(model.Map)
-
-				refVal := item[refNode.column]
-
-				var refConditionMap = model.MapStrAny{
-					refK: refVal,
-				}
-				err = n.executor.ParseCondition(refConditionMap, false)
-				if err != nil {
-					n.err = err
-					return
-				}
-			}
-		}
-
-		if n.isList {
-
-			page := 1
-			count := 10
-
-			for k, v := range n.page {
-				switch k {
-				case consts.Page:
-					page = gconv.Int(v)
-
-				case consts.Count:
-					count = gconv.Int(v)
-				}
-			}
-
-			for k, v := range n.req {
-				switch k {
-				case consts.Page:
-					page = gconv.Int(v)
-
-				case consts.Count:
-					count = gconv.Int(v)
-				case consts.Query:
-					switch gconv.String(v) {
-					case "1", "2":
-						n.needTotal = true
-					}
-				}
-			}
-
-			if n.primaryTableKey == "" { // 主查询表 才分页
-				page = 0
-				count = 0
-			}
-
-			n.ret, n.err = n.executor.List(page, count)
-			n.total, n.err = n.executor.Count()
-		} else {
-			n.ret, n.err = n.executor.One()
-		}
-		if n.err != nil {
-			return
-		}
-
-		// 需优化调整
-		for k, v := range n.req {
-			if !strings.HasSuffix(k, consts.FunctionsKeySuffix) {
-				continue
-			}
-
-			k = k[0 : len(k)-2]
-
-			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
-
-			if n.isList {
-				for i, item := range n.ret.([]model.Map) {
-					var param = model.Map{}
-					for _, key := range paramKeys {
-						if key == consts.FunctionOriReqParam {
-							param[key] = item
-						} else {
-							param[key] = item[key]
-						}
-					}
-					var err error
-					n.ret.([]model.Map)[i][k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
-					if err != nil {
-						panic(err)
-					}
-				}
-			} else {
-				var param = model.Map{}
-				for _, key := range paramKeys {
-					if key == consts.FunctionOriReqParam {
-						param[key] = n.ret.(model.Map)
-					} else {
-						param[key] = n.ret.(model.Map)[key]
-					}
-
-				}
-				var err error
-				n.ret.(model.Map)[k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
-				if err != nil {
-					panic(err)
-				}
-			}
-		}
-
+		n.nodeHandler.fetch()
 	case NodeTypeRef:
-		for _, refNode := range n.refKeyMap {
-			if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, consts.ListKeySuffix) {
-				n.total = refNode.node.total
-			}
-		}
+		n.nodeHandler.fetch()
 
 	case NodeTypeStruct:
-		// 目前结构节点组装数据在result, 如果被依赖的是组装后的, 则无法查询。 如遇到此情况再看
-		if n.isList && n.needTotal {
-			n.total = n.children[n.primaryTableKey].total
-		}
+		n.nodeHandler.fetch()
 	case NodeTypeFunc:
-		functionName, paramKeys := util.ParseFunctionsStr(n.simpleReqVal)
-		//n.simpleReqVal = functionName
-		// todo 如何传递参数
-		param := model.Map{}
-		for _, key := range paramKeys {
-			param[key] = n.queryContext.pathNodes[key].simpleReqVal
-		}
+		n.nodeHandler.fetch()
 
-		n.ret, n.err = n.queryContext.Functions.Call(n.ctx, functionName, param)
 	}
 
 }
@@ -601,98 +290,11 @@ func (n *Node) Result() (any, error) {
 
 	switch n.Type {
 	case NodeTypeQuery:
-		if n.isList {
-			if n.ret == nil || n.ret.([]model.Map) == nil {
-				return []model.Map{}, n.err
-			}
-		} else {
-			if n.ret == nil || n.ret.(model.Map) == nil {
-				return nil, n.err
-			}
-		}
-
+		n.nodeHandler.result()
 	case NodeTypeRef:
-		if strings.HasSuffix(n.simpleReqVal, "[]/total") {
-			return n.total, nil
-		}
+		n.nodeHandler.result()
 	case NodeTypeStruct:
-		if n.isList {
-			var retList []model.Map
-
-			var primaryList []model.Map
-
-			if n.children[n.primaryTableKey].ret != nil {
-				primaryList = n.children[n.primaryTableKey].ret.([]model.Map)
-
-				for i := 0; i < len(primaryList); i++ {
-
-					pItem := primaryList[i]
-
-					item := model.Map{
-						n.primaryTableKey: pItem,
-					}
-
-					// 遍历组装数据, 后续考虑使用别的方案优化 (暂未简单使用map的id->item ,主要考虑多字段问题)
-					for childK, childNode := range n.children {
-						if childNode.primaryTableKey == "" {
-							if childNode.ret != nil {
-
-								var resultList []model.Map
-
-								for _, depRetItem := range childNode.ret.([]model.Map) {
-									match := true
-									for refK, refNode := range childNode.refKeyMap {
-										if pItem[refNode.column] != depRetItem[refK] {
-											match = false
-											break
-										}
-									}
-									if match {
-										resultList = append(resultList, depRetItem)
-									}
-
-								}
-								if len(resultList) > 0 {
-									if strings.HasSuffix(childK, consts.ListKeySuffix) {
-										item[childK] = resultList
-									} else {
-										item[childK] = resultList[0]
-									}
-								}
-
-							}
-
-						}
-					}
-
-					retList = append(retList, item)
-				}
-			}
-
-			n.ret = retList
-		} else {
-
-			retMap := model.Map{}
-			for k, node := range n.children {
-				var err error
-				if strings.HasSuffix(k, consts.RefKeySuffix) {
-					k = k[0 : len(k)-1]
-				}
-				if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
-					k = k[0 : len(k)-2]
-				}
-
-				retMap[k], err = node.Result()
-				if node.Type == NodeTypeFunc && retMap[k] == nil {
-					delete(retMap, k)
-				}
-
-				if err != nil {
-					return nil, err
-				}
-			}
-			n.ret = retMap
-		}
+		n.nodeHandler.result()
 
 	}
 

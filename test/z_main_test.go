@@ -69,6 +69,12 @@ func init() {
 				Get:    []string{"UNKNOWN"},
 				RowKey: "id",
 			},
+			{
+				Name:   "user",
+				Alias:  "User2",
+				Get:    []string{"UNKNOWN"},
+				RowKey: "id",
+			},
 		}
 
 		// request
@@ -123,21 +129,31 @@ func TestQuery(t *testing.T) {
 	ctx := gctx.New()
 	q := query.New(ctx, model.Map{
 		"User": model.Map{
-			"id":      "123",
-			"id{}":    []string{"123", "456"},
-			"id>":     "222",
-			"@column": "id",
+			//"id":      "123",
+			//"id{}":    []string{"123", "456"},
+			//"id>":     "222",
+			//"@column": "id",
 		},
-		"User[]": model.Map{
-			"@column": "id",
-			//"userId": "123",
+		//"User[]": model.Map{
+		//	"@column": "id",
+		//	//"userId": "123",
+		//},
+		//"user2": model.Map{},
+		"a@": "User/username",
+		"b": model.Map{
+			"User": model.Map{
+				"id": 1,
+			},
+			"c@": "/User/username",
 		},
+		"say()": "test()",
 	})
 
 	q.NoAccessVerify = true
 	q.Access = a.Config().Access
 	q.Access.NoVerify = true
 	q.Config = a.Config()
+	q.Functions = a.Config().Functions
 
 	result, err := q.Result()
 
@@ -152,15 +168,38 @@ func TestQuery(t *testing.T) {
 func BenchmarkName(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx := gctx.New()
-
 		q := query.New(ctx, model.Map{
-			"Todo": model.Map{},
-			"User": model.Map{},
+			"User": model.Map{
+				//"id":      "123",
+				//"id{}":    []string{"123", "456"},
+				//"id>":     "222",
+				//"@column": "id",
+			},
+			"User[]": model.Map{
+				"@column": "id",
+				//"userId": "123",
+			},
+			"user2": model.Map{},
+			"a@":    "User/username",
+			"b": model.Map{
+				"User": model.Map{
+					"id": 1,
+				},
+				"c@": "/User/username",
+			},
+			"say()": "test()",
 		})
 
+		q.NoAccessVerify = true
+		q.Access = a.Config().Access
+		q.Access.NoVerify = true
+		q.Config = a.Config()
+		q.Functions = a.Config().Functions
+
 		_, err := q.Result()
+
 		if err != nil {
-			panic(err)
+			log.Fatalf("%+v", err)
 		}
 	}
 }

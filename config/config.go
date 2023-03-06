@@ -36,6 +36,7 @@ func New() *Config {
 	a.JsonFieldStyle = CaseCamel
 
 	a.Functions = &Functions{}
+	a.Functions.funcMap = make(map[string]Func)
 
 	return a
 }
