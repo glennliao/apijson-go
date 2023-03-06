@@ -46,7 +46,7 @@ func (a *ApiJson) Use(p ...func(ctx context.Context, a *ApiJson)) *ApiJson {
 }
 
 func (a *ApiJson) Load() {
-
+	a.config.Load()
 }
 
 func (a *ApiJson) Config() *config.Config {

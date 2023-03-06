@@ -39,3 +39,12 @@ func New() *Config {
 
 	return a
 }
+
+func (c *Config) Load() {
+
+	c.Access.accessConfigMap = make(map[string]AccessConfig)
+
+	for _, access := range c.AccessList {
+		c.Access.accessConfigMap[access.Alias] = access
+	}
+}

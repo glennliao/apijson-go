@@ -11,6 +11,7 @@ import (
 	_ "github.com/gogf/gf/contrib/drivers/sqlite/v2" // need import for sqlite
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gctx"
+	"log"
 	"strings"
 	"testing"
 )
@@ -61,6 +62,14 @@ func init() {
 		}
 
 		a.Config().AccessList = accessList
+		a.Config().AccessList = []config.AccessConfig{
+			{
+				Name:   "user",
+				Alias:  "User",
+				Get:    []string{"UNKNOWN"},
+				RowKey: "id",
+			},
+		}
 
 		// request
 		var requestList []config.Request
@@ -113,26 +122,27 @@ func TestQuery(t *testing.T) {
 
 	ctx := gctx.New()
 	q := query.New(ctx, model.Map{
-		"user": model.Map{
+		"User": model.Map{
 			"id":      "123",
 			"id{}":    []string{"123", "456"},
 			"id>":     "222",
-			"@column": "id,userId",
+			"@column": "id",
 		},
-		"user[]": model.Map{
+		"User[]": model.Map{
+			"@column": "id",
 			//"userId": "123",
 		},
-		//"t_todo":  model.Map{},
-		//"_access": model.Map{},
 	})
 
-	q.NoAccessVerify = true //config.AccessVerify
+	q.NoAccessVerify = true
 	q.Access = a.Config().Access
+	q.Access.NoVerify = true
+	q.Config = a.Config()
 
 	result, err := q.Result()
 
 	if err != nil {
-		panic(err)
+		log.Fatalf("%+v", err)
 	}
 
 	g.Dump(result)

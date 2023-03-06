@@ -22,6 +22,13 @@ const (
 	NodeTypeFunc          // functions 节点
 )
 
+type nodeHandler interface {
+	parse()
+	fetch()
+	result()
+	nodeType() int
+}
+
 type Node struct {
 	ctx          context.Context
 	queryContext *Query
@@ -64,6 +71,8 @@ type Node struct {
 
 	total     int64 // 数据总条数
 	needTotal bool
+
+	nodeHandler nodeHandler
 }
 
 // NodeRef 节点依赖引用
@@ -222,7 +231,7 @@ func (n *Node) parse() {
 			return
 		}
 
-		if n.queryContext.NoAccessVerify != false {
+		if n.queryContext.NoAccessVerify == false {
 			has, condition, err := hasAccess(n, tableKey)
 			if err != nil {
 				n.err = err
