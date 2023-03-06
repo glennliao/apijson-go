@@ -59,6 +59,14 @@ func (gf *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error)
 	q.NoAccessVerify = gf.apijson.Config().Access.NoVerify
 	q.Access = gf.apijson.Config().Access
 	q.AccessCondition = gf.apijson.Config().Access.ConditionFunc
+
+	q.DbMeta = gf.apijson.Config().DbMeta       // todo
+	q.Functions = gf.apijson.Config().Functions // todo
+	q.DbFieldStyle = gf.apijson.Config().DbFieldStyle
+	q.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
+
+	q.Config = gf.apijson.Config()
+
 	return q.Result()
 }
 
@@ -67,20 +75,29 @@ func (gf *GF) Head(ctx context.Context, req model.Map) (res model.Map, err error
 }
 
 func (gf *GF) Post(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodPost, req)
+	act := action.New(ctx, http.MethodPost, req, gf.apijson.Config().RequestConfig)
 	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	act.DbFieldStyle = gf.apijson.Config().DbFieldStyle
+	act.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
+	act.Functions = gf.apijson.Config().Functions
 	return act.Result()
 }
 
 func (gf *GF) Put(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodPut, req)
+	act := action.New(ctx, http.MethodPut, req, gf.apijson.Config().RequestConfig)
 	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	act.DbFieldStyle = gf.apijson.Config().DbFieldStyle
+	act.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
+	act.Functions = gf.apijson.Config().Functions
 	return act.Result()
 }
 
 func (gf *GF) Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodDelete, req)
+	act := action.New(ctx, http.MethodDelete, req, gf.apijson.Config().RequestConfig)
 	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
+	act.DbFieldStyle = gf.apijson.Config().DbFieldStyle
+	act.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
+	act.Functions = gf.apijson.Config().Functions
 	return act.Result()
 }
 

@@ -3,9 +3,7 @@ package action
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
-	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
@@ -27,7 +25,7 @@ type Node struct {
 	Where  []model.Map // 条件
 	RowKey string      // 主键
 
-	structure *db.Structure
+	structure *config.Structure
 	executor  string
 
 	keyNode map[string]*Node
@@ -35,7 +33,7 @@ type Node struct {
 	access *config.Access
 }
 
-func newNode(key string, req []model.Map, structure *db.Structure, executor string) Node {
+func newNode(key string, req []model.Map, structure *config.Structure, executor string) Node {
 	return Node{
 		Key: key, req: req, structure: structure, executor: executor,
 	}
@@ -54,7 +52,7 @@ func (n *Node) parseReq(method string) {
 			if key == consts.Role {
 				n.Role = util.String(val)
 			} else {
-				key = config.GetDbFieldStyle()(n.ctx, n.TableName, key)
+				key = n.action.DbFieldStyle(n.ctx, n.TableName, key)
 
 				if method == http.MethodDelete {
 					n.Where[i][key] = val
@@ -82,7 +80,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
 		key = key[0 : len(key)-2]
 	}
-	access, err := db.GetAccess(key, true)
+	access, err := n.access.GetAccess(key, true)
 
 	if err != nil {
 		return err
@@ -245,7 +243,7 @@ func (n *Node) reqUpdate() error {
 					}
 				}
 				k := key[0 : len(key)-2]
-				val, err := functions.Call(n.ctx, functionName, param)
+				val, err := n.action.Functions.Call(n.ctx, functionName, param)
 				if err != nil {
 					return err
 				}
@@ -278,9 +276,9 @@ func (n *Node) reqUpdateBeforeDo() error {
 			if strings.HasSuffix(k, consts.RefKeySuffix) {
 				refNodeKey, refCol := util.ParseRefCol(v.(string))
 				if strings.HasSuffix(refNodeKey, consts.ListKeySuffix) { // 双列表
-					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][n.action.DbFieldStyle(n.ctx, n.TableName, refCol)]
 				} else {
-					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][config.GetDbFieldStyle()(n.ctx, n.TableName, refCol)]
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][n.action.DbFieldStyle(n.ctx, n.TableName, refCol)]
 				}
 			}
 		}
@@ -303,7 +301,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 
 		var rowKeyVal model.Map
 
-		access, err := db.GetAccess(n.Key, true)
+		access, err := n.access.GetAccess(n.Key, true)
 		if err != nil {
 			return nil, err
 		}
@@ -343,7 +341,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 
 		if len(n.Data) > 0 { //多条插入时返回值已经应该无意义了
 
-			jsonStyle := config.GetJsonFieldStyle()
+			jsonStyle := n.action.JsonFieldStyle
 			if rowKeyVal != nil {
 				for k, v := range rowKeyVal {
 					if k == consts.RowKey {

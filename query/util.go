@@ -2,7 +2,6 @@ package query
 
 import (
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gset"
@@ -56,7 +55,7 @@ func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, w
 }
 
 func hasAccess(node *Node, table string) (hasAccess bool, accessWhere *config.ConditionRet, err error) {
-	accessRoles, tableName, err := db.GetAccessRole(table, http.MethodGet)
+	accessRoles, tableName, err := node.queryContext.Access.GetAccessRole(table, http.MethodGet)
 	if err != nil {
 		return false, nil, err
 	}

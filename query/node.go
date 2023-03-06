@@ -2,9 +2,7 @@ package query
 
 import (
 	"context"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
-	"github.com/glennliao/apijson-go/config/functions"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
@@ -109,7 +107,7 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 			node.Type = NodeTypeStruct // 结构节点下应该必须存在查询节点
 
 			if query.NoAccessVerify == false {
-				if lo.Contains(db.GetTableNameList(), k) {
+				if lo.Contains(query.DbMeta.GetTableNameList(), k) {
 					node.Type = NodeTypeQuery
 				}
 			}
@@ -209,7 +207,7 @@ func (n *Node) parse() {
 	case NodeTypeQuery:
 		tableKey := parseTableKey(n.Key, n.Path)
 
-		access, err := db.GetAccess(tableKey, n.queryContext.NoAccessVerify)
+		access, err := n.queryContext.Access.GetAccess(tableKey, n.queryContext.NoAccessVerify)
 		if err != nil {
 			n.err = err
 			return
@@ -239,7 +237,7 @@ func (n *Node) parse() {
 			accessWhereCondition = condition.Where() // todo
 		}
 
-		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.NoAccessVerify, n.role, access)
+		queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.NoAccessVerify, n.role, access, n.queryContext.Config)
 		if err != nil {
 			n.err = err
 			return
@@ -437,7 +435,7 @@ func (n *Node) fetch() {
 
 				valList := getColList(list, refNode.column)
 				if len(valList) == 0 { // 未查询到主表, 故当前不再查询
-					n.executor.EmptyResult()
+					n.executor.SetEmptyResult()
 					break
 				}
 
@@ -453,7 +451,7 @@ func (n *Node) fetch() {
 			} else {
 
 				if ret == nil { // 未查询到主表, 故当前不再查询
-					n.executor.EmptyResult()
+					n.executor.SetEmptyResult()
 					break
 				}
 
@@ -507,7 +505,8 @@ func (n *Node) fetch() {
 				count = 0
 			}
 
-			n.ret, n.total, n.err = n.executor.List(page, count, n.needTotal)
+			n.ret, n.err = n.executor.List(page, count)
+			n.total, n.err = n.executor.Count()
 		} else {
 			n.ret, n.err = n.executor.One()
 		}
@@ -536,7 +535,7 @@ func (n *Node) fetch() {
 						}
 					}
 					var err error
-					n.ret.([]model.Map)[i][k], err = functions.Call(n.ctx, functionName, param)
+					n.ret.([]model.Map)[i][k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
 					if err != nil {
 						panic(err)
 					}
@@ -552,7 +551,7 @@ func (n *Node) fetch() {
 
 				}
 				var err error
-				n.ret.(model.Map)[k], err = functions.Call(n.ctx, functionName, param)
+				n.ret.(model.Map)[k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
 				if err != nil {
 					panic(err)
 				}
@@ -580,7 +579,7 @@ func (n *Node) fetch() {
 			param[key] = n.queryContext.pathNodes[key].simpleReqVal
 		}
 
-		n.ret, n.err = functions.Call(n.ctx, functionName, param)
+		n.ret, n.err = n.queryContext.Functions.Call(n.ctx, functionName, param)
 	}
 
 }

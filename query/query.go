@@ -38,6 +38,18 @@ type Query struct {
 	AccessCondition config.AccessCondition
 
 	Access *config.Access
+
+	DbMeta *config.DBMeta
+
+	Functions *config.Functions
+
+	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
+	DbFieldStyle config.FieldStyle
+
+	// jsonFieldStyle 数据库返回的字段
+	JsonFieldStyle config.FieldStyle
+
+	Config *config.Config
 }
 
 func New(ctx context.Context, req model.Map) *Query {

@@ -63,6 +63,8 @@ type Access struct {
 	DefaultRoleFunc DefaultRole
 
 	roleList []string
+
+	accessConfigMap map[string]AccessConfig
 }
 
 func NewAccess() *Access {

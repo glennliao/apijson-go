@@ -32,7 +32,7 @@ type Request struct {
 	Debug               int8           `ddl:"not null;default:0;comment:是否调试,开发环境可用"`
 	Tag                 string         `ddl:"not null;size:32;not null;comment:标签名(表别名)"`
 	Version             string         `ddl:"not null;size:8;comment:版本号"`
-	Method              string         `ddl:"not null;size:5;comment:请求方式"`
+	Method              string         `ddl:"not null;size:6;comment:请求方式"`
 	Structure           map[string]any `ddl:"not null;type:json;comment:请求结构"`
 	Detail              string         `ddl:"size:512;comment:描述说明"`
 	CreatedAt           *time.Time     `ddl:"NOT NULL;comment:创建时间"`

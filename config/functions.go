@@ -1,35 +1,39 @@
-package functions
+package config
 
 import (
 	"context"
 	"fmt"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/frame/g"
 )
 
 type Func struct {
-	Handler func(ctx context.Context, param g.Map) (res any, err error)
+	Handler func(ctx context.Context, param model.Map) (res any, err error)
 }
 
-var funcMap = make(map[string]Func)
-
-func Reg(name string, f Func) {
-	if _, exists := funcMap[name]; exists {
-		panic(fmt.Errorf(" function %s has exists", name))
-	}
-	funcMap[name] = f
+type Functions struct {
+	funcMap map[string]Func
 }
 
-func RegHandler(name string, handler func(ctx context.Context, param g.Map) (res any, err error)) {
-	if _, exists := funcMap[name]; exists {
+func (f *Functions) Bind(name string, _func Func) {
+	if _, exists := f.funcMap[name]; exists {
 		panic(fmt.Errorf(" function %s has exists", name))
 	}
-	funcMap[name] = struct {
-		Handler func(ctx context.Context, param g.Map) (res any, err error)
+	f.funcMap[name] = _func
+}
+
+// ?
+func (f *Functions) BindHandlerFunc(name string, handler func(ctx context.Context, param model.Map) (res any, err error)) {
+	if _, exists := f.funcMap[name]; exists {
+		panic(fmt.Errorf(" function %s has exists", name))
+	}
+	f.funcMap[name] = struct {
+		Handler func(ctx context.Context, param model.Map) (res any, err error)
 	}{Handler: handler}
 }
 
-func Call(ctx context.Context, name string, param g.Map) (any, error) {
-	return funcMap[name].Handler(ctx, param)
+func (f *Functions) Call(ctx context.Context, name string, param g.Map) (any, error) {
+	return f.funcMap[name].Handler(ctx, param)
 }
 
 // functions 提供的功能

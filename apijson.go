@@ -28,8 +28,12 @@ func New() *ApiJson {
 }
 
 // Load load for defaultApiJson, 简化使用
-func Load(app func(ctx context.Context, a *ApiJson)) *ApiJson {
-	DefaultApiJson.Use(app)
+func Load(apps ...func(ctx context.Context, a *ApiJson)) *ApiJson {
+
+	for _, app := range apps {
+		DefaultApiJson.Use(app)
+	}
+
 	DefaultApiJson.Load()
 	return DefaultApiJson
 }

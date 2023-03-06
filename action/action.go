@@ -3,7 +3,6 @@ package action
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/database/gdb"
@@ -16,7 +15,7 @@ import (
 // Action 非get查询的request表中的请求
 type Action struct {
 	ctx        context.Context
-	tagRequest *db.Request
+	tagRequest *config.Request
 	method     string
 
 	req model.Map
@@ -32,11 +31,19 @@ type Action struct {
 	NoRequestVerify bool
 
 	Access *config.Access
+
+	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
+	DbFieldStyle config.FieldStyle
+
+	// jsonFieldStyle 数据库返回的字段
+	JsonFieldStyle config.FieldStyle
+
+	Functions *config.Functions
 }
 
-func New(ctx context.Context, method string, req model.Map) *Action {
+func New(ctx context.Context, method string, req model.Map, requestCfg *config.RequestConfig) *Action {
 
-	request, err := checkTag(req, method)
+	request, err := checkTag(req, method, requestCfg)
 	if err != nil {
 		panic(err)
 	}
@@ -150,7 +157,7 @@ func (a *Action) Result() (model.Map, error) {
 	return ret, err
 }
 
-func checkTag(req model.Map, method string) (*db.Request, error) {
+func checkTag(req model.Map, method string, requestCfg *config.RequestConfig) (*config.Request, error) {
 	_tag, ok := req["tag"]
 	if !ok {
 		return nil, gerror.New("tag 缺失")
@@ -159,7 +166,7 @@ func checkTag(req model.Map, method string) (*db.Request, error) {
 	tag := gconv.String(_tag)
 	version := req["version"]
 
-	request, err := db.GetRequest(tag, method, gconv.String(version))
+	request, err := requestCfg.GetRequest(tag, method, gconv.String(version))
 	if err != nil {
 		return nil, err
 	}

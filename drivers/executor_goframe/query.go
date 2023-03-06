@@ -3,7 +3,6 @@ package executor_goframe
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
@@ -34,10 +33,12 @@ type SqlExecutor struct {
 
 	noAccessVerify bool
 
-	access *db.Access
+	access *config.AccessConfig
+
+	config *config.Config
 }
 
-func New(ctx context.Context, noAccessVerify bool, role string, access *db.Access) (executor.QueryExecutor, error) {
+func New(ctx context.Context, noAccessVerify bool, role string, access *config.AccessConfig, config *config.Config) (executor.QueryExecutor, error) {
 
 	return &SqlExecutor{
 		ctx:             ctx,
@@ -49,6 +50,7 @@ func New(ctx context.Context, noAccessVerify bool, role string, access *db.Acces
 		WithEmptyResult: false,
 		noAccessVerify:  noAccessVerify,
 		access:          access,
+		config:          config,
 	}, nil
 }
 
@@ -85,7 +87,7 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 
 	inFieldsMap := e.access.GetFieldsGetInByRole(e.Role)
 
-	dbStyle := config.GetDbFieldStyle()
+	dbStyle := e.config.DbFieldStyle
 
 	tableName := e.access.Name
 
@@ -166,7 +168,7 @@ var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 // ParseCtrl 解析 @column,@group等控制类
 func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 
-	fieldStyle := config.GetDbFieldStyle()
+	fieldStyle := e.config.DbFieldStyle
 	tableName := e.access.Name
 	for k, v := range ctrl {
 		// 使用;分割字段
@@ -210,7 +212,7 @@ func (e *SqlExecutor) build() *gdb.Model {
 
 	whereBuild := m.Builder()
 
-	fieldStyle := config.GetDbFieldStyle()
+	fieldStyle := e.config.DbFieldStyle
 
 	for _, whereItem := range e.Where {
 		key := fieldStyle(e.ctx, tableName, whereItem[0].(string))
@@ -279,13 +281,13 @@ func (e *SqlExecutor) column() []string {
 	if e.Columns != nil {
 		columns = e.Columns
 	} else {
-		columns = db.GetTableColumns(tableName)
+		columns = e.config.DbMeta.GetTableColumns(tableName)
 	}
 
 	var fields = make([]string, 0, len(columns))
 
-	fieldStyle := config.GetJsonFieldStyle()
-	dbStyle := config.GetDbFieldStyle()
+	fieldStyle := e.config.JsonFieldStyle
+	dbStyle := e.config.DbFieldStyle
 
 	for _, column := range columns {
 		fieldName := column
@@ -311,26 +313,30 @@ func (e *SqlExecutor) column() []string {
 	return fields
 }
 
-func (e *SqlExecutor) EmptyResult() {
+func (e *SqlExecutor) SetEmptyResult() {
 	e.WithEmptyResult = true
 }
 
-func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []model.Map, total int64, err error) {
+func (e *SqlExecutor) Count() (total int64, err error) {
+	m := e.build()
+	_total, err := m.Count()
+	if err != nil || _total == 0 {
+		return 0, err
+	} else {
+		total = int64(_total)
+	}
+
+	return total, nil
+
+}
+
+func (e *SqlExecutor) List(page int, count int) (list []model.Map, err error) {
 
 	if e.WithEmptyResult {
-		return nil, 0, err
+		return nil, err
 	}
 
 	m := e.build()
-
-	if needTotal {
-		_total, err := m.Count()
-		if err != nil || _total == 0 {
-			return nil, 0, err
-		} else {
-			total = int64(_total)
-		}
-	}
 
 	m = m.Fields(e.column())
 
@@ -338,14 +344,14 @@ func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []model.Ma
 	all, err := m.All()
 
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	for _, item := range all.List() {
 		list = append(list, item)
 	}
 
-	return list, total, nil
+	return list, nil
 }
 
 func (e *SqlExecutor) One() (model.Map, error) {
