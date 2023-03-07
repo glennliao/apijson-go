@@ -3,6 +3,8 @@ package apijson
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/model"
+	"github.com/glennliao/apijson-go/query"
 )
 
 type Plugin interface {
@@ -51,4 +53,15 @@ func (a *ApiJson) Load() {
 
 func (a *ApiJson) Config() *config.Config {
 	return a.config
+}
+
+func (a *ApiJson) NewQuery(ctx context.Context, req model.Map) *query.Query {
+	q := query.New(ctx, a.Config().QueryConfig(), req)
+
+	q.DbMeta = a.config.DbMeta
+	q.Functions = a.config.Functions
+	q.DbFieldStyle = a.config.DbFieldStyle
+	q.JsonFieldStyle = a.config.JsonFieldStyle
+
+	return q
 }

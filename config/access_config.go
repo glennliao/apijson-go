@@ -56,19 +56,19 @@ func (a *AccessConfig) GetFieldsGetInByRole(role string) map[string][]string {
 	return inFieldsMap
 }
 
-func (a *Access) GetAccess(tableAlias string, accessVerify bool) (*AccessConfig, error) {
+func (a *Access) GetAccess(tableAlias string, noVerify bool) (*AccessConfig, error) {
 	tableAlias, _ = util.ParseNodeKey(tableAlias)
 	access, ok := a.accessConfigMap[tableAlias]
 
 	if !ok {
-		if accessVerify {
-			return nil, gerror.Newf("access[%s]: 404", tableAlias)
+		if noVerify {
+			return &AccessConfig{
+				Debug: 0,
+				Name:  tableAlias,
+				Alias: tableAlias,
+			}, nil
 		}
-		return &AccessConfig{
-			Debug: 0,
-			Name:  tableAlias,
-			Alias: tableAlias,
-		}, nil
+		return nil, gerror.Newf("access[%s]: 404", tableAlias)
 	}
 
 	return &access, nil

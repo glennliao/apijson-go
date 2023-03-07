@@ -31,25 +31,18 @@ type SqlExecutor struct {
 	// 是否最终为空结果, 用于node中中断数据获取
 	WithEmptyResult bool
 
-	noAccessVerify bool
-
-	access *config.AccessConfig
-
-	config *config.Config
+	config *config.ExecutorConfig
 }
 
-func New(ctx context.Context, noAccessVerify bool, role string, access *config.AccessConfig, config *config.Config) (executor.QueryExecutor, error) {
+func New(ctx context.Context, config *config.ExecutorConfig) (executor.QueryExecutor, error) {
 
 	return &SqlExecutor{
 		ctx:             ctx,
-		Role:            role,
 		Where:           [][]any{},
 		Columns:         nil,
 		Order:           "",
 		Group:           "",
 		WithEmptyResult: false,
-		noAccessVerify:  noAccessVerify,
-		access:          access,
 		config:          config,
 	}, nil
 }
@@ -81,15 +74,15 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 		return nil
 	}
 
-	if e.noAccessVerify { // 可任意字段搜索
+	if e.config.NoVerify { // 可任意字段搜索
 		return nil
 	}
 
-	inFieldsMap := e.access.GetFieldsGetInByRole(e.Role)
+	inFieldsMap := e.config.GetFieldsGetInByRole()
 
 	dbStyle := e.config.DbFieldStyle
 
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 
 	for _, where := range e.Where {
 		k := dbStyle(e.ctx, tableName, where[0].(string))
@@ -169,7 +162,7 @@ var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 
 	fieldStyle := e.config.DbFieldStyle
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 	for k, v := range ctrl {
 		// 使用;分割字段
 		fieldStr := strings.ReplaceAll(gconv.String(v), ";", ",")
@@ -203,7 +196,7 @@ func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 }
 
 func (e *SqlExecutor) build() *gdb.Model {
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 	m := g.DB().Model(tableName).Ctx(e.ctx)
 
 	if e.Order != "" {
@@ -272,16 +265,16 @@ func (e *SqlExecutor) build() *gdb.Model {
 
 func (e *SqlExecutor) column() []string {
 
-	outFields := e.access.GetFieldsGetOutByRole(e.Role)
+	outFields := e.config.GetFieldsGetOutByRole()
 
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 
 	var columns []string
 
 	if e.Columns != nil {
 		columns = e.Columns
 	} else {
-		columns = e.config.DbMeta.GetTableColumns(tableName)
+		columns = e.config.TableColumns()
 	}
 
 	var fields = make([]string, 0, len(columns))
@@ -304,7 +297,7 @@ func (e *SqlExecutor) column() []string {
 		}
 
 		// 过滤可访问字段
-		if e.noAccessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
+		if e.config.NoVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
 			len(outFields) == 0 /* 数据库中未设置, 则看成全部可访问 */ {
 			fields = append(fields, column)
 		}

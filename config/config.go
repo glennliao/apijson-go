@@ -21,6 +21,8 @@ type Config struct {
 	AccessList []AccessConfig // todo to access
 
 	RequestConfig *RequestConfig
+
+	queryConfig *QueryConfig
 }
 
 func New() *Config {
@@ -48,4 +50,16 @@ func (c *Config) Load() {
 	for _, access := range c.AccessList {
 		c.Access.accessConfigMap[access.Alias] = access
 	}
+
+	c.queryConfig = &QueryConfig{
+		access:          c.Access,
+		functions:       c.Functions,
+		maxTreeDeep:     c.MaxTreeDeep,
+		maxTreeWidth:    c.MaxTreeWidth,
+		defaultRoleFunc: c.Access.DefaultRoleFunc,
+	}
+}
+
+func (c *Config) QueryConfig() *QueryConfig {
+	return c.queryConfig
 }

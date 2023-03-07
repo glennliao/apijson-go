@@ -34,10 +34,11 @@ type Query struct {
 
 	// 关闭权限验证 , 默认否
 	NoAccessVerify bool
+
+	queryConfig *config.QueryConfig
+
 	// 自定义可访问权限的限定, 例如添加用户id的where条件
 	AccessCondition config.AccessCondition
-
-	Access *config.Access
 
 	DbMeta *config.DBMeta
 
@@ -52,10 +53,13 @@ type Query struct {
 	Config *config.Config
 }
 
-func New(ctx context.Context, req model.Map) *Query {
+func New(ctx context.Context, qc *config.QueryConfig, req model.Map) *Query {
 
-	q := &Query{}
+	q := &Query{
+		queryConfig: qc,
+	}
 	q.init(ctx, req)
+	q.NoAccessVerify = qc.NoVerify()
 
 	return q
 }

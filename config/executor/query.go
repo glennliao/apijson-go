@@ -16,7 +16,7 @@ type QueryExecutor interface {
 	SetEmptyResult()
 }
 
-type queryExecutorBuilder func(ctx context.Context, noAccessVerify bool, role string, access *config.AccessConfig, config *config.Config) (QueryExecutor, error)
+type queryExecutorBuilder func(ctx context.Context, config *config.ExecutorConfig) (QueryExecutor, error)
 
 var queryExecutorBuilderMap = map[string]queryExecutorBuilder{}
 
@@ -24,11 +24,11 @@ func RegQueryExecutor(name string, e queryExecutorBuilder) {
 	queryExecutorBuilderMap[name] = e
 }
 
-func NewQueryExecutor(name string, ctx context.Context, noAccessVerify bool, role string, access *config.AccessConfig, config *config.Config) (QueryExecutor, error) {
+func NewQueryExecutor(name string, ctx context.Context, config *config.ExecutorConfig) (QueryExecutor, error) {
 	if v, exists := queryExecutorBuilderMap[name]; exists {
-		return v(ctx, noAccessVerify, role, access, config)
+		return v(ctx, config)
 	}
-	return queryExecutorBuilderMap["default"](ctx, noAccessVerify, role, access, config)
+	return queryExecutorBuilderMap["default"](ctx, config)
 }
 
 func QueryExecutorList() []string {

@@ -2,10 +2,12 @@ package query
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -72,6 +74,8 @@ type Node struct {
 	needTotal bool
 
 	nodeHandler nodeHandler
+
+	executorConfig *config.ExecutorConfig
 }
 
 // NodeRef 节点依赖引用
@@ -119,6 +123,7 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 					node.Type = NodeTypeQuery
 				}
 			}
+
 		}
 
 		if isList || strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) {
@@ -158,10 +163,11 @@ func (n *Node) buildChild() error {
 		return nil
 	}
 
-	// 最大深度检查
-	//if len(strings.Split(n.Path, "/")) > config.MaxTreeDeep {
-	//	return gerror.Newf("deep(%s) > %d", n.Path, config.MaxTreeDeep)
-	//}
+	//最大深度检查
+	maxDeep := n.queryContext.queryConfig.MaxTreeDeep()
+	if len(strings.Split(n.Path, "/")) > maxDeep {
+		return gerror.Newf("deep(%s) > %d", n.Path, maxDeep)
+	}
 
 	children := make(map[string]*Node)
 
@@ -200,14 +206,15 @@ func (n *Node) buildChild() error {
 
 	if len(children) > 0 {
 
-		// 最大宽度检查, 目前为某节点的宽度, 应该计算为整棵树的最大宽度
-		//if len(children) > config.MaxTreeWidth {
-		//	path := n.Path
-		//	if path == "" {
-		//		path = "root"
-		//	}
-		//	return gerror.Newf("width(%s) > %d", path, config.MaxTreeWidth)
-		//}
+		// 最大宽度检查, 为当前节点的子节点数
+		maxWidth := n.queryContext.queryConfig.MaxTreeWidth()
+		if len(children) > maxWidth {
+			path := n.Path
+			if path == "" {
+				path = "root"
+			}
+			return gerror.Newf("width(%s) > %d", path, maxWidth)
+		}
 
 		n.children = children
 
@@ -225,19 +232,8 @@ func (n *Node) parse() {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse> ", n.Path)
 	}
 
-	switch n.Type {
-	case NodeTypeQuery:
-		n.nodeHandler.parse()
+	n.nodeHandler.parse()
 
-	case NodeTypeRef:
-		n.nodeHandler.parse()
-
-	case NodeTypeStruct:
-		n.nodeHandler.parse()
-
-	case NodeTypeFunc:
-		n.nodeHandler.parse()
-	}
 	if n.queryContext.PrintProcessLog {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
 	}
@@ -267,36 +263,16 @@ func (n *Node) fetch() {
 		return
 	}
 
-	switch n.Type {
-	case NodeTypeQuery:
-		n.nodeHandler.fetch()
-	case NodeTypeRef:
-		n.nodeHandler.fetch()
-
-	case NodeTypeStruct:
-		n.nodeHandler.fetch()
-	case NodeTypeFunc:
-		n.nodeHandler.fetch()
-
-	}
+	n.nodeHandler.fetch()
 
 }
 
 func (n *Node) Result() (any, error) {
-
 	if n.err != nil {
 		return nil, n.err
 	}
 
-	switch n.Type {
-	case NodeTypeQuery:
-		n.nodeHandler.result()
-	case NodeTypeRef:
-		n.nodeHandler.result()
-	case NodeTypeStruct:
-		n.nodeHandler.result()
-
-	}
+	n.nodeHandler.result()
 
 	return n.ret, n.err
 

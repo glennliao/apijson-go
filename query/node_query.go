@@ -1,12 +1,14 @@
 package query
 
 import (
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/util/gconv"
+	"net/http"
 	"path/filepath"
 	"strings"
 )
@@ -21,17 +23,29 @@ func newQueryNode(n *Node) *queryNode {
 
 func (q *queryNode) parse() {
 	n := q.node
-	tableKey := parseTableKey(n.Key, n.Path)
+	tableKey := parseTableKey(n.Key, n.Path) // todo
 
-	access, err := n.queryContext.Access.GetAccess(tableKey, n.queryContext.NoAccessVerify)
+	accessConfig, err := n.queryContext.queryConfig.GetAccessConfig(tableKey, n.queryContext.NoAccessVerify)
 	if err != nil {
 		n.err = err
 		return
 	}
 
+	n.executorConfig = config.NewExecutorConfig(accessConfig, http.MethodGet, n.queryContext.NoAccessVerify)
+	n.executorConfig.DbFieldStyle = n.queryContext.DbFieldStyle
+	n.executorConfig.JsonFieldStyle = n.queryContext.JsonFieldStyle
+	n.executorConfig.DBMeta = n.queryContext.DbMeta
+
+	//access, err := n.queryContext.Access.GetAccess(tableKey, n.queryContext.NoAccessVerify)
+	//if err != nil {
+	//	n.err = err
+	//	return
+	//}
+
 	var accessWhereCondition model.MapStrAny
 
-	setNodeRole(n, access.Name, n.role)
+	setNodeRole(n, n.Key, n.role)
+	n.executorConfig.SetRole(n.role)
 
 	if n.role == consts.DENY {
 		n.err = gerror.New("deny node: " + n.Path)
@@ -39,7 +53,7 @@ func (q *queryNode) parse() {
 	}
 
 	if n.queryContext.NoAccessVerify == false {
-		has, condition, err := hasAccess(n, tableKey)
+		has, condition, err := hasAccess(n)
 		if err != nil {
 			n.err = err
 			return
@@ -53,7 +67,7 @@ func (q *queryNode) parse() {
 		accessWhereCondition = condition.Where() // todo
 	}
 
-	queryExecutor, err := executor.NewQueryExecutor(access.Executor, n.ctx, n.queryContext.NoAccessVerify, n.role, access, n.queryContext.Config)
+	queryExecutor, err := executor.NewQueryExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)
 	if err != nil {
 		n.err = err
 		return

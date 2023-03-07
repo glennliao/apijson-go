@@ -6,7 +6,6 @@ import (
 	"github.com/glennliao/apijson-go"
 	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/model"
-	"github.com/glennliao/apijson-go/query"
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -55,18 +54,10 @@ func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 }
 
 func (gf *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
-	q := query.New(ctx, req)
+	q := gf.apijson.NewQuery(ctx, req)
 	q.NoAccessVerify = gf.apijson.Config().Access.NoVerify
-	q.Access = gf.apijson.Config().Access
 	q.AccessCondition = gf.apijson.Config().Access.ConditionFunc
-
-	q.DbMeta = gf.apijson.Config().DbMeta       // todo
-	q.Functions = gf.apijson.Config().Functions // todo
-	q.DbFieldStyle = gf.apijson.Config().DbFieldStyle
-	q.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
-
 	q.Config = gf.apijson.Config()
-
 	return q.Result()
 }
 

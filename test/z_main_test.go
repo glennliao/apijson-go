@@ -7,7 +7,6 @@ import (
 	_ "github.com/glennliao/apijson-go/drivers/executor/goframe" // need import for executor with goframe
 	"github.com/glennliao/apijson-go/drivers/framework_goframe"
 	"github.com/glennliao/apijson-go/model"
-	"github.com/glennliao/apijson-go/query"
 	_ "github.com/gogf/gf/contrib/drivers/sqlite/v2" // need import for sqlite
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gctx"
@@ -127,7 +126,8 @@ func TestServer(t *testing.T) {
 func TestQuery(t *testing.T) {
 
 	ctx := gctx.New()
-	q := query.New(ctx, model.Map{
+
+	q := a.NewQuery(ctx, model.Map{
 		"User": model.Map{
 			//"id":      "123",
 			//"id{}":    []string{"123", "456"},
@@ -150,10 +150,6 @@ func TestQuery(t *testing.T) {
 	})
 
 	q.NoAccessVerify = true
-	q.Access = a.Config().Access
-	q.Access.NoVerify = true
-	q.Config = a.Config()
-	q.Functions = a.Config().Functions
 
 	result, err := q.Result()
 
@@ -167,8 +163,8 @@ func TestQuery(t *testing.T) {
 
 func BenchmarkName(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ctx := gctx.New()
-		q := query.New(ctx, model.Map{
+		ctx := context.Background()
+		q := a.NewQuery(ctx, model.Map{
 			"User": model.Map{
 				//"id":      "123",
 				//"id{}":    []string{"123", "456"},
@@ -179,8 +175,7 @@ func BenchmarkName(b *testing.B) {
 				"@column": "id",
 				//"userId": "123",
 			},
-			"user2": model.Map{},
-			"a@":    "User/username",
+			"a@": "User/username",
 			"b": model.Map{
 				"User": model.Map{
 					"id": 1,
@@ -191,10 +186,6 @@ func BenchmarkName(b *testing.B) {
 		})
 
 		q.NoAccessVerify = true
-		q.Access = a.Config().Access
-		q.Access.NoVerify = true
-		q.Config = a.Config()
-		q.Functions = a.Config().Functions
 
 		_, err := q.Result()
 

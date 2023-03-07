@@ -54,19 +54,19 @@ func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, w
 	return
 }
 
-func hasAccess(node *Node, table string) (hasAccess bool, accessWhere *config.ConditionRet, err error) {
-	accessRoles, tableName, err := node.queryContext.Access.GetAccessRole(table, http.MethodGet)
+func hasAccess(node *Node) (hasAccess bool, accessWhere *config.ConditionRet, err error) {
+	accessRoles := node.executorConfig.AccessRoles()
 	if err != nil {
 		return false, nil, err
 	}
 
 	if !lo.Contains(accessRoles, node.role) {
-		g.Log().Debug(node.ctx, table, "role:", node.role, "accessRole", accessRoles, " -> deny")
+		g.Log().Debug(node.ctx, node.Key, "role:", node.role, "accessRole", accessRoles, " -> deny")
 		return false, nil, err
 	}
 
 	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
-		AccessName:          tableName,
+		AccessName:          node.Key,
 		TableAccessRoleList: accessRoles,
 		Method:              http.MethodGet,
 		NodeReq:             node.req,
@@ -106,15 +106,15 @@ func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 		}
 	} else {
 		if ok {
-			//node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
-			//	AccessName: tableName,
-			//	NodeRole:   gconv.String(role),
-			//})
+			node.role, _ = node.queryContext.queryConfig.DefaultRoleFunc()(node.ctx, config.RoleReq{
+				AccessName: tableName,
+				NodeRole:   gconv.String(role),
+			})
 		} else {
-			//node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
-			//	AccessName: tableName,
-			//	NodeRole:   parenNodeRole,
-			//})
+			node.role, _ = node.queryContext.queryConfig.DefaultRoleFunc()(node.ctx, config.RoleReq{
+				AccessName: tableName,
+				NodeRole:   parenNodeRole,
+			})
 		}
 	}
 }
