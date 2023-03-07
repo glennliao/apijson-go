@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/glennliao/apijson-go"
-	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -55,9 +54,6 @@ func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 
 func (gf *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
 	q := gf.apijson.NewQuery(ctx, req)
-	q.NoAccessVerify = gf.apijson.Config().Access.NoVerify
-	q.AccessCondition = gf.apijson.Config().Access.ConditionFunc
-	q.Config = gf.apijson.Config()
 	return q.Result()
 }
 
@@ -66,29 +62,17 @@ func (gf *GF) Head(ctx context.Context, req model.Map) (res model.Map, err error
 }
 
 func (gf *GF) Post(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodPost, req, gf.apijson.Config().RequestConfig)
-	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
-	act.DbFieldStyle = gf.apijson.Config().DbFieldStyle
-	act.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
-	act.Functions = gf.apijson.Config().Functions
+	act := gf.apijson.NewAction(ctx, http.MethodPost, req)
 	return act.Result()
 }
 
 func (gf *GF) Put(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodPut, req, gf.apijson.Config().RequestConfig)
-	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
-	act.DbFieldStyle = gf.apijson.Config().DbFieldStyle
-	act.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
-	act.Functions = gf.apijson.Config().Functions
+	act := gf.apijson.NewAction(ctx, http.MethodPut, req)
 	return act.Result()
 }
 
 func (gf *GF) Delete(ctx context.Context, req model.Map) (res model.Map, err error) {
-	act := action.New(ctx, http.MethodDelete, req, gf.apijson.Config().RequestConfig)
-	act.NoAccessVerify = gf.apijson.Config().Access.NoVerify
-	act.DbFieldStyle = gf.apijson.Config().DbFieldStyle
-	act.JsonFieldStyle = gf.apijson.Config().JsonFieldStyle
-	act.Functions = gf.apijson.Config().Functions
+	act := gf.apijson.NewAction(ctx, http.MethodDelete, req)
 	return act.Result()
 }
 

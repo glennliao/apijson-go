@@ -30,33 +30,27 @@ func init() {
 		}
 
 		for _, access := range accessList {
-			name := access.Alias
-			if name == "" {
-				name = access.Name
-			}
-
-			if len(access.Get) > 0 {
+			if len(access.Get) == 1 {
 				access.Get = strings.Split(access.Get[0], ",")
 			}
-			if len(access.Head) > 0 {
+			if len(access.Head) == 1 {
 				access.Head = strings.Split(access.Head[0], ",")
 			}
-			if len(access.Gets) > 0 {
+			if len(access.Gets) == 1 {
 				access.Gets = strings.Split(access.Gets[0], ",")
 			}
-			if len(access.Heads) > 0 {
+			if len(access.Heads) == 1 {
 				access.Heads = strings.Split(access.Heads[0], ",")
 			}
-			if len(access.Post) > 0 {
+			if len(access.Post) == 1 {
 				access.Post = strings.Split(access.Post[0], ",")
 			}
-			if len(access.Put) > 0 {
+			if len(access.Put) == 1 {
 				access.Put = strings.Split(access.Put[0], ",")
 			}
-			if len(access.Delete) > 0 {
+			if len(access.Delete) == 1 {
 				access.Delete = strings.Split(access.Delete[0], ",")
 			}
-
 			accessList = append(accessList, access)
 		}
 

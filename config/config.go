@@ -48,6 +48,12 @@ func (c *Config) Load() {
 	c.Access.accessConfigMap = make(map[string]AccessConfig)
 
 	for _, access := range c.AccessList {
+
+		name := access.Alias
+		if name == "" {
+			name = access.Name
+		}
+
 		c.Access.accessConfigMap[access.Alias] = access
 	}
 

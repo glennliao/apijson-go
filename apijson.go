@@ -2,6 +2,7 @@ package apijson
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/query"
@@ -63,5 +64,19 @@ func (a *ApiJson) NewQuery(ctx context.Context, req model.Map) *query.Query {
 	q.DbFieldStyle = a.config.DbFieldStyle
 	q.JsonFieldStyle = a.config.JsonFieldStyle
 
+	q.NoAccessVerify = a.config.Access.NoVerify
+	q.AccessCondition = a.config.Access.ConditionFunc
+
 	return q
+}
+
+func (a *ApiJson) NewAction(ctx context.Context, method string, req model.Map) *action.Action {
+	act := action.New(ctx, method, req, a.config.RequestConfig)
+
+	act.NoAccessVerify = a.config.Access.NoVerify
+	act.DbFieldStyle = a.config.DbFieldStyle
+	act.JsonFieldStyle = a.config.JsonFieldStyle
+	act.Functions = a.config.Functions
+
+	return act
 }
