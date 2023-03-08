@@ -9,15 +9,15 @@ import (
 	"strings"
 )
 
-type refNode struct {
+type RefNode struct {
 	node *Node
 }
 
-func newRefNode(n *Node) *refNode {
-	return &refNode{node: n}
+func newRefNode(n *Node) *RefNode {
+	return &RefNode{node: n}
 }
 
-func (r *refNode) parse() {
+func (r *RefNode) parse() {
 	n := r.node
 
 	refStr := n.simpleReqVal
@@ -46,7 +46,7 @@ func (r *refNode) parse() {
 	}
 }
 
-func (r *refNode) fetch() {
+func (r *RefNode) fetch() {
 	n := r.node
 	for _, refNode := range n.refKeyMap {
 		if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, consts.ListKeySuffix) {
@@ -57,13 +57,13 @@ func (r *refNode) fetch() {
 	}
 }
 
-func (r *refNode) result() {
+func (r *RefNode) result() {
 	n := r.node
 	if strings.HasSuffix(n.simpleReqVal, "[]/total") {
 		n.ret = n.total
 	}
 }
 
-func (r *refNode) nodeType() int {
+func (r *RefNode) nodeType() int {
 	return NodeTypeRef
 }

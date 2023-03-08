@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/glennliao/apijson-go"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/tables"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/table-sync/tablesync"
@@ -25,6 +26,25 @@ type Todo struct {
 	CreatedAt *time.Time
 }
 
+func init() {
+	config.RegAccessListProvider("db", func(ctx context.Context) []config.AccessConfig {
+		return []config.AccessConfig{
+			{
+				Name:   "user",
+				Alias:  "User",
+				Get:    []string{"UNKNOWN"},
+				RowKey: "id",
+			},
+			{
+				Name:   "user",
+				Alias:  "User2",
+				Get:    []string{"UNKNOWN"},
+				RowKey: "id",
+			},
+		}
+	})
+}
+
 func App(ctx context.Context, a *apijson.ApiJson) {
 
 	syncer := tablesync.Syncer{
@@ -43,5 +63,7 @@ func App(ctx context.Context, a *apijson.ApiJson) {
 	}{Handler: func(ctx context.Context, param model.Map) (res any, err error) {
 		return "nihao", nil
 	}})
+
+	a.Config().AccessListProvider = "custom"
 
 }

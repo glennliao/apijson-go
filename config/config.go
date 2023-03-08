@@ -1,5 +1,31 @@
 package config
 
+import "context"
+
+type AccessListProvider func(ctx context.Context) []AccessConfig
+
+var accessListProviderMap = make(map[string]AccessListProvider)
+
+func RegAccessListProvider(name string, provider AccessListProvider) {
+	accessListProviderMap[name] = provider
+}
+
+type RequestListProvider func(ctx context.Context) []Request
+
+var requestListProviderMap = make(map[string]RequestListProvider)
+
+func RegRequestListProvider(name string, provider RequestListProvider) {
+	requestListProviderMap[name] = provider
+}
+
+type DbMetaProvider func(ctx context.Context) []Table
+
+var dbMetaProviderMap = make(map[string]DbMetaProvider)
+
+func RegDbMetaProvider(name string, provider DbMetaProvider) {
+	dbMetaProviderMap[name] = provider
+}
+
 type Config struct {
 	Access *Access
 
@@ -18,7 +44,11 @@ type Config struct {
 
 	DbMeta *DBMeta
 
-	AccessList []AccessConfig // todo to access
+	AccessListProvider  string
+	RequestListProvider string
+	DbMetaProvider      string
+
+	accessList []AccessConfig // todo to access
 
 	RequestConfig *RequestConfig
 
@@ -28,6 +58,9 @@ type Config struct {
 func New() *Config {
 	a := &Config{}
 	a.Access = NewAccess()
+	a.AccessListProvider = "db"
+	a.RequestListProvider = "db"
+	a.DbMetaProvider = "db"
 
 	a.MaxTreeWidth = 5
 	a.MaxTreeDeep = 5
@@ -47,14 +80,30 @@ func (c *Config) Load() {
 
 	c.Access.accessConfigMap = make(map[string]AccessConfig)
 
-	for _, access := range c.AccessList {
+	ctx := context.Background()
 
-		name := access.Alias
-		if name == "" {
-			name = access.Name
+	accessListProvider := accessListProviderMap[c.AccessListProvider]
+
+	if accessListProvider != nil {
+		c.accessList = accessListProvider(ctx)
+		for _, access := range c.accessList {
+			name := access.Alias
+			if name == "" {
+				name = access.Name
+			}
+			c.Access.accessConfigMap[access.Alias] = access
 		}
+	}
 
-		c.Access.accessConfigMap[access.Alias] = access
+	requestListProvider := requestListProviderMap[c.RequestListProvider]
+	if requestListProvider != nil {
+		requestList := requestListProvider(ctx)
+		c.RequestConfig = NewRequestConfig(requestList)
+	}
+
+	dbMetaProvider := dbMetaProviderMap[c.DbMetaProvider]
+	if dbMetaProvider != nil {
+		c.DbMeta = NewDbMeta(dbMetaProvider(ctx))
 	}
 
 	c.queryConfig = &QueryConfig{

@@ -25,11 +25,11 @@ func (h *funcNode) fetch() {
 	functionName, paramKeys := util.ParseFunctionsStr(n.simpleReqVal)
 	//n.simpleReqVal = functionName
 	// todo 如何传递参数
+
 	param := model.Map{}
 	for _, key := range paramKeys {
 		param[key] = n.queryContext.pathNodes[key].simpleReqVal
 	}
-
 	n.ret, n.err = n.queryContext.Functions.Call(n.ctx, functionName, param)
 }
 
