@@ -2,8 +2,8 @@ package query
 
 import (
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gset"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -25,10 +25,10 @@ func parseTableKey(k string, p string) (tableName string) {
 }
 
 // parseQueryNodeReq 解析节点请求内容
-func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.Map, ctrlMap g.Map) {
-	refMap = g.MapStrStr{}
-	ctrlMap = g.Map{}
-	where = g.Map{}
+func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, where model.MapStrAny, ctrlMap model.Map) {
+	refMap = model.MapStrStr{}
+	ctrlMap = model.Map{}
+	where = model.MapStrAny{}
 	for k, v := range reqMap {
 
 		if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
@@ -54,30 +54,36 @@ func parseQueryNodeReq(reqMap g.Map, isList bool) (refMap g.MapStrStr, where g.M
 	return
 }
 
-func hasAccess(node *Node, table string) (hasAccess bool, accessWhere g.Map, err error) {
-	accessRoles, tableName, err := db.GetAccessRole(table, http.MethodGet)
+func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err error) {
+	accessRoles := node.executorConfig.AccessRoles()
 	if err != nil {
 		return false, nil, err
 	}
 
 	if !lo.Contains(accessRoles, node.role) {
-		g.Log().Debug(node.ctx, table, "role:", node.role, "accessRole", accessRoles, " -> deny")
+		g.Log().Debug(node.ctx, node.Key, "role:", node.role, "accessRole", accessRoles, " -> deny")
 		return false, nil, err
 	}
 
-	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.AccessConditionReq{
-		Table:               tableName,
+	condition = config.NewConditionRet()
+
+	accessName := node.Key
+	if strings.HasSuffix(accessName, "[]") { // todo 统一处理
+		accessName = accessName[0 : len(accessName)-2]
+	}
+	err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
+		AccessName:          accessName,
 		TableAccessRoleList: accessRoles,
 		Method:              http.MethodGet,
 		NodeReq:             node.req,
 		NodeRole:            node.role,
-	})
+	}, condition)
 
-	return true, accessWhere, err
+	return true, condition, err
 
 }
 
-func getColList(list []g.Map, col string) []any {
+func getColList(list []model.Map, col string) []any {
 
 	set := gset.New()
 	for _, item := range list {
@@ -106,14 +112,14 @@ func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 		}
 	} else {
 		if ok {
-			node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
-				Table:    tableName,
-				NodeRole: gconv.String(role),
+			node.role, _ = node.queryContext.queryConfig.DefaultRoleFunc()(node.ctx, config.RoleReq{
+				AccessName: tableName,
+				NodeRole:   gconv.String(role),
 			})
 		} else {
-			node.role, _ = config.DefaultRoleFunc(node.ctx, config.RoleReq{
-				Table:    tableName,
-				NodeRole: parenNodeRole,
+			node.role, _ = node.queryContext.queryConfig.DefaultRoleFunc()(node.ctx, config.RoleReq{
+				AccessName: tableName,
+				NodeRole:   parenNodeRole,
 			})
 		}
 	}

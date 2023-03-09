@@ -1,11 +1,11 @@
-package gf_orm
+package executor_goframe
 
 import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/db"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
@@ -22,7 +22,7 @@ type SqlExecutor struct {
 
 	//保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
 	Where           [][]any
-	accessCondition g.Map
+	accessCondition model.Map
 
 	Columns []string
 	Order   string
@@ -31,29 +31,25 @@ type SqlExecutor struct {
 	// 是否最终为空结果, 用于node中中断数据获取
 	WithEmptyResult bool
 
-	accessVerify bool
-
-	access *db.Access
+	config *config.ExecutorConfig
 }
 
-func New(ctx context.Context, accessVerify bool, role string, access *db.Access) (executor.QueryExecutor, error) {
+func New(ctx context.Context, config *config.ExecutorConfig) (executor.QueryExecutor, error) {
 
 	return &SqlExecutor{
 		ctx:             ctx,
-		Role:            role,
 		Where:           [][]any{},
 		Columns:         nil,
 		Order:           "",
 		Group:           "",
 		WithEmptyResult: false,
-		accessVerify:    accessVerify,
-		access:          access,
+		config:          config,
 	}, nil
 }
 
 // ParseCondition 解析查询条件
 // accessVerify 内部调用时, 不校验是否可使用该种查询方式
-func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) error {
+func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bool) error {
 
 	for key, condition := range conditions {
 		switch {
@@ -66,8 +62,8 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 		case strings.HasSuffix(key, consts.OpRegexp):
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
 
-		case key == "@raw" && !accessVerify:
-			e.accessCondition = condition.(g.Map)
+		case key == consts.Raw && !accessVerify:
+			e.accessCondition = condition.(map[string]any)
 
 		default:
 			e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})
@@ -78,15 +74,15 @@ func (e *SqlExecutor) ParseCondition(conditions g.MapStrAny, accessVerify bool) 
 		return nil
 	}
 
-	if !e.accessVerify { // 可任意字段搜索
+	if e.config.NoVerify { // 可任意字段搜索
 		return nil
 	}
 
-	inFieldsMap := e.access.GetFieldsGetInByRole(e.Role)
+	inFieldsMap := e.config.GetFieldsGetInByRole()
 
-	dbStyle := config.GetDbFieldStyle()
+	dbStyle := e.config.DbFieldStyle
 
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 
 	for _, where := range e.Where {
 		k := dbStyle(e.ctx, tableName, where[0].(string))
@@ -163,10 +159,10 @@ func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 
 // ParseCtrl 解析 @column,@group等控制类
-func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
+func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 
-	fieldStyle := config.GetDbFieldStyle()
-	tableName := e.access.Name
+	fieldStyle := e.config.DbFieldStyle
+	tableName := e.config.TableName()
 	for k, v := range ctrl {
 		// 使用;分割字段
 		fieldStr := strings.ReplaceAll(gconv.String(v), ";", ",")
@@ -200,7 +196,7 @@ func (e *SqlExecutor) ParseCtrl(ctrl g.Map) error {
 }
 
 func (e *SqlExecutor) build() *gdb.Model {
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 	m := g.DB().Model(tableName).Ctx(e.ctx)
 
 	if e.Order != "" {
@@ -209,7 +205,7 @@ func (e *SqlExecutor) build() *gdb.Model {
 
 	whereBuild := m.Builder()
 
-	fieldStyle := config.GetDbFieldStyle()
+	fieldStyle := e.config.DbFieldStyle
 
 	for _, whereItem := range e.Where {
 		key := fieldStyle(e.ctx, tableName, whereItem[0].(string))
@@ -269,22 +265,22 @@ func (e *SqlExecutor) build() *gdb.Model {
 
 func (e *SqlExecutor) column() []string {
 
-	outFields := e.access.GetFieldsGetOutByRole(e.Role)
+	outFields := e.config.GetFieldsGetOutByRole()
 
-	tableName := e.access.Name
+	tableName := e.config.TableName()
 
 	var columns []string
 
 	if e.Columns != nil {
 		columns = e.Columns
 	} else {
-		columns = db.GetTableColumns(tableName)
+		columns = e.config.TableColumns()
 	}
 
 	var fields = make([]string, 0, len(columns))
 
-	fieldStyle := config.GetJsonFieldStyle()
-	dbStyle := config.GetDbFieldStyle()
+	fieldStyle := e.config.JsonFieldStyle
+	dbStyle := e.config.DbFieldStyle
 
 	for _, column := range columns {
 		fieldName := column
@@ -301,7 +297,7 @@ func (e *SqlExecutor) column() []string {
 		}
 
 		// 过滤可访问字段
-		if !e.accessVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
+		if e.config.NoVerify || lo.Contains(outFields, dbStyle(e.ctx, tableName, fieldName)) ||
 			len(outFields) == 0 /* 数据库中未设置, 则看成全部可访问 */ {
 			fields = append(fields, column)
 		}
@@ -310,26 +306,30 @@ func (e *SqlExecutor) column() []string {
 	return fields
 }
 
-func (e *SqlExecutor) EmptyResult() {
+func (e *SqlExecutor) SetEmptyResult() {
 	e.WithEmptyResult = true
 }
 
-func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, total int64, err error) {
+func (e *SqlExecutor) Count() (total int64, err error) {
+	m := e.build()
+	_total, err := m.Count()
+	if err != nil || _total == 0 {
+		return 0, err
+	} else {
+		total = int64(_total)
+	}
+
+	return total, nil
+
+}
+
+func (e *SqlExecutor) List(page int, count int) (list []model.Map, err error) {
 
 	if e.WithEmptyResult {
-		return nil, 0, err
+		return nil, err
 	}
 
 	m := e.build()
-
-	if needTotal {
-		_total, err := m.Count()
-		if err != nil || _total == 0 {
-			return nil, 0, err
-		} else {
-			total = int64(_total)
-		}
-	}
 
 	m = m.Fields(e.column())
 
@@ -337,13 +337,17 @@ func (e *SqlExecutor) List(page int, count int, needTotal bool) (list []g.Map, t
 	all, err := m.All()
 
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	return all.List(), total, nil
+	for _, item := range all.List() {
+		list = append(list, item)
+	}
+
+	return list, nil
 }
 
-func (e *SqlExecutor) One() (g.Map, error) {
+func (e *SqlExecutor) One() (model.Map, error) {
 	if e.WithEmptyResult {
 		return nil, nil
 	}
@@ -355,9 +359,4 @@ func (e *SqlExecutor) One() (g.Map, error) {
 	one, err := m.One()
 
 	return one.Map(), err
-}
-
-// init 暂先自动注册,后续改成可手动配置
-func init() {
-	executor.RegQueryExecutor("default", New)
 }

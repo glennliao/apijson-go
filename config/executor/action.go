@@ -2,14 +2,14 @@ package executor
 
 import (
 	"context"
-	"github.com/gogf/gf/v2/frame/g"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/samber/lo"
 )
 
 type ActionExecutor interface {
 	Insert(ctx context.Context, table string, data any) (id int64, count int64, err error)
-	Update(ctx context.Context, table string, data g.Map, where g.Map) (count int64, err error)
-	Delete(ctx context.Context, table string, where g.Map) (count int64, err error)
+	Update(ctx context.Context, table string, data model.Map, where model.Map) (count int64, err error)
+	Delete(ctx context.Context, table string, where model.Map) (count int64, err error)
 }
 
 var actionExecutorMap = map[string]ActionExecutor{}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -16,7 +17,7 @@ type Query struct {
 	ctx context.Context
 
 	// json请求内容
-	req g.Map
+	req model.Map
 	// 节点树根节点
 	rootNode *Node
 
@@ -31,21 +32,39 @@ type Query struct {
 	// 输出过程
 	PrintProcessLog bool
 
-	// 是否权限验证
-	AccessVerify bool
+	// 关闭权限验证 , 默认否
+	NoAccessVerify bool
+
+	queryConfig *config.QueryConfig
+
 	// 自定义可访问权限的限定, 例如添加用户id的where条件
 	AccessCondition config.AccessCondition
+
+	DbMeta *config.DBMeta
+
+	Functions *config.Functions
+
+	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
+	DbFieldStyle config.FieldStyle
+
+	// jsonFieldStyle 数据库返回的字段
+	JsonFieldStyle config.FieldStyle
+
+	//Config *config.Config
 }
 
-func New(ctx context.Context, req g.Map) *Query {
+func New(ctx context.Context, qc *config.QueryConfig, req model.Map) *Query {
 
-	q := &Query{}
+	q := &Query{
+		queryConfig: qc,
+	}
 	q.init(ctx, req)
+	q.NoAccessVerify = qc.NoVerify()
 
 	return q
 }
 
-func (q *Query) init(ctx context.Context, req g.Map) {
+func (q *Query) init(ctx context.Context, req model.Map) {
 
 	q.ctx = ctx
 	q.req = req
@@ -54,7 +73,7 @@ func (q *Query) init(ctx context.Context, req g.Map) {
 	q.pathNodes = make(map[string]*Node)
 }
 
-func (q *Query) Result() (g.Map, error) {
+func (q *Query) Result() (model.Map, error) {
 
 	if q.PrintProcessLog {
 		g.Log().Debugf(q.ctx, "【query】 ============ [begin]")
@@ -99,7 +118,7 @@ func (q *Query) Result() (g.Map, error) {
 			return nil, q.rootNode.err
 		}
 
-		ret := g.Map{}
+		ret := model.Map{}
 		for k, node := range q.rootNode.children {
 			ret[k] = node.err
 		}
@@ -110,7 +129,7 @@ func (q *Query) Result() (g.Map, error) {
 		g.Log().Debugf(q.ctx, "【query】 ^=======================^")
 	}
 
-	return resultMap.(g.Map), err
+	return resultMap.(model.Map), err
 }
 
 func (q *Query) fetch() {

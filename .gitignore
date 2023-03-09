@@ -1,4 +1,3 @@
 .idea
 *.exe
-config.yaml
-test
+*.sqlite3

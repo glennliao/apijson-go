@@ -1,8 +1,8 @@
-package gf_orm
+package executor_goframe
 
 import (
 	"context"
-	"github.com/glennliao/apijson-go/config/executor"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"strings"
@@ -26,7 +26,7 @@ func (a *ActionExecutor) Insert(ctx context.Context, table string, data any) (id
 	return id, count, nil
 }
 
-func (a *ActionExecutor) Update(ctx context.Context, table string, data g.Map, where g.Map) (count int64, err error) {
+func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Map, where model.Map) (count int64, err error) {
 	m := g.DB(a.DbName).Model(table).Ctx(ctx)
 
 	for k, v := range where {
@@ -58,7 +58,7 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data g.Map, w
 	return count, err
 }
 
-func (a *ActionExecutor) Delete(ctx context.Context, table string, where g.Map) (count int64, err error) {
+func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.Map) (count int64, err error) {
 	if len(where) == 0 {
 		return 0, gerror.New("where不能为空")
 	}
@@ -88,9 +88,4 @@ func (a *ActionExecutor) Delete(ctx context.Context, table string, where g.Map) 
 	}
 
 	return count, err
-}
-
-// init 暂先自动注册,后续改成可手动配置
-func init() {
-	executor.RegActionExecutor("default", &ActionExecutor{})
 }

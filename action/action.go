@@ -2,8 +2,9 @@ package action
 
 import (
 	"context"
-	"github.com/glennliao/apijson-go/config/db"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -14,20 +15,36 @@ import (
 // Action 非get查询的request表中的请求
 type Action struct {
 	ctx        context.Context
-	tagRequest *db.Request
+	tagRequest *config.Request
 	method     string
 
-	req g.Map
+	req model.Map
 
 	err error
 
 	children map[string]*Node
 	keyNode  map[string]*Node
+
+	// 关闭 access 权限验证, 默认否
+	NoAccessVerify bool
+	// 关闭 request 验证开关, 默认否
+	NoRequestVerify bool
+
+	//Access *config.Access
+
+	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
+	DbFieldStyle config.FieldStyle
+
+	// jsonFieldStyle 数据库返回的字段
+	JsonFieldStyle config.FieldStyle
+
+	Functions    *config.Functions
+	actionConfig *config.ActionConfig
 }
 
-func New(ctx context.Context, method string, req g.Map) *Action {
+func New(ctx context.Context, actionConfig *config.ActionConfig, method string, req model.Map) *Action {
 
-	request, err := checkTag(req, method)
+	request, err := checkTag(req, method, actionConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -36,12 +53,13 @@ func New(ctx context.Context, method string, req g.Map) *Action {
 	delete(req, "version")
 
 	a := &Action{
-		ctx:        ctx,
-		tagRequest: request,
-		method:     method,
-		req:        req,
-		children:   map[string]*Node{},
-		keyNode:    map[string]*Node{},
+		ctx:          ctx,
+		tagRequest:   request,
+		method:       method,
+		req:          req,
+		children:     map[string]*Node{},
+		keyNode:      map[string]*Node{},
+		actionConfig: actionConfig,
 	}
 	return a
 }
@@ -63,16 +81,19 @@ func (a *Action) parse() error {
 			}
 		}
 
-		var list []g.Map
-		_v, ok := v.(g.Map)
+		var list []model.Map
+		_v, ok := v.(model.Map)
 		if ok { // 将所有node都假设成列表, 如果单个则看成一个元素的批量
-			list = []g.Map{_v}
+			list = []model.Map{_v}
 		} else {
-			list = gconv.SliceMap(v)
+			for _, m := range gconv.Maps(v) {
+				list = append(list, m)
+			}
 		}
 
 		node := newNode(key, list, structure, a.tagRequest.Executor[key])
 		node.ctx = a.ctx
+		node.action = a
 		a.keyNode[key] = &node
 		node.keyNode = a.keyNode
 		err := node.parse(a.ctx, a.method)
@@ -86,18 +107,18 @@ func (a *Action) parse() error {
 	return nil
 }
 
-func (a *Action) Result() (g.Map, error) {
+func (a *Action) Result() (model.Map, error) {
 
 	err := a.parse()
 	if err != nil {
 		return nil, err
 	}
 
-	ret := g.Map{}
+	ret := model.Map{}
 
 	for _, k := range a.tagRequest.ExecQueue {
 		node := a.children[k]
-		err = EmitHook(a.ctx, BeforeExec, node, a.method)
+		err = EmitHook(a.ctx, BeforeNodeExec, node, a.method)
 		if err != nil {
 			return nil, err
 		}
@@ -112,9 +133,8 @@ func (a *Action) Result() (g.Map, error) {
 		}
 	}
 
-	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx *gdb.TX) error {
+	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx gdb.TX) error {
 		for _, k := range a.tagRequest.ExecQueue {
-
 			node := a.children[k]
 			ret[k], err = node.execute(ctx, a.method)
 			if err != nil {
@@ -130,7 +150,7 @@ func (a *Action) Result() (g.Map, error) {
 
 	for _, k := range a.tagRequest.ExecQueue {
 		node := a.children[k]
-		err = EmitHook(a.ctx, AfterExec, node, a.method)
+		err = EmitHook(a.ctx, AfterNodeExec, node, a.method)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +159,7 @@ func (a *Action) Result() (g.Map, error) {
 	return ret, err
 }
 
-func checkTag(req g.Map, method string) (*db.Request, error) {
+func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.Request, error) {
 	_tag, ok := req["tag"]
 	if !ok {
 		return nil, gerror.New("tag 缺失")
@@ -148,7 +168,7 @@ func checkTag(req g.Map, method string) (*db.Request, error) {
 	tag := gconv.String(_tag)
 	version := req["version"]
 
-	request, err := db.GetRequest(tag, method, gconv.String(version))
+	request, err := requestCfg.GetRequest(tag, method, gconv.String(version))
 	if err != nil {
 		return nil, err
 	}

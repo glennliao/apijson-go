@@ -1,0 +1,10 @@
+name: tests
+on:
+  push:
+    branches: [ "main" ,"dev"]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  simple-test:
+    run: cd test && go test -short

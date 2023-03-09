@@ -1,7 +1,6 @@
-package db
+package config
 
 import (
-	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -10,17 +9,14 @@ import (
 	"strings"
 )
 
-var requestMap = map[string]*Request{}
-
 type Request struct {
-	Debug       int8
-	Version     int16
-	Method      string
-	Tag         string
-	StructureDb map[string]any        `orm:"structure"`
-	Structure   map[string]*Structure `orm:"-"`
-	Detail      string
-	CreatedAt   *gtime.Time
+	Debug     int8
+	Version   string
+	Method    string
+	Tag       string
+	Structure map[string]*Structure
+	Detail    string
+	CreatedAt *gtime.Time
 	// 节点执行顺序
 	ExecQueue []string
 	Executor  map[string]string
@@ -42,32 +38,35 @@ type Structure struct {
 	Remove []string `json:"REMOVE,omitempty"`
 }
 
-func loadRequestMap() {
-	_requestMap := make(map[string]*Request)
+type RequestConfig struct {
+	requestMap map[string]*Request
+}
 
-	var requestList []Request
-	err := g.DB().Model(config.TableRequest).OrderAsc("version").Scan(&requestList)
-	if err != nil {
-		panic(err)
-	}
+func NewRequestConfig(requestList []Request) *RequestConfig {
+	c := RequestConfig{}
+	requestMap := make(map[string]*Request)
 
 	for _, _item := range requestList {
 		item := _item
 		tag, _ := getTag(item.Tag)
 
-		if strings.ToLower(tag) != tag {
-			// 本身大写, 如果没有外层, 则套一层
-			if _, ok := item.StructureDb[tag]; !ok {
-				item.StructureDb = map[string]any{
-					tag: item.StructureDb,
-				}
-			}
+		if item.Structure == nil {
+			item.Structure = make(map[string]*Structure)
 		}
 
-		item.Structure = make(map[string]*Structure)
-		for k, v := range item.StructureDb {
+		// provider处理
+		//if strings.ToLower(tag) != tag {
+		//	// 本身大写, 如果没有外层, 则套一层
+		//	if _, ok := item.Structure[tag]; !ok {
+		//		item.Structure = map[string]any{
+		//			tag: item.Structure,
+		//		}
+		//	}
+		//}
+
+		for k, v := range item.Structure {
 			structure := Structure{}
-			err = gconv.Scan(v, &structure)
+			err := gconv.Scan(v, &structure)
 			if err != nil {
 				panic(err)
 			}
@@ -82,18 +81,20 @@ func loadRequestMap() {
 			item.Structure[k] = &structure
 		}
 
-		if item.ExecQueue != nil {
-			item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
+		if len(item.ExecQueue) > 0 {
+			// todo db provider处理
+			//item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
 		} else {
 			item.ExecQueue = []string{tag}
 		}
 
-		_requestMap[getRequestFullKey(item.Tag, item.Method, gconv.String(item.Version))] = &item
+		requestMap[getRequestFullKey(item.Tag, item.Method, gconv.String(item.Version))] = &item
 		//  获取时version排序,所以此处最后一个为最新
-		_requestMap[getRequestFullKey(item.Tag, item.Method, "latest")] = &item
+		requestMap[getRequestFullKey(item.Tag, item.Method, "latest")] = &item
 	}
 
-	requestMap = _requestMap
+	c.requestMap = requestMap
+	return &c
 }
 
 func getTag(tag string) (name string, isList bool) {
@@ -111,14 +112,14 @@ func getRequestFullKey(tag string, method string, version string) string {
 	return tag + "@" + method + "@" + version
 }
 
-func GetRequest(tag string, method string, version string) (*Request, error) {
+func (c *RequestConfig) GetRequest(tag string, method string, version string) (*Request, error) {
 
 	if version == "" || version == "-1" || version == "0" {
 		version = "latest"
 	}
 
 	key := getRequestFullKey(tag, method, version)
-	request, ok := requestMap[key]
+	request, ok := c.requestMap[key]
 
 	if !ok {
 		return nil, gerror.Newf("request[%s]: 404", key)

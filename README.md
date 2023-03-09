@@ -1,9 +1,9 @@
-# apijson-go [下水阶段]
+# apijson-go [摸石头阶段]
 基于 go + goframe 实现的 apijson
 
 > ~~暂仍处于前期开发探索中, 请仅使用在 个人探索项目~~
-
-> 目前处于 【下水阶段】, 欢迎测试、issue、建议、pr
+> ~~目前处于 【下水阶段】, 欢迎测试、issue、建议、pr~~
+> 目前处于 【摸石头阶段】, 欢迎测试、issue、建议、pr, 请勿使用在非个人的线上项目
 
 [RoadMap 阶段规划](./@doc/roadmap.md)
 
