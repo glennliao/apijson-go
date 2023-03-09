@@ -6,7 +6,7 @@ import (
 )
 
 type ActionConfig struct {
-	requestConfig    RequestConfig
+	requestConfig    *RequestConfig
 	access           *Access
 	functions        *Functions
 	rowKeyGenFuncMap map[string]RowKeyGenFuncHandler
@@ -31,6 +31,10 @@ func (c *ActionConfig) CallFunc(ctx context.Context, name string, param model.Ma
 
 func (c *ActionConfig) GetRequest(tag string, method string, version string) (*Request, error) {
 	return c.requestConfig.GetRequest(tag, method, version)
+}
+
+func (c *ActionConfig) ConditionFunc(ctx context.Context, req ConditionReq, condition *ConditionRet) error {
+	return c.access.ConditionFunc(ctx, req, condition)
 }
 
 func (c *ActionConfig) RowKeyGen(ctx context.Context, genFuncName string, accessName string, data model.Map) (model.Map, error) {

@@ -123,6 +123,10 @@ func (h *structNode) result() {
 		}
 
 		n.ret = retList
+
+		if len(n.ret.([]model.Map)) == 0 {
+			n.ret = []model.Map{}
+		}
 	} else {
 
 		retMap := model.Map{}

@@ -30,7 +30,7 @@ type Node struct {
 
 	keyNode map[string]*Node
 
-	access *config.Access
+	//access *config.Access
 }
 
 func newNode(key string, req []model.Map, structure *config.Structure, executor string) Node {
@@ -80,7 +80,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
 		key = key[0 : len(key)-2]
 	}
-	access, err := n.access.GetAccess(key, true)
+	access, err := n.action.actionConfig.GetAccessConfig(key, true)
 
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 
 	// todo 可配置单次的内容, 而非直接使用整个的
 
-	role, err := n.action.Access.DefaultRoleFunc(ctx, config.RoleReq{
+	role, err := n.action.actionConfig.DefaultRoleFunc()(ctx, config.RoleReq{
 		AccessName: n.TableName,
 		Method:     method,
 		NodeRole:   n.Role,
@@ -177,7 +177,7 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 			NodeReq:             item,
 		}
 
-		err := n.action.Access.ConditionFunc(ctx, conditionReq, condition)
+		err := n.action.actionConfig.ConditionFunc(ctx, conditionReq, condition)
 
 		if err != nil {
 			return err
@@ -306,7 +306,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 
 		var rowKeyVal model.Map
 
-		access, err := n.access.GetAccess(n.Key, true)
+		access, err := n.action.actionConfig.GetAccessConfig(n.Key, true)
 		if err != nil {
 			return nil, err
 		}

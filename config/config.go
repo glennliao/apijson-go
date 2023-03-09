@@ -114,6 +114,14 @@ func (c *Config) ReLoad() {
 		maxTreeWidth:    c.MaxTreeWidth,
 		defaultRoleFunc: c.Access.DefaultRoleFunc,
 	}
+
+	c.actionConfig = &ActionConfig{
+		requestConfig:    c.requestConfig,
+		access:           c.Access,
+		functions:        c.Functions,
+		rowKeyGenFuncMap: c.rowKeyGenFuncMap,
+		defaultRoleFunc:  c.Access.DefaultRoleFunc,
+	}
 }
 
 func (c *Config) QueryConfig() *QueryConfig {

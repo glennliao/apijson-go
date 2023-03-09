@@ -30,7 +30,7 @@ type Action struct {
 	// 关闭 request 验证开关, 默认否
 	NoRequestVerify bool
 
-	Access *config.Access
+	//Access *config.Access
 
 	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
 	DbFieldStyle config.FieldStyle

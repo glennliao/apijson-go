@@ -10,14 +10,13 @@ import (
 )
 
 type Request struct {
-	Debug       int8
-	Version     string
-	Method      string
-	Tag         string
-	StructureDb map[string]any        `orm:"structure"`
-	Structure   map[string]*Structure `orm:"-"`
-	Detail      string
-	CreatedAt   *gtime.Time
+	Debug     int8
+	Version   string
+	Method    string
+	Tag       string
+	Structure map[string]*Structure
+	Detail    string
+	CreatedAt *gtime.Time
 	// 节点执行顺序
 	ExecQueue []string
 	Executor  map[string]string
@@ -51,35 +50,40 @@ func NewRequestConfig(requestList []Request) *RequestConfig {
 		item := _item
 		tag, _ := getTag(item.Tag)
 
-		if strings.ToLower(tag) != tag {
-			// 本身大写, 如果没有外层, 则套一层
-			if _, ok := item.StructureDb[tag]; !ok {
-				item.StructureDb = map[string]any{
-					tag: item.StructureDb,
-				}
-			}
+		if item.Structure == nil {
+			item.Structure = make(map[string]*Structure)
 		}
 
-		item.Structure = make(map[string]*Structure)
-		//for k, v := range item.StructureDb {
-		//	structure := Structure{}
-		//	err := gconv.Scan(v, &structure)
-		//	if err != nil {
-		//		panic(err)
+		// provider处理
+		//if strings.ToLower(tag) != tag {
+		//	// 本身大写, 如果没有外层, 则套一层
+		//	if _, ok := item.Structure[tag]; !ok {
+		//		item.Structure = map[string]any{
+		//			tag: item.Structure,
+		//		}
 		//	}
-		//
-		//	if structure.Must != nil {
-		//		structure.Must = strings.Split(structure.Must[0], ",")
-		//	}
-		//	if structure.Refuse != nil {
-		//		structure.Refuse = strings.Split(structure.Refuse[0], ",")
-		//	}
-		//
-		//	item.Structure[k] = &structure
 		//}
 
+		for k, v := range item.Structure {
+			structure := Structure{}
+			err := gconv.Scan(v, &structure)
+			if err != nil {
+				panic(err)
+			}
+
+			if structure.Must != nil {
+				structure.Must = strings.Split(structure.Must[0], ",")
+			}
+			if structure.Refuse != nil {
+				structure.Refuse = strings.Split(structure.Refuse[0], ",")
+			}
+
+			item.Structure[k] = &structure
+		}
+
 		if len(item.ExecQueue) > 0 {
-			item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
+			// todo db provider处理
+			//item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
 		} else {
 			item.ExecQueue = []string{tag}
 		}

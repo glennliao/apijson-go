@@ -102,6 +102,10 @@ func (gf *GF) commonResponse(handler func(ctx context.Context, req model.Map) (r
 				}
 			}
 
+			if err != nil {
+				panic(err)
+			}
+
 		})
 
 		if err != nil {
