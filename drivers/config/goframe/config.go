@@ -7,14 +7,21 @@ import (
 	"strings"
 )
 
+// 设置 _access/_request 自定义表名
+var (
+	TableAccess  = "_access"
+	TableRequest = "_request"
+	ProviderName = "db"
+)
+
 func init() {
-	config.RegAccessListProvider("db", func(ctx context.Context) []config.AccessConfig {
+	config.RegAccessListProvider(ProviderName, func(ctx context.Context) []config.AccessConfig {
 		// access
 		var accessList []config.AccessConfig
 
 		db := g.DB()
 
-		err := db.Model("_access").Scan(&accessList)
+		err := db.Model(TableAccess).Scan(&accessList)
 		if err != nil {
 			panic(err)
 		}
@@ -47,16 +54,16 @@ func init() {
 		return accessList
 	})
 
-	config.RegRequestListProvider("db", func(ctx context.Context) []config.Request {
+	config.RegRequestListProvider(ProviderName, func(ctx context.Context) []config.Request {
 		var requestList []config.Request
-		err := g.DB().Model("_request").OrderAsc("version").Scan(&requestList)
+		err := g.DB().Model(TableRequest).OrderAsc("version").Scan(&requestList)
 		if err != nil {
 			panic(err)
 		}
 		return requestList
 	})
 
-	config.RegDbMetaProvider("db", func(ctx context.Context) []config.Table {
+	config.RegDbMetaProvider(ProviderName, func(ctx context.Context) []config.Table {
 		var _tables []config.Table
 
 		db := g.DB()

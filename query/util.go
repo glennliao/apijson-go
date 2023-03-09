@@ -54,7 +54,7 @@ func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, w
 	return
 }
 
-func hasAccess(node *Node) (hasAccess bool, accessWhere *config.ConditionRet, err error) {
+func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err error) {
 	accessRoles := node.executorConfig.AccessRoles()
 	if err != nil {
 		return false, nil, err
@@ -65,15 +65,21 @@ func hasAccess(node *Node) (hasAccess bool, accessWhere *config.ConditionRet, er
 		return false, nil, err
 	}
 
-	accessWhere, err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
-		AccessName:          node.Key,
+	condition = config.NewConditionRet()
+
+	accessName := node.Key
+	if strings.HasSuffix(accessName, "[]") { // todo 统一处理
+		accessName = accessName[0 : len(accessName)-2]
+	}
+	err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
+		AccessName:          accessName,
 		TableAccessRoleList: accessRoles,
 		Method:              http.MethodGet,
 		NodeReq:             node.req,
 		NodeRole:            node.role,
-	})
+	}, condition)
 
-	return true, accessWhere, err
+	return true, condition, err
 
 }
 

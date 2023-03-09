@@ -50,9 +50,10 @@ type Config struct {
 
 	accessList []AccessConfig // todo to access
 
-	RequestConfig *RequestConfig
+	requestConfig *RequestConfig
 
-	queryConfig *QueryConfig
+	queryConfig  *QueryConfig
+	actionConfig *ActionConfig
 }
 
 func New() *Config {
@@ -76,7 +77,7 @@ func New() *Config {
 	return a
 }
 
-func (c *Config) Load() {
+func (c *Config) ReLoad() {
 
 	c.Access.accessConfigMap = make(map[string]AccessConfig)
 
@@ -98,7 +99,7 @@ func (c *Config) Load() {
 	requestListProvider := requestListProviderMap[c.RequestListProvider]
 	if requestListProvider != nil {
 		requestList := requestListProvider(ctx)
-		c.RequestConfig = NewRequestConfig(requestList)
+		c.requestConfig = NewRequestConfig(requestList)
 	}
 
 	dbMetaProvider := dbMetaProviderMap[c.DbMetaProvider]
@@ -117,4 +118,8 @@ func (c *Config) Load() {
 
 func (c *Config) QueryConfig() *QueryConfig {
 	return c.queryConfig
+}
+
+func (c *Config) ActionConfig() *ActionConfig {
+	return c.actionConfig
 }

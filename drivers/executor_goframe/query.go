@@ -63,7 +63,7 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
 
 		case key == consts.Raw && !accessVerify:
-			e.accessCondition = condition.(model.Map)
+			e.accessCondition = condition.(map[string]any)
 
 		default:
 			e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})

@@ -38,12 +38,13 @@ type Action struct {
 	// jsonFieldStyle 数据库返回的字段
 	JsonFieldStyle config.FieldStyle
 
-	Functions *config.Functions
+	Functions    *config.Functions
+	actionConfig *config.ActionConfig
 }
 
-func New(ctx context.Context, method string, req model.Map, requestCfg *config.RequestConfig) *Action {
+func New(ctx context.Context, actionConfig *config.ActionConfig, method string, req model.Map) *Action {
 
-	request, err := checkTag(req, method, requestCfg)
+	request, err := checkTag(req, method, actionConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -52,12 +53,13 @@ func New(ctx context.Context, method string, req model.Map, requestCfg *config.R
 	delete(req, "version")
 
 	a := &Action{
-		ctx:        ctx,
-		tagRequest: request,
-		method:     method,
-		req:        req,
-		children:   map[string]*Node{},
-		keyNode:    map[string]*Node{},
+		ctx:          ctx,
+		tagRequest:   request,
+		method:       method,
+		req:          req,
+		children:     map[string]*Node{},
+		keyNode:      map[string]*Node{},
+		actionConfig: actionConfig,
 	}
 	return a
 }
@@ -157,7 +159,7 @@ func (a *Action) Result() (model.Map, error) {
 	return ret, err
 }
 
-func checkTag(req model.Map, method string, requestCfg *config.RequestConfig) (*config.Request, error) {
+func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.Request, error) {
 	_tag, ok := req["tag"]
 	if !ok {
 		return nil, gerror.New("tag 缺失")

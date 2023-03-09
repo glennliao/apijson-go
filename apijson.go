@@ -49,7 +49,7 @@ func (a *ApiJson) Use(p ...func(ctx context.Context, a *ApiJson)) *ApiJson {
 }
 
 func (a *ApiJson) Load() {
-	a.config.Load()
+	a.config.ReLoad()
 }
 
 func (a *ApiJson) Config() *config.Config {
@@ -71,7 +71,7 @@ func (a *ApiJson) NewQuery(ctx context.Context, req model.Map) *query.Query {
 }
 
 func (a *ApiJson) NewAction(ctx context.Context, method string, req model.Map) *action.Action {
-	act := action.New(ctx, method, req, a.config.RequestConfig)
+	act := action.New(ctx, a.Config().ActionConfig(), method, req)
 
 	act.NoAccessVerify = a.config.Access.NoVerify
 	act.DbFieldStyle = a.config.DbFieldStyle

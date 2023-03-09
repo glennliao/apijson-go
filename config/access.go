@@ -7,13 +7,6 @@ import (
 	"github.com/samber/lo"
 )
 
-// 设置 _access/_request 自定义表名
-// todo
-var (
-	TableAccess  = "_access"
-	TableRequest = "_request"
-)
-
 type ConditionReq struct {
 	AccessName          string // _access 中的alias
 	TableAccessRoleList []string
@@ -23,18 +16,32 @@ type ConditionReq struct {
 }
 
 type ConditionRet struct {
-	condition map[string]any
+	condition    map[string]any
+	rawCondition map[string]any
+}
+
+func NewConditionRet() *ConditionRet {
+	c := ConditionRet{
+		condition:    map[string]any{},
+		rawCondition: map[string]any{},
+	}
+	return &c
 }
 
 func (c *ConditionRet) Add(k string, v any) { // todo any?
 	c.condition[k] = v
 }
 
+func (c *ConditionRet) AddRaw(k string, v any) { // todo any?
+	c.rawCondition[k] = v
+}
+
 func (c *ConditionRet) Where() map[string]any {
+	c.condition[consts.Raw] = c.rawCondition
 	return c.condition
 }
 
-type AccessCondition func(ctx context.Context, req ConditionReq) (*ConditionRet, error)
+type AccessCondition func(ctx context.Context, req ConditionReq, condition *ConditionRet) error
 
 type RoleReq struct {
 	AccessName string
@@ -48,8 +55,8 @@ func defaultRole(ctx context.Context, req RoleReq) (string, error) {
 	return consts.UNKNOWN, nil
 }
 
-func defaultCondition(ctx context.Context, req ConditionReq) (*ConditionRet, error) {
-	return &ConditionRet{}, nil
+func defaultCondition(ctx context.Context, req ConditionReq, condition *ConditionRet) error {
+	return nil
 }
 
 type Access struct {

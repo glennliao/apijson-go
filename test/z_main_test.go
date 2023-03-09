@@ -22,6 +22,9 @@ func init() {
 
 // notice: import section
 func TestServer(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 	s := framework_goframe.New(a)
 	s.Run()
 	// then test in test.http

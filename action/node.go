@@ -166,24 +166,29 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 	}
 
 	for i, item := range n.req {
-		where, err := n.action.Access.ConditionFunc(ctx, config.ConditionReq{
+
+		condition := config.NewConditionRet()
+
+		conditionReq := config.ConditionReq{
 			AccessName:          n.TableName,
 			TableAccessRoleList: accessRoles,
 			Method:              method,
 			NodeRole:            n.Role,
 			NodeReq:             item,
-		})
+		}
+
+		err := n.action.Access.ConditionFunc(ctx, conditionReq, condition)
 
 		if err != nil {
 			return err
 		}
 
 		if method == http.MethodPost {
-			for k, v := range where.Where() {
+			for k, v := range condition.Where() {
 				n.Data[i][k] = v
 			}
 		} else {
-			for k, v := range where.Where() {
+			for k, v := range condition.Where() {
 				n.Where[i][k] = v
 			}
 		}
@@ -306,24 +311,24 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 			return nil, err
 		}
 
-		//if access.RowKeyGen != "" {
-		//	for i, _ := range n.Data {
-		//
-		//		rowKeyVal, err = config.RowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
-		//		if err != nil {
-		//			return nil, err
-		//		}
-		//
-		//		for k, v := range rowKeyVal {
-		//			if k == consts.RowKey {
-		//				n.Data[i][access.RowKey] = v
-		//			} else {
-		//				n.Data[i][k] = v
-		//			}
-		//		}
-		//
-		//	}
-		//}
+		if access.RowKeyGen != "" {
+			for i, _ := range n.Data {
+
+				rowKeyVal, err = n.action.actionConfig.RowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
+				if err != nil {
+					return nil, err
+				}
+
+				for k, v := range rowKeyVal {
+					if k == consts.RowKey {
+						n.Data[i][access.RowKey] = v
+					} else {
+						n.Data[i][k] = v
+					}
+				}
+
+			}
+		}
 
 		var id int64
 

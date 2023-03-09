@@ -36,12 +36,6 @@ func (q *queryNode) parse() {
 	n.executorConfig.JsonFieldStyle = n.queryContext.JsonFieldStyle
 	n.executorConfig.DBMeta = n.queryContext.DbMeta
 
-	//access, err := n.queryContext.Access.GetAccess(tableKey, n.queryContext.NoAccessVerify)
-	//if err != nil {
-	//	n.err = err
-	//	return
-	//}
-
 	var accessWhereCondition model.MapStrAny
 
 	setNodeRole(n, n.Key, n.role)
