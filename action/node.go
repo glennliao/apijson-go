@@ -14,12 +14,13 @@ import (
 )
 
 type Node struct {
-	req       []model.Map
-	ctx       context.Context
-	action    *Action
-	Key       string
-	TableName string
-	Role      string
+	req        []model.Map
+	ctx        context.Context
+	action     *Action
+	Key        string
+	tableName  string
+	AccessName string
+	Role       string
 
 	Data   []model.Map // 需写入数据库的数据
 	Where  []model.Map // 条件
@@ -34,8 +35,14 @@ type Node struct {
 }
 
 func newNode(key string, req []model.Map, structure *config.Structure, executor string) Node {
+
+	accessName := key
+	if strings.HasSuffix(accessName, "[]") {
+		accessName = accessName[0 : len(accessName)-2]
+	}
+
 	return Node{
-		Key: key, req: req, structure: structure, executor: executor,
+		Key: key, req: req, structure: structure, executor: executor, AccessName: accessName,
 	}
 }
 
@@ -52,7 +59,7 @@ func (n *Node) parseReq(method string) {
 			if key == consts.Role {
 				n.Role = util.String(val)
 			} else {
-				key = n.action.DbFieldStyle(n.ctx, n.TableName, key)
+				key = n.action.DbFieldStyle(n.ctx, n.tableName, key)
 
 				if method == http.MethodDelete {
 					n.Where[i][key] = val
@@ -63,7 +70,6 @@ func (n *Node) parseReq(method string) {
 						} else {
 							n.Data[i][key] = val
 						}
-						// Post 暂原则上不让传递这个rowKey值  // todo  可传递
 					} else {
 						n.Data[i][key] = val
 					}
@@ -86,7 +92,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 		return err
 	}
 
-	n.TableName = access.Name
+	n.tableName = access.Name
 	n.RowKey = access.RowKey
 
 	n.parseReq(method)
@@ -143,10 +149,8 @@ func (n *Node) roleUpdate() error {
 
 func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []string) error {
 
-	// todo 可配置单次的内容, 而非直接使用整个的
-
 	role, err := n.action.actionConfig.DefaultRoleFunc()(ctx, config.RoleReq{
-		AccessName: n.TableName,
+		AccessName: n.tableName,
 		Method:     method,
 		NodeRole:   n.Role,
 	})
@@ -170,7 +174,7 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 		condition := config.NewConditionRet()
 
 		conditionReq := config.ConditionReq{
-			AccessName:          n.TableName,
+			AccessName:          n.tableName,
 			TableAccessRoleList: accessRoles,
 			Method:              method,
 			NodeRole:            n.Role,
@@ -281,9 +285,9 @@ func (n *Node) reqUpdateBeforeDo() error {
 			if strings.HasSuffix(k, consts.RefKeySuffix) {
 				refNodeKey, refCol := util.ParseRefCol(v.(string))
 				if strings.HasSuffix(refNodeKey, consts.ListKeySuffix) { // 双列表
-					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][n.action.DbFieldStyle(n.ctx, n.TableName, refCol)]
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][n.action.DbFieldStyle(n.ctx, n.tableName, refCol)]
 				} else {
-					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][n.action.DbFieldStyle(n.ctx, n.TableName, refCol)]
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][n.action.DbFieldStyle(n.ctx, n.tableName, refCol)]
 				}
 			}
 		}
@@ -314,7 +318,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 		if access.RowKeyGen != "" {
 			for i, _ := range n.Data {
 
-				rowKeyVal, err = n.action.actionConfig.RowKeyGen(ctx, access.RowKeyGen, n.TableName, n.Data[i])
+				rowKeyVal, err = n.action.actionConfig.RowKeyGen(ctx, access.RowKeyGen, n.AccessName, n.Data[i])
 				if err != nil {
 					return nil, err
 				}
@@ -332,7 +336,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 
 		var id int64
 
-		id, count, err = executor.GetActionExecutor(n.executor).Insert(ctx, n.TableName, n.Data)
+		id, count, err = executor.GetActionExecutor(n.executor).Insert(ctx, n.tableName, n.Data)
 
 		if err != nil {
 			return nil, err
@@ -350,16 +354,16 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 			if rowKeyVal != nil {
 				for k, v := range rowKeyVal {
 					if k == consts.RowKey {
-						ret[jsonStyle(ctx, n.TableName, access.RowKey)] = v
+						ret[jsonStyle(ctx, n.tableName, access.RowKey)] = v
 					} else {
-						ret[jsonStyle(ctx, n.TableName, k)] = v
+						ret[jsonStyle(ctx, n.tableName, k)] = v
 					}
 				}
 			}
 		}
 
 	case http.MethodPut:
-		count, err = executor.GetActionExecutor(n.executor).Update(ctx, n.TableName, n.Data[dataIndex], n.Where[dataIndex])
+		count, err = executor.GetActionExecutor(n.executor).Update(ctx, n.tableName, n.Data[dataIndex], n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}
@@ -369,7 +373,7 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 			"count": count,
 		}
 	case http.MethodDelete:
-		count, err = executor.GetActionExecutor(n.executor).Delete(ctx, n.TableName, n.Where[dataIndex])
+		count, err = executor.GetActionExecutor(n.executor).Delete(ctx, n.tableName, n.Where[dataIndex])
 		if err != nil {
 			return nil, err
 		}

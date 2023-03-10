@@ -7,4 +7,7 @@ on:
 
 jobs:
   simple-test:
-    run: cd test && go test -short
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: cd test && go test -short

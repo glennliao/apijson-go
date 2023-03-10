@@ -15,7 +15,6 @@ func newFuncNode(n *Node) *funcNode {
 
 func (h *funcNode) parse() {
 	//n := h.node
-	// todo
 	//functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
 	//n.simpleReqVal = functionName
 }

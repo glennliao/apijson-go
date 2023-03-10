@@ -48,12 +48,11 @@ type Config struct {
 	RequestListProvider string
 	DbMetaProvider      string
 
-	accessList []AccessConfig // todo to access
+	accessList []AccessConfig
 
 	requestConfig *RequestConfig
-
-	queryConfig  *QueryConfig
-	actionConfig *ActionConfig
+	queryConfig   *QueryConfig
+	actionConfig  *ActionConfig
 }
 
 func New() *Config {

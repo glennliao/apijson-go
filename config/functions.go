@@ -8,7 +8,6 @@ import (
 )
 
 type Func struct {
-	// todo 调整成结构体
 	Handler func(ctx context.Context, param model.Map) (res any, err error)
 }
 

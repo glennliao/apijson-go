@@ -68,7 +68,7 @@ func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err 
 	condition = config.NewConditionRet()
 
 	accessName := node.Key
-	if strings.HasSuffix(accessName, "[]") { // todo 统一处理
+	if strings.HasSuffix(accessName, "[]") { //  todo 统一处理
 		accessName = accessName[0 : len(accessName)-2]
 	}
 	err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{

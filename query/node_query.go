@@ -23,7 +23,7 @@ func newQueryNode(n *Node) *queryNode {
 
 func (q *queryNode) parse() {
 	n := q.node
-	tableKey := parseTableKey(n.Key, n.Path) // todo
+	tableKey := parseTableKey(n.Key, n.Path)
 
 	accessConfig, err := n.queryContext.queryConfig.GetAccessConfig(tableKey, n.queryContext.NoAccessVerify)
 	if err != nil {
@@ -58,7 +58,7 @@ func (q *queryNode) parse() {
 			return
 		}
 
-		accessWhereCondition = condition.Where() // todo
+		accessWhereCondition = condition.Where()
 	}
 
 	queryExecutor, err := executor.NewQueryExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)

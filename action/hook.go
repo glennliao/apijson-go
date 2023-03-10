@@ -28,7 +28,7 @@ func RegHook(h Hook) {
 
 func EmitHook(ctx context.Context, hookAt int, node *Node, method string) error {
 
-	hooks := append(hooksMap["*"], hooksMap[node.TableName]...)
+	hooks := append(hooksMap["*"], hooksMap[node.AccessName]...)
 	for _, hook := range hooks {
 
 		var handler func(ctx context.Context, n *Node, method string) error

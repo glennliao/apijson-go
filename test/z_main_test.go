@@ -72,23 +72,24 @@ func BenchmarkName(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
 		q := a.NewQuery(ctx, model.Map{
-			"User": model.Map{
-				//"id":      "123",
-				//"id{}":    []string{"123", "456"},
-				//"id>":     "222",
-				//"@column": "id",
-			},
-			"User[]": model.Map{
-				"@column": "id",
-				//"userId": "123",
-			},
-			"a@": "User/username",
-			"b": model.Map{
-				"User": model.Map{
-					"id": 1,
-				},
-				"c@": "/User/username",
-			},
+			//"User": model.Map{
+			//	"id": 1,
+			//	//"id":      "123",
+			//	//"id{}":    []string{"123", "456"},
+			//	//"id>":     "222",
+			//	//"@column": "id",
+			//},
+			//"User[]": model.Map{
+			//	"@column": "id",
+			//	//"userId": "123",
+			//},
+			//"a@": "User/username",
+			//"b": model.Map{
+			//	"User": model.Map{
+			//		"id": 1,
+			//	},
+			//	//"c@": "/User/username",
+			//},
 			"say()": "test()",
 		})
 

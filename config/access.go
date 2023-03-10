@@ -28,11 +28,11 @@ func NewConditionRet() *ConditionRet {
 	return &c
 }
 
-func (c *ConditionRet) Add(k string, v any) { // todo any?
+func (c *ConditionRet) Add(k string, v any) {
 	c.condition[k] = v
 }
 
-func (c *ConditionRet) AddRaw(k string, v any) { // todo any?
+func (c *ConditionRet) AddRaw(k string, v any) {
 	c.rawCondition[k] = v
 }
 
