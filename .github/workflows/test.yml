@@ -9,5 +9,14 @@ jobs:
   simple-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          cache: true
+
       - name: test
         run: cd test && go test -short

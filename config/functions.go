@@ -7,8 +7,16 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
+type ParamItem struct {
+	Type string
+	Name string
+	Desc string
+}
+
+// todo Func会和下方functions混淆,不利于代码补全
 type Func struct {
-	Handler func(ctx context.Context, param model.Map) (res any, err error)
+	ParamList []ParamItem
+	Handler   func(ctx context.Context, param model.Map) (res any, err error)
 }
 
 type Functions struct {
@@ -20,15 +28,6 @@ func (f *Functions) Bind(name string, _func Func) {
 		panic(fmt.Errorf(" function %s has exists", name))
 	}
 	f.funcMap[name] = _func
-}
-
-func (f *Functions) BindHandlerFunc(name string, handler func(ctx context.Context, param model.Map) (res any, err error)) {
-	if _, exists := f.funcMap[name]; exists {
-		panic(fmt.Errorf(" function %s has exists", name))
-	}
-	f.funcMap[name] = struct {
-		Handler func(ctx context.Context, param model.Map) (res any, err error)
-	}{Handler: handler}
 }
 
 func (f *Functions) Call(ctx context.Context, name string, param g.Map) (any, error) {

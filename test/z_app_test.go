@@ -58,11 +58,11 @@ func App(ctx context.Context, a *apijson.ApiJson) {
 		panic(err)
 	}
 
-	a.Config().Functions.Bind("test", struct {
-		Handler func(ctx context.Context, param model.Map) (res any, err error)
-	}{Handler: func(ctx context.Context, param model.Map) (res any, err error) {
-		return "nihao", nil
-	}})
+	a.Config().Functions.Bind("test", config.Func{
+		Handler: func(ctx context.Context, param model.Map) (res any, err error) {
+			return "你好", nil
+		},
+	})
 
 	a.Config().AccessListProvider = "custom"
 

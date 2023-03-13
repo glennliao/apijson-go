@@ -20,6 +20,8 @@ type Hook struct {
 	AfterExecutorDo  func(ctx context.Context, n *Node, method string) error
 }
 
+// todo hook可获取到executor的返回值
+
 var hooksMap = map[string][]Hook{}
 
 func RegHook(h Hook) {

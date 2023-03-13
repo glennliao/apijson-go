@@ -12,6 +12,7 @@ type ActionExecutor interface {
 	Delete(ctx context.Context, table string, where model.Map) (count int64, err error)
 }
 
+// todo 调整executor
 var actionExecutorMap = map[string]ActionExecutor{}
 
 func RegActionExecutor(name string, e ActionExecutor) {
