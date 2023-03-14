@@ -7,9 +7,14 @@ import (
 )
 
 type ActionExecutor interface {
-	Insert(ctx context.Context, table string, data any) (id int64, count int64, err error)
-	Update(ctx context.Context, table string, data model.Map, where model.Map) (count int64, err error)
-	Delete(ctx context.Context, table string, where model.Map) (count int64, err error)
+	Do(ctx context.Context, req ActionExecutorReq) (ret model.Map, err error)
+}
+
+type ActionExecutorReq struct {
+	Method string
+	Table  string
+	Data   []model.Map
+	Where  []model.Map
 }
 
 var actionExecutorMap = map[string]ActionExecutor{}

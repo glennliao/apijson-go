@@ -4,7 +4,6 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/util/gconv"
 	"strings"
 )
 
@@ -18,19 +17,8 @@ func newStructNode(n *Node) *structNode {
 
 func (h *structNode) parse() {
 	n := h.node
-	for _, childNode := range n.children {
-		childNode.parse()
-	}
 
 	if n.isList { // []节点
-
-		page := model.Map{}
-		if v, exists := n.req[consts.Page]; exists {
-			page[consts.Page] = gconv.Int(v)
-		}
-		if v, exists := n.req[consts.Count]; exists {
-			page[consts.Count] = gconv.Int(v)
-		}
 
 		hasPrimary := false // 是否存在主查询表
 		for _, child := range n.children {
@@ -48,7 +36,7 @@ func (h *structNode) parse() {
 
 				hasPrimary = true
 				n.primaryTableKey = child.Key
-				child.page = page
+				child.page = n.page
 
 			}
 		}
@@ -56,6 +44,10 @@ func (h *structNode) parse() {
 		if n.Key == consts.ListKeySuffix && !hasPrimary {
 			panic(gerror.Newf("node must have  primary table: (%s)", n.Path))
 		}
+	}
+
+	for _, childNode := range n.children {
+		childNode.parse()
 	}
 }
 
@@ -132,6 +124,7 @@ func (h *structNode) result() {
 		retMap := model.Map{}
 		for k, node := range n.children {
 			var err error
+
 			if strings.HasSuffix(k, consts.RefKeySuffix) {
 				k = k[0 : len(k)-1]
 			}

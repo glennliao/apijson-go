@@ -7,32 +7,29 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
-type Func struct {
-	// todo 调整成结构体
-	Handler func(ctx context.Context, param model.Map) (res any, err error)
+type ParamItem struct {
+	Type string
+	Name string
+	Desc string
 }
 
-type Functions struct {
+type Func struct {
+	ParamList []ParamItem
+	Handler   func(ctx context.Context, param model.Map) (res any, err error)
+}
+
+type functions struct {
 	funcMap map[string]Func
 }
 
-func (f *Functions) Bind(name string, _func Func) {
+func (f *functions) Bind(name string, _func Func) {
 	if _, exists := f.funcMap[name]; exists {
 		panic(fmt.Errorf(" function %s has exists", name))
 	}
 	f.funcMap[name] = _func
 }
 
-func (f *Functions) BindHandlerFunc(name string, handler func(ctx context.Context, param model.Map) (res any, err error)) {
-	if _, exists := f.funcMap[name]; exists {
-		panic(fmt.Errorf(" function %s has exists", name))
-	}
-	f.funcMap[name] = struct {
-		Handler func(ctx context.Context, param model.Map) (res any, err error)
-	}{Handler: handler}
-}
-
-func (f *Functions) Call(ctx context.Context, name string, param g.Map) (any, error) {
+func (f *functions) Call(ctx context.Context, name string, param g.Map) (any, error) {
 	return f.funcMap[name].Handler(ctx, param)
 }
 

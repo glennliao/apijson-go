@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+const (
+	totalInList = "[]/total"
+)
+
 type RefNode struct {
 	node *Node
 }
@@ -36,7 +40,7 @@ func (r *RefNode) parse() {
 
 	n.refKeyMap = make(map[string]NodeRef)
 
-	if strings.HasSuffix(n.simpleReqVal, "[]/total") {
+	if strings.HasSuffix(n.simpleReqVal, totalInList) {
 		setNeedTotal(refNode)
 	}
 
@@ -49,17 +53,21 @@ func (r *RefNode) parse() {
 func (r *RefNode) fetch() {
 	n := r.node
 	for _, refNode := range n.refKeyMap {
-		if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, consts.ListKeySuffix) {
+		if strings.HasSuffix(refNode.column, consts.Total) {
 			n.total = refNode.node.total
 		} else {
-			n.ret = refNode.node.ret.(model.Map)[refNode.column] //todo fei model.Map 时候
+			refRet := refNode.node.ret
+			switch refRet.(type) {
+			case model.Map:
+				n.ret = refRet.(model.Map)[refNode.column]
+			}
 		}
 	}
 }
 
 func (r *RefNode) result() {
 	n := r.node
-	if strings.HasSuffix(n.simpleReqVal, "[]/total") {
+	if strings.HasSuffix(n.simpleReqVal, totalInList) {
 		n.ret = n.total
 	}
 }

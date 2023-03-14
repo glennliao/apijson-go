@@ -38,7 +38,6 @@ type Action struct {
 	// jsonFieldStyle 数据库返回的字段
 	JsonFieldStyle config.FieldStyle
 
-	Functions    *config.Functions
 	actionConfig *config.ActionConfig
 }
 

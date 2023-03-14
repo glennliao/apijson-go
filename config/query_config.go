@@ -1,15 +1,13 @@
 package config
 
 import (
-	"context"
-	"github.com/glennliao/apijson-go/model"
 	"github.com/samber/lo"
 	"net/http"
 )
 
 type QueryConfig struct {
 	access          *Access
-	functions       *Functions
+	functions       *functions
 	maxTreeDeep     int
 	maxTreeWidth    int
 	defaultRoleFunc DefaultRole
@@ -27,8 +25,8 @@ func (c *QueryConfig) GetAccessConfig(key string, noVerify bool) (*AccessConfig,
 	return c.access.GetAccess(key, noVerify)
 }
 
-func (c *QueryConfig) CallFunc(ctx context.Context, name string, param model.Map) (any, error) {
-	return c.functions.Call(ctx, name, param)
+func (c *QueryConfig) Func(name string) Func {
+	return c.functions.funcMap[name]
 }
 
 func (c *QueryConfig) MaxTreeDeep() int {
@@ -66,6 +64,15 @@ func (c *ExecutorConfig) TableName() string {
 
 func (c *ExecutorConfig) TableColumns() []string {
 	return c.DBMeta.GetTableColumns(c.accessConfig.Name)
+}
+
+func (c *ExecutorConfig) GetFieldsGetByRole() *FieldsGetValue {
+
+	if val, exists := c.accessConfig.FieldsGet[c.role]; exists {
+		return val
+	}
+
+	return c.accessConfig.FieldsGet["default"]
 }
 
 func (c *ExecutorConfig) GetFieldsGetOutByRole() []string {

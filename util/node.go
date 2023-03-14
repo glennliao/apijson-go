@@ -1,11 +1,9 @@
 package util
 
 import (
-	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"path/filepath"
-	"strings"
 )
 
 func IsFirstUp(str string) bool {
@@ -28,16 +26,6 @@ func HasFirstUpKey(m model.Map) bool {
 
 func RemoveSuffix(key string, suffix string) string {
 	return key[0 : len(key)-len(suffix)]
-}
-
-func ParseNodeKey(inK string) (k string, isList bool) {
-	k = inK
-
-	if strings.HasSuffix(k, consts.ListKeySuffix) {
-		isList = true
-		k = k[0 : len(k)-len(consts.ListKeySuffix)]
-	}
-	return
 }
 
 // ParseRefCol 解析引用字段

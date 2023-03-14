@@ -29,7 +29,7 @@ func RegDbMetaProvider(name string, provider DbMetaProvider) {
 type Config struct {
 	Access *Access
 
-	Functions *Functions
+	Functions *functions
 
 	MaxTreeWidth int
 	MaxTreeDeep  int
@@ -48,12 +48,11 @@ type Config struct {
 	RequestListProvider string
 	DbMetaProvider      string
 
-	accessList []AccessConfig // todo to access
+	accessList []AccessConfig
 
 	requestConfig *RequestConfig
-
-	queryConfig  *QueryConfig
-	actionConfig *ActionConfig
+	queryConfig   *QueryConfig
+	actionConfig  *ActionConfig
 }
 
 func New() *Config {
@@ -71,7 +70,7 @@ func New() *Config {
 	a.DbFieldStyle = CaseSnake
 	a.JsonFieldStyle = CaseCamel
 
-	a.Functions = &Functions{}
+	a.Functions = &functions{}
 	a.Functions.funcMap = make(map[string]Func)
 
 	return a
@@ -87,10 +86,27 @@ func (c *Config) ReLoad() {
 
 	if accessListProvider != nil {
 		c.accessList = accessListProvider(ctx)
+
+		defaultMaxCount := 100
+
 		for _, access := range c.accessList {
 			name := access.Alias
 			if name == "" {
 				name = access.Name
+			}
+
+			if access.FieldsGet == nil {
+				access.FieldsGet = map[string]*FieldsGetValue{}
+			}
+
+			if _, exists := access.FieldsGet["default"]; !exists {
+				access.FieldsGet["default"] = &FieldsGetValue{}
+			}
+
+			for role, _ := range access.FieldsGet {
+				if access.FieldsGet[role].MaxCount == nil {
+					access.FieldsGet[role].MaxCount = &defaultMaxCount
+				}
 			}
 			c.Access.accessConfigMap[access.Alias] = access
 		}

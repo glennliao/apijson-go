@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/util/gconv"
 	"strings"
 )
 
@@ -48,6 +49,9 @@ func init() {
 			if len(access.Delete) == 1 {
 				access.Delete = strings.Split(access.Delete[0], ",")
 			}
+
+			g.Dump(access.FieldsGet)
+
 			accessList = append(accessList, access)
 		}
 
@@ -60,6 +64,49 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
+
+		for i, item := range requestList {
+			item := item
+
+			if item.Structure == nil {
+				item.Structure = make(map[string]*config.Structure)
+			}
+
+			// provider处理
+			//if strings.ToLower(tag) != tag {
+			//	// 本身大写, 如果没有外层, 则套一层
+			//	if _, ok := item.Structure[tag]; !ok {
+			//		item.Structure = map[string]any{
+			//			tag: item.Structure,
+			//		}
+			//	}
+			//}
+
+			for k, v := range item.Structure {
+				structure := config.Structure{}
+				err := gconv.Scan(v, &structure)
+				if err != nil {
+					panic(err)
+				}
+
+				if structure.Must != nil {
+					structure.Must = strings.Split(structure.Must[0], ",")
+				}
+				if structure.Refuse != nil {
+					structure.Refuse = strings.Split(structure.Refuse[0], ",")
+				}
+
+				item.Structure[k] = &structure
+			}
+
+			if len(item.ExecQueue) > 0 {
+				item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
+			}
+
+			requestList[i] = item
+
+		}
+
 		return requestList
 	})
 

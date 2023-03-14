@@ -14,27 +14,32 @@ func newFuncNode(n *Node) *funcNode {
 }
 
 func (h *funcNode) parse() {
-	//n := h.node
-	// todo
-	//functionName, _ := util.ParseFunctionsStr(n.simpleReqVal)
-	//n.simpleReqVal = functionName
+
 }
 
 func (h *funcNode) fetch() {
 	n := h.node
+	queryConfig := n.queryContext.queryConfig
+
 	functionName, paramKeys := util.ParseFunctionsStr(n.simpleReqVal)
-	//n.simpleReqVal = functionName
-	// todo 如何传递参数
+
+	_func := queryConfig.Func(functionName)
 
 	param := model.Map{}
-	for _, key := range paramKeys {
-		param[key] = n.queryContext.pathNodes[key].simpleReqVal
+
+	for i, item := range _func.ParamList {
+		valNode := n.queryContext.pathNodes[paramKeys[i]]
+		if valNode.ret != nil {
+			param[item.Name] = valNode.ret
+		} else {
+			param[item.Name] = valNode.simpleReqVal
+		}
 	}
-	n.ret, n.err = n.queryContext.Functions.Call(n.ctx, functionName, param)
+
+	n.ret, n.err = _func.Handler(n.ctx, param)
 }
 
 func (h *funcNode) result() {
-	//n := h.node
 
 }
 

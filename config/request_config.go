@@ -48,43 +48,13 @@ func NewRequestConfig(requestList []Request) *RequestConfig {
 
 	for _, _item := range requestList {
 		item := _item
-		tag, _ := getTag(item.Tag)
 
 		if item.Structure == nil {
 			item.Structure = make(map[string]*Structure)
 		}
 
-		// provider处理
-		//if strings.ToLower(tag) != tag {
-		//	// 本身大写, 如果没有外层, 则套一层
-		//	if _, ok := item.Structure[tag]; !ok {
-		//		item.Structure = map[string]any{
-		//			tag: item.Structure,
-		//		}
-		//	}
-		//}
-
-		for k, v := range item.Structure {
-			structure := Structure{}
-			err := gconv.Scan(v, &structure)
-			if err != nil {
-				panic(err)
-			}
-
-			if structure.Must != nil {
-				structure.Must = strings.Split(structure.Must[0], ",")
-			}
-			if structure.Refuse != nil {
-				structure.Refuse = strings.Split(structure.Refuse[0], ",")
-			}
-
-			item.Structure[k] = &structure
-		}
-
-		if len(item.ExecQueue) > 0 {
-			// todo db provider处理
-			//item.ExecQueue = strings.Split(item.ExecQueue[0], ",")
-		} else {
+		if len(item.ExecQueue) == 0 {
+			tag, _ := getTag(item.Tag)
 			item.ExecQueue = []string{tag}
 		}
 
@@ -95,17 +65,6 @@ func NewRequestConfig(requestList []Request) *RequestConfig {
 
 	c.requestMap = requestMap
 	return &c
-}
-
-func getTag(tag string) (name string, isList bool) {
-	if strings.HasSuffix(tag, consts.ListKeySuffix) {
-		name = tag[0 : len(tag)-2]
-		isList = true
-	} else {
-		name = tag
-	}
-
-	return
 }
 
 func getRequestFullKey(tag string, method string, version string) string {
@@ -126,4 +85,15 @@ func (c *RequestConfig) GetRequest(tag string, method string, version string) (*
 	}
 
 	return request, nil
+}
+
+func getTag(tag string) (name string, isList bool) {
+	if strings.HasSuffix(tag, consts.ListKeySuffix) {
+		name = tag[0 : len(tag)-2]
+		isList = true
+	} else {
+		name = tag
+	}
+
+	return
 }

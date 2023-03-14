@@ -7,7 +7,6 @@ import (
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/util/gconv"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -23,9 +22,8 @@ func newQueryNode(n *Node) *queryNode {
 
 func (q *queryNode) parse() {
 	n := q.node
-	tableKey := parseTableKey(n.Key, n.Path) // todo
 
-	accessConfig, err := n.queryContext.queryConfig.GetAccessConfig(tableKey, n.queryContext.NoAccessVerify)
+	accessConfig, err := n.queryContext.queryConfig.GetAccessConfig(n.Key, n.queryContext.NoAccessVerify)
 	if err != nil {
 		n.err = err
 		return
@@ -35,6 +33,16 @@ func (q *queryNode) parse() {
 	n.executorConfig.DbFieldStyle = n.queryContext.DbFieldStyle
 	n.executorConfig.JsonFieldStyle = n.queryContext.JsonFieldStyle
 	n.executorConfig.DBMeta = n.queryContext.DbMeta
+
+	if n.isList {
+		fieldsGet := n.executorConfig.GetFieldsGetByRole()
+		if *fieldsGet.MaxCount != 0 {
+			if n.page.Count > *fieldsGet.MaxCount {
+				n.err = gerror.New(" > maxCount: " + n.Path)
+				return
+			}
+		}
+	}
 
 	var accessWhereCondition model.MapStrAny
 
@@ -54,11 +62,11 @@ func (q *queryNode) parse() {
 		}
 
 		if !has {
-			n.err = gerror.New("无权限访问:" + tableKey + " by " + n.role)
+			n.err = gerror.New("无权限访问:" + n.Key + " by " + n.role)
 			return
 		}
 
-		accessWhereCondition = condition.Where() // todo
+		accessWhereCondition = condition.Where()
 	}
 
 	queryExecutor, err := executor.NewQueryExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)
@@ -160,7 +168,7 @@ func (q *queryNode) fetch() {
 			}
 
 			err = n.executor.ParseCondition(model.MapStrAny{
-				refK + "{}": valList, //  @ 与 {}&等的结合 id{}@的处理
+				refK + consts.OpIn: valList, //  @ 与 {}&等的结合 id{}@的处理
 			}, false)
 
 			if err != nil {
@@ -192,33 +200,8 @@ func (q *queryNode) fetch() {
 
 	if n.isList {
 
-		page := 1
-		count := 10
-
-		for k, v := range n.page {
-			switch k {
-			case consts.Page:
-				page = gconv.Int(v)
-
-			case consts.Count:
-				count = gconv.Int(v)
-			}
-		}
-
-		for k, v := range n.req {
-			switch k {
-			case consts.Page:
-				page = gconv.Int(v)
-
-			case consts.Count:
-				count = gconv.Int(v)
-			case consts.Query:
-				switch gconv.String(v) {
-				case "1", "2":
-					n.needTotal = true
-				}
-			}
-		}
+		page := n.page.Page
+		count := n.page.Count
 
 		if n.primaryTableKey == "" { // 主查询表 才分页
 			page = 0
@@ -234,6 +217,8 @@ func (q *queryNode) fetch() {
 		return
 	}
 
+	queryConfig := n.queryContext.queryConfig
+
 	// 需优化调整
 	for k, v := range n.req {
 		if !strings.HasSuffix(k, consts.FunctionsKeySuffix) {
@@ -243,38 +228,43 @@ func (q *queryNode) fetch() {
 		k = k[0 : len(k)-2]
 
 		functionName, paramKeys := util.ParseFunctionsStr(v.(string))
+		_func := queryConfig.Func(functionName)
 
 		if n.isList {
 			for i, item := range n.ret.([]model.Map) {
-				var param = model.Map{}
-				for _, key := range paramKeys {
-					if key == consts.FunctionOriReqParam {
-						param[key] = item
+
+				param := model.Map{}
+				for paramI, paramItem := range _func.ParamList {
+					if paramItem.Name == consts.FunctionOriReqParam {
+						param[paramItem.Name] = item
 					} else {
-						param[key] = item[key]
+						param[paramItem.Name] = item[paramKeys[paramI]]
 					}
 				}
-				var err error
-				n.ret.([]model.Map)[i][k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
+
+				val, err := _func.Handler(n.ctx, param)
 				if err != nil {
-					panic(err)
+					n.err = err
+					return
 				}
+				n.ret.([]model.Map)[i][k] = val
 			}
 		} else {
-			var param = model.Map{}
-			for _, key := range paramKeys {
-				if key == consts.FunctionOriReqParam {
-					param[key] = n.ret.(model.Map)
+			param := model.Map{}
+			for paramI, paramItem := range _func.ParamList {
+				if paramItem.Name == consts.FunctionOriReqParam {
+					param[paramItem.Name] = n.ret.(model.Map)
 				} else {
-					param[key] = n.ret.(model.Map)[key]
+					param[paramItem.Name] = n.ret.(model.Map)[paramKeys[paramI]]
 				}
+			}
 
-			}
-			var err error
-			n.ret.(model.Map)[k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
+			val, err := _func.Handler(n.ctx, param)
 			if err != nil {
-				panic(err)
+				n.err = err
+				return
 			}
+			n.ret.(model.Map)[k] = val
 		}
 	}
 
@@ -291,7 +281,6 @@ func (q *queryNode) result() {
 			n.ret = nil
 		}
 	}
-
 }
 
 func (q *queryNode) nodeType() int {
