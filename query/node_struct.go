@@ -4,6 +4,7 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
+	"path/filepath"
 	"strings"
 )
 
@@ -17,6 +18,10 @@ func newStructNode(n *Node) *structNode {
 
 func (h *structNode) parse() {
 	n := h.node
+
+	for _, childNode := range n.children {
+		childNode.parse()
+	}
 
 	if n.isList { // []节点
 
@@ -35,7 +40,7 @@ func (h *structNode) parse() {
 				}
 
 				hasPrimary = true
-				n.primaryTableKey = child.Key
+				n.primaryTableKey = filepath.Base(child.Key)
 				child.page = n.page
 
 			}
@@ -46,9 +51,6 @@ func (h *structNode) parse() {
 		}
 	}
 
-	for _, childNode := range n.children {
-		childNode.parse()
-	}
 }
 
 func (h *structNode) fetch() {
