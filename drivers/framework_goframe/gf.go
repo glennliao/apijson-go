@@ -45,11 +45,11 @@ func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 	if len(mode) == 0 {
 		mode = []Mode{InDataMode}
 	}
-	group.POST("/get", gf.commonResponse(gf.Get, mode[0]))
-	group.POST("/post", gf.commonResponse(gf.Post, mode[0]))
-	group.POST("/head", gf.commonResponse(gf.Head, mode[0]))
-	group.POST("/put", gf.commonResponse(gf.Put, mode[0]))
-	group.POST("/delete", gf.commonResponse(gf.Delete, mode[0]))
+	group.POST("/get", gf.CommonResponse(gf.Get, mode[0]))
+	group.POST("/post", gf.CommonResponse(gf.Post, mode[0]))
+	group.POST("/head", gf.CommonResponse(gf.Head, mode[0]))
+	group.POST("/put", gf.CommonResponse(gf.Put, mode[0]))
+	group.POST("/delete", gf.CommonResponse(gf.Delete, mode[0]))
 }
 
 func (gf *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
@@ -76,7 +76,7 @@ func (gf *GF) Delete(ctx context.Context, req model.Map) (res model.Map, err err
 	return act.Result()
 }
 
-func (gf *GF) commonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode) func(req *ghttp.Request) {
+func (gf *GF) CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode) func(req *ghttp.Request) {
 	return func(req *ghttp.Request) {
 		metaRes := &gmap.ListMap{}
 		code := 200

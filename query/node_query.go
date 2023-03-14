@@ -94,7 +94,7 @@ func (q *queryNode) parse() {
 		return
 	}
 
-	n.primaryTableKey = n.Key
+	n.primaryTableKey = filepath.Base(n.Path)
 
 	if len(refKeyMap) > 0 { // 需要引用别处
 		n.refKeyMap = make(map[string]NodeRef)
