@@ -217,6 +217,8 @@ func (q *queryNode) fetch() {
 		return
 	}
 
+	queryConfig := n.queryContext.queryConfig
+
 	// 需优化调整
 	for k, v := range n.req {
 		if !strings.HasSuffix(k, consts.FunctionsKeySuffix) {
@@ -226,38 +228,43 @@ func (q *queryNode) fetch() {
 		k = k[0 : len(k)-2]
 
 		functionName, paramKeys := util.ParseFunctionsStr(v.(string))
+		_func := queryConfig.Func(functionName)
 
 		if n.isList {
 			for i, item := range n.ret.([]model.Map) {
-				var param = model.Map{}
-				for _, key := range paramKeys {
-					if key == consts.FunctionOriReqParam {
-						param[key] = item
+
+				param := model.Map{}
+				for paramI, paramItem := range _func.ParamList {
+					if paramItem.Name == consts.FunctionOriReqParam {
+						param[paramItem.Name] = item
 					} else {
-						param[key] = item[key]
+						param[paramItem.Name] = item[paramKeys[paramI]]
 					}
 				}
-				var err error
-				n.ret.([]model.Map)[i][k], err = n.queryContext.queryConfig.CallFunc(n.ctx, functionName, param)
+
+				val, err := _func.Handler(n.ctx, param)
 				if err != nil {
-					panic(err)
+					n.err = err
+					return
 				}
+				n.ret.([]model.Map)[i][k] = val
 			}
 		} else {
-			var param = model.Map{}
-			for _, key := range paramKeys {
-				if key == consts.FunctionOriReqParam {
-					param[key] = n.ret.(model.Map)
+			param := model.Map{}
+			for paramI, paramItem := range _func.ParamList {
+				if paramItem.Name == consts.FunctionOriReqParam {
+					param[paramItem.Name] = n.ret.(model.Map)
 				} else {
-					param[key] = n.ret.(model.Map)[key]
+					param[paramItem.Name] = n.ret.(model.Map)[paramKeys[paramI]]
 				}
+			}
 
-			}
-			var err error
-			n.ret.(model.Map)[k], err = n.queryContext.queryConfig.CallFunc(n.ctx, functionName, param)
+			val, err := _func.Handler(n.ctx, param)
 			if err != nil {
-				panic(err)
+				n.err = err
+				return
 			}
+			n.ret.(model.Map)[k] = val
 		}
 	}
 
@@ -274,7 +281,6 @@ func (q *queryNode) result() {
 			n.ret = nil
 		}
 	}
-
 }
 
 func (q *queryNode) nodeType() int {

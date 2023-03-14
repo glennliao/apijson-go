@@ -256,23 +256,35 @@ func (n *Node) reqUpdate() error {
 		for key, updateVal := range n.structure.Update {
 
 			if strings.HasSuffix(key, consts.FunctionsKeySuffix) {
-				functionName, paramKeys := util.ParseFunctionsStr(updateVal.(string))
-				var param = model.Map{}
-				for _, paramKey := range paramKeys {
-					if paramKey == consts.FunctionOriReqParam {
-						param[paramKey] = n.Data[i]
-					} else {
-						param[paramKey] = n.Data[i][paramKey]
+
+				k := key[0 : len(key)-2]
+
+				// call functions
+				{
+					queryConfig := n.action.actionConfig
+
+					functionName, paramKeys := util.ParseFunctionsStr(updateVal.(string))
+
+					_func := queryConfig.Func(functionName)
+
+					param := model.Map{}
+					for paramI, item := range _func.ParamList {
+						if item.Name == consts.FunctionOriReqParam {
+							param[item.Name] = n.Data[i]
+						} else {
+							param[item.Name] = n.Data[i][paramKeys[paramI]]
+						}
+					}
+
+					val, err := _func.Handler(n.ctx, param)
+					if err != nil {
+						return err
+					}
+					if val != nil {
+						n.Data[i][k] = val
 					}
 				}
-				k := key[0 : len(key)-2]
-				val, err := n.action.actionConfig.CallFunc(n.ctx, functionName, param)
-				if err != nil {
-					return err
-				}
-				if val != nil {
-					n.Data[i][k] = val
-				}
+
 			} else {
 				n.Data[i][key] = updateVal
 			}

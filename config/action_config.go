@@ -25,8 +25,8 @@ func (c *ActionConfig) GetAccessConfig(key string, noVerify bool) (*AccessConfig
 	return c.access.GetAccess(key, noVerify)
 }
 
-func (c *ActionConfig) CallFunc(ctx context.Context, name string, param model.Map) (any, error) {
-	return c.functions.Call(ctx, name, param)
+func (c *ActionConfig) Func(name string) Func {
+	return c.functions.funcMap[name]
 }
 
 func (c *ActionConfig) GetRequest(tag string, method string, version string) (*Request, error) {

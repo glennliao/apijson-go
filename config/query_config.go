@@ -1,8 +1,6 @@
 package config
 
 import (
-	"context"
-	"github.com/glennliao/apijson-go/model"
 	"github.com/samber/lo"
 	"net/http"
 )
@@ -27,8 +25,8 @@ func (c *QueryConfig) GetAccessConfig(key string, noVerify bool) (*AccessConfig,
 	return c.access.GetAccess(key, noVerify)
 }
 
-func (c *QueryConfig) CallFunc(ctx context.Context, name string, param model.Map) (any, error) {
-	return c.functions.Call(ctx, name, param)
+func (c *QueryConfig) Func(name string) Func {
+	return c.functions.funcMap[name]
 }
 
 func (c *QueryConfig) MaxTreeDeep() int {
