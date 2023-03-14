@@ -255,7 +255,7 @@ func (q *queryNode) fetch() {
 					}
 				}
 				var err error
-				n.ret.([]model.Map)[i][k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
+				n.ret.([]model.Map)[i][k], err = n.queryContext.queryConfig.CallFunc(n.ctx, functionName, param)
 				if err != nil {
 					panic(err)
 				}
@@ -271,7 +271,7 @@ func (q *queryNode) fetch() {
 
 			}
 			var err error
-			n.ret.(model.Map)[k], err = n.queryContext.Functions.Call(n.ctx, functionName, param)
+			n.ret.(model.Map)[k], err = n.queryContext.queryConfig.CallFunc(n.ctx, functionName, param)
 			if err != nil {
 				panic(err)
 			}

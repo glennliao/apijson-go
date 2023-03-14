@@ -8,7 +8,7 @@ import (
 type ActionConfig struct {
 	requestConfig    *RequestConfig
 	access           *Access
-	functions        *Functions
+	functions        *functions
 	rowKeyGenFuncMap map[string]RowKeyGenFuncHandler
 	defaultRoleFunc  DefaultRole
 }

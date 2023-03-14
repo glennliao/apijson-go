@@ -2,9 +2,15 @@ package executor_goframe
 
 import (
 	"context"
+	"github.com/glennliao/apijson-go/config/executor"
+	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
+	"github.com/glennliao/apijson-go/util"
+	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/util/gconv"
+	"net/http"
 	"strings"
 )
 
@@ -12,55 +18,130 @@ type ActionExecutor struct {
 	DbName string
 }
 
-func (a *ActionExecutor) Insert(ctx context.Context, table string, data any) (id int64, count int64, err error) {
-	ret, err := g.DB(a.DbName).Insert(ctx, table, data)
-	if err != nil {
-		return 0, 0, err
-	}
-	id, err = ret.LastInsertId()
-	if err != nil {
-		return 0, 0, err
-	}
+func (a *ActionExecutor) Do(ctx context.Context, req executor.ActionExecutorReq) (ret model.Map, err error) {
+	switch req.Method {
+	case http.MethodPost:
+		return a.Insert(ctx, req.Table, req.Data)
+	case http.MethodPut:
 
-	count, err = ret.RowsAffected()
-	return id, count, nil
+		for i, _ := range req.Data {
+			ret, err = a.Update(ctx, req.Table, req.Data[i], req.Where[i])
+			if err != nil {
+				break
+			}
+		}
+		if err != nil {
+			ret = model.Map{
+				"code": 200,
+			}
+		}
+		return ret, err
+
+	case http.MethodDelete:
+
+		for i, _ := range req.Data {
+			ret, err = a.Delete(ctx, req.Table, req.Where[i])
+			if err != nil {
+				break
+			}
+		}
+		if err != nil {
+			ret = model.Map{
+				"code": 200,
+			}
+		}
+		return ret, err
+	}
+	return nil, gerror.New("method not support")
 }
 
-func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Map, where model.Map) (count int64, err error) {
+func (a *ActionExecutor) Insert(ctx context.Context, table string, data []model.Map) (ret model.Map, err error) {
+	result, err := g.DB(a.DbName).Insert(ctx, table, data)
+	if err != nil {
+		return nil, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	count, err := result.RowsAffected()
+
+	ret = model.Map{
+		"code":  200,
+		"count": count,
+		"id":    id,
+	}
+
+	return ret, nil
+}
+
+func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Map, where model.Map) (ret model.Map, err error) {
 	m := g.DB(a.DbName).Model(table).Ctx(ctx)
 
 	for k, v := range where {
 		if strings.HasSuffix(k, "{}") {
 			if vStr, ok := v.(string); ok {
 				if vStr == "" {
-					return 0, gerror.New("where的值不能为空")
+					return nil, gerror.New("where的值不能为空")
 				}
 			}
 			m = m.WhereIn(k[0:len(k)-2], v)
 			delete(where, k)
 			continue
 		}
+		if k == consts.Raw {
+			delete(where, k) // todo 处理 rawSql
+			continue
+		}
+
 		if v.(string) == "" || v == nil { //暂只处理字符串为空的情况
-			return 0, gerror.New("where的值不能为空")
+			return nil, gerror.New("where的值不能为空")
+		}
+	}
+
+	for k, v := range data {
+		if strings.HasSuffix(k, "+") {
+			field := util.RemoveSuffix(k, "+")
+			data[field] = &gdb.Counter{
+				Field: field,
+				Value: gconv.Float64(v),
+			}
+			delete(data, k)
+			continue
+		}
+		if strings.HasSuffix(k, "-") {
+			field := util.RemoveSuffix(k, "-")
+			data[field] = &gdb.Counter{
+				Field: field,
+				Value: -gconv.Float64(v),
+			}
+			delete(data, k)
+			continue
 		}
 	}
 
 	_ret, err := m.Where(where).Update(data)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	count, err = _ret.RowsAffected()
+	count, err := _ret.RowsAffected()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return count, err
+	ret = model.Map{
+		"code":  200,
+		"count": count,
+	}
+
+	return ret, err
 }
 
-func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.Map) (count int64, err error) {
+func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.Map) (ret model.Map, err error) {
 	if len(where) == 0 {
-		return 0, gerror.New("where不能为空")
+		return nil, gerror.New("where不能为空")
 	}
 
 	m := g.DB(a.DbName).Model(table).Ctx(ctx)
@@ -72,20 +153,25 @@ func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.M
 			continue
 		}
 		if v.(string) == "" || v == nil { //暂只处理字符串为空的情况
-			return 0, gerror.New("where的值不能为空")
+			return nil, gerror.New("where的值不能为空")
 		}
 	}
 
 	_ret, err := m.Where(where).Delete()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	count, err = _ret.RowsAffected()
+	count, err := _ret.RowsAffected()
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return count, err
+	ret = model.Map{
+		"code":  200,
+		"count": count,
+	}
+
+	return ret, err
 }

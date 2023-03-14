@@ -9,7 +9,7 @@ import (
 
 type QueryConfig struct {
 	access          *Access
-	functions       *Functions
+	functions       *functions
 	maxTreeDeep     int
 	maxTreeWidth    int
 	defaultRoleFunc DefaultRole

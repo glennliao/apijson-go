@@ -60,7 +60,6 @@ func (a *ApiJson) NewQuery(ctx context.Context, req model.Map) *query.Query {
 	q := query.New(ctx, a.Config().QueryConfig(), req)
 
 	q.DbMeta = a.config.DbMeta
-	q.Functions = a.config.Functions
 	q.DbFieldStyle = a.config.DbFieldStyle
 	q.JsonFieldStyle = a.config.JsonFieldStyle
 
@@ -76,7 +75,6 @@ func (a *ApiJson) NewAction(ctx context.Context, method string, req model.Map) *
 	act.NoAccessVerify = a.config.Access.NoVerify
 	act.DbFieldStyle = a.config.DbFieldStyle
 	act.JsonFieldStyle = a.config.JsonFieldStyle
-	act.Functions = a.config.Functions
 
 	return act
 }

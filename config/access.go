@@ -37,7 +37,9 @@ func (c *ConditionRet) AddRaw(k string, v any) {
 }
 
 func (c *ConditionRet) Where() map[string]any {
-	c.condition[consts.Raw] = c.rawCondition
+	if len(c.rawCondition) > 0 {
+		c.condition[consts.Raw] = c.rawCondition
+	}
 	return c.condition
 }
 

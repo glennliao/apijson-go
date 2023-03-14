@@ -29,7 +29,7 @@ func RegDbMetaProvider(name string, provider DbMetaProvider) {
 type Config struct {
 	Access *Access
 
-	Functions *Functions
+	Functions *functions
 
 	MaxTreeWidth int
 	MaxTreeDeep  int
@@ -70,7 +70,7 @@ func New() *Config {
 	a.DbFieldStyle = CaseSnake
 	a.JsonFieldStyle = CaseCamel
 
-	a.Functions = &Functions{}
+	a.Functions = &functions{}
 	a.Functions.funcMap = make(map[string]Func)
 
 	return a

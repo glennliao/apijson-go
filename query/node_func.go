@@ -29,7 +29,7 @@ func (h *funcNode) fetch() {
 	for _, key := range paramKeys {
 		param[key] = n.queryContext.pathNodes[key].simpleReqVal
 	}
-	n.ret, n.err = n.queryContext.Functions.Call(n.ctx, functionName, param)
+	n.ret, n.err = n.queryContext.queryConfig.CallFunc(n.ctx, functionName, param)
 }
 
 func (h *funcNode) result() {

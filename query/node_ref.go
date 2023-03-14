@@ -52,7 +52,7 @@ func (r *RefNode) fetch() {
 		if strings.HasSuffix(refNode.column, "total") && strings.HasSuffix(refNode.node.Path, consts.ListKeySuffix) {
 			n.total = refNode.node.total
 		} else {
-			n.ret = refNode.node.ret.(model.Map)[refNode.column] //todo fei model.Map 时候
+			n.ret = refNode.node.ret.(model.Map)[refNode.column] //todo 非 model.Map 时候
 		}
 	}
 }

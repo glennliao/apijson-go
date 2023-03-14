@@ -42,8 +42,6 @@ type Query struct {
 
 	DbMeta *config.DBMeta
 
-	Functions *config.Functions
-
 	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
 	DbFieldStyle config.FieldStyle
 

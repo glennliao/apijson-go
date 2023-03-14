@@ -24,6 +24,7 @@ type Node struct {
 
 	Data   []model.Map // 需写入数据库的数据
 	Where  []model.Map // 条件
+	Ret    model.Map   // 节点返回值
 	RowKey string      // 主键
 
 	structure *config.Structure
@@ -56,25 +57,27 @@ func (n *Node) parseReq(method string) {
 		n.Where = append(n.Where, model.Map{})
 
 		for key, val := range item {
+
 			if key == consts.Role {
 				n.Role = util.String(val)
-			} else {
-				key = n.action.DbFieldStyle(n.ctx, n.tableName, key)
+				continue
+			}
 
-				if method == http.MethodDelete {
+			key = n.action.DbFieldStyle(n.ctx, n.tableName, key)
+
+			switch method {
+			case http.MethodPost:
+				n.Data[i][key] = val
+			case http.MethodDelete:
+				n.Where[i][key] = val
+			case http.MethodPut:
+				if key == n.RowKey || key == n.RowKey+"{}" {
 					n.Where[i][key] = val
 				} else {
-					if key == n.RowKey || key == n.RowKey+"{}" {
-						if method == http.MethodPut {
-							n.Where[i][key] = val
-						} else {
-							n.Data[i][key] = val
-						}
-					} else {
-						n.Data[i][key] = val
-					}
+					n.Data[i][key] = val
 				}
 			}
+
 		}
 	}
 
@@ -103,10 +106,9 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	if err != nil {
 		return err
 	}
-
+	var accessRoles []string
 	if n.action.NoAccessVerify == false {
 		// 1. 检查权限, 无权限就不用做参数检查了
-		var accessRoles []string
 
 		switch method {
 		case http.MethodPost:
@@ -128,6 +130,8 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	if err != nil {
 		return err
 	}
+
+	n.whereUpdate(ctx, method, accessRoles)
 
 	return nil
 }
@@ -169,12 +173,18 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 		return gerror.Newf("node not access: %s with %s", n.Key, n.Role)
 	}
 
+	return nil
+}
+
+// ? todo 整合到哪
+func (n *Node) whereUpdate(ctx context.Context, method string, accessRoles []string) error {
+
 	for i, item := range n.req {
 
 		condition := config.NewConditionRet()
 
 		conditionReq := config.ConditionReq{
-			AccessName:          n.tableName,
+			AccessName:          n.Key,
 			TableAccessRoleList: accessRoles,
 			Method:              method,
 			NodeRole:            n.Role,
@@ -252,7 +262,7 @@ func (n *Node) reqUpdate() error {
 					}
 				}
 				k := key[0 : len(key)-2]
-				val, err := n.action.Functions.Call(n.ctx, functionName, param)
+				val, err := n.action.actionConfig.CallFunc(n.ctx, functionName, param)
 				if err != nil {
 					return err
 				}
@@ -296,14 +306,12 @@ func (n *Node) reqUpdateBeforeDo() error {
 	return nil
 }
 
-func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.Map, err error) {
+func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error) {
 
 	err = EmitHook(ctx, BeforeExecutorDo, n, method)
 	if err != nil {
 		return nil, err
 	}
-
-	var count int64
 
 	switch method {
 	case http.MethodPost:
@@ -334,18 +342,15 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 			}
 		}
 
-		var id int64
-
-		id, count, err = executor.GetActionExecutor(n.executor).Insert(ctx, n.tableName, n.Data)
+		ret, err := executor.GetActionExecutor(n.executor).Do(ctx, executor.ActionExecutorReq{
+			Method: method,
+			Table:  n.tableName,
+			Data:   n.Data,
+			Where:  nil,
+		})
 
 		if err != nil {
 			return nil, err
-		}
-
-		ret = model.Map{
-			"code":  200,
-			"count": count,
-			"id":    id,
 		}
 
 		if len(n.Data) > 0 { //多条插入时返回值已经应该无意义了
@@ -363,30 +368,24 @@ func (n *Node) do(ctx context.Context, method string, dataIndex int) (ret model.
 		}
 
 	case http.MethodPut:
-		count, err = executor.GetActionExecutor(n.executor).Update(ctx, n.tableName, n.Data[dataIndex], n.Where[dataIndex])
-		if err != nil {
-			return nil, err
-		}
-
-		ret = model.Map{
-			"code":  200,
-			"count": count,
-		}
 	case http.MethodDelete:
-		count, err = executor.GetActionExecutor(n.executor).Delete(ctx, n.tableName, n.Where[dataIndex])
-		if err != nil {
-			return nil, err
-		}
 
-		ret = model.Map{
-			"code":  200,
-			"count": count,
-		}
-	}
-
-	if ret == nil {
+	default:
 		return nil, gerror.New("undefined method:" + method)
 	}
+
+	ret, err = executor.GetActionExecutor(n.executor).Do(ctx, executor.ActionExecutorReq{
+		Method: method,
+		Table:  n.tableName,
+		Data:   n.Data,
+		Where:  n.Where,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	n.Ret = ret
 
 	err = EmitHook(ctx, AfterExecutorDo, n, method)
 	if err != nil {
@@ -403,22 +402,11 @@ func (n *Node) execute(ctx context.Context, method string) (model.Map, error) {
 		return nil, err
 	}
 
-	if method == http.MethodPost { // 新增时可以合并新增
-		ret, err := n.do(ctx, method, 0)
-		if err != nil {
-			return nil, err
-		}
-		return ret, nil
-	} else {
-		for i, _ := range n.req {
-			_, err := n.do(ctx, method, i)
-			if err != nil {
-				return nil, err
-			}
-		}
+	ret, err := n.do(ctx, method)
+	if err != nil {
+		return nil, err
 	}
 
-	return model.Map{
-		"code": 200,
-	}, nil
+	n.Ret = ret
+	return n.Ret, nil
 }
