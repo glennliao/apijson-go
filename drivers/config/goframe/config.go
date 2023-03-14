@@ -49,6 +49,9 @@ func init() {
 			if len(access.Delete) == 1 {
 				access.Delete = strings.Split(access.Delete[0], ",")
 			}
+
+			g.Dump(access.FieldsGet)
+
 			accessList = append(accessList, access)
 		}
 

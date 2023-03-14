@@ -30,11 +30,16 @@ type nodeHandler interface {
 	nodeType() int
 }
 
+type Page struct {
+	Count int
+	Page  int
+}
+
 type Node struct {
 	ctx          context.Context
 	queryContext *Query
 
-	// 当前节点key Todos
+	// 当前节点key Todos, 如果Todo[], 保存为Todo
 	Key string
 	// 当前节点path -> []/Todos
 	Path string
@@ -43,7 +48,8 @@ type Node struct {
 
 	// 是否为列表节点
 	isList bool
-	page   model.Map // 分页参数
+
+	page *Page // 分页参数
 
 	// 访问当前节点的角色
 	role string
@@ -104,28 +110,23 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 		finish:       false,
 	}
 
-	// 节点类型判断
-	k, isList := util.ParseNodeKey(key)
+	node.Key, node.isList = parseNodeKey(key, path)
 
-	if util.IsFirstUp(k) { // 大写开头, 为查询节点(对应数据库)
+	// 节点类型判断
+	if util.IsFirstUp(node.Key) { // 大写开头, 为查询节点(对应数据库)
 		node.Type = NodeTypeQuery
-	} else if strings.HasSuffix(k, consts.RefKeySuffix) {
+	} else if strings.HasSuffix(node.Key, consts.RefKeySuffix) {
 		node.Type = NodeTypeRef
-	} else if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
+	} else if strings.HasSuffix(node.Key, consts.FunctionsKeySuffix) {
 		node.Type = NodeTypeFunc
 	} else {
 		node.Type = NodeTypeStruct // 结构节点下应该必须存在查询节点
 
 		if query.NoAccessVerify == false {
-			if lo.Contains(query.DbMeta.GetTableNameList(), k) {
+			if lo.Contains(query.DbMeta.GetTableNameList(), node.Key) {
 				node.Type = NodeTypeQuery
 			}
 		}
-
-	}
-
-	if isList || strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) {
-		node.isList = true
 	}
 
 	switch node.Type {
@@ -149,6 +150,20 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 	}
 
 	return node
+}
+
+func parseNodeKey(inK string, path string) (k string, isList bool) {
+	k = inK
+	if strings.HasSuffix(k, consts.ListKeySuffix) {
+		isList = true
+		k = k[0 : len(k)-len(consts.ListKeySuffix)]
+	} else {
+		if strings.HasSuffix(filepath.Dir(path), consts.ListKeySuffix) { // parent  is []
+			isList = true
+		}
+	}
+
+	return
 }
 
 func (n *Node) buildChild() error {
@@ -176,7 +191,7 @@ func (n *Node) buildChild() error {
 		}
 
 		if n.isList {
-			if lo.Contains([]string{"total", "page"}, key) {
+			if lo.Contains([]string{consts.Total, consts.Page}, key) {
 				continue
 			}
 		}
@@ -224,6 +239,23 @@ func (n *Node) parse() {
 
 	if n.queryContext.PrintProcessLog {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse> ", n.Path)
+	}
+
+	if n.isList {
+		page := &Page{}
+		if v, exists := n.req[consts.Page]; exists {
+			page.Page = gconv.Int(v)
+		}
+		if v, exists := n.req[consts.Count]; exists {
+			page.Count = gconv.Int(v)
+		}
+		if v, exists := n.req[consts.Query]; exists {
+			switch gconv.String(v) {
+			case "1", "2":
+				n.needTotal = true
+			}
+		}
+		n.page = page
 	}
 
 	n.nodeHandler.parse()

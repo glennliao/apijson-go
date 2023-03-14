@@ -80,7 +80,7 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 	m := g.DB(a.DbName).Model(table).Ctx(ctx)
 
 	for k, v := range where {
-		if strings.HasSuffix(k, "{}") {
+		if strings.HasSuffix(k, consts.OpIn) {
 			if vStr, ok := v.(string); ok {
 				if vStr == "" {
 					return nil, gerror.New("where的值不能为空")
@@ -91,7 +91,8 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			continue
 		}
 		if k == consts.Raw {
-			delete(where, k) // todo 处理 rawSql
+			m = m.Where(v.(model.Map))
+			delete(where, k)
 			continue
 		}
 
@@ -101,8 +102,8 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 	}
 
 	for k, v := range data {
-		if strings.HasSuffix(k, "+") {
-			field := util.RemoveSuffix(k, "+")
+		if strings.HasSuffix(k, consts.OpPLus) {
+			field := util.RemoveSuffix(k, consts.OpPLus)
 			data[field] = &gdb.Counter{
 				Field: field,
 				Value: gconv.Float64(v),
@@ -110,8 +111,8 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			delete(data, k)
 			continue
 		}
-		if strings.HasSuffix(k, "-") {
-			field := util.RemoveSuffix(k, "-")
+		if strings.HasSuffix(k, consts.OpSub) {
+			field := util.RemoveSuffix(k, consts.OpSub)
 			data[field] = &gdb.Counter{
 				Field: field,
 				Value: -gconv.Float64(v),

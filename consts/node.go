@@ -15,12 +15,14 @@ const (
 const (
 	Role  = "@role"
 	Page  = "page"  // page num
-	Count = "count" // page size // todo access中增加限制count,防止被恶意下载数据
+	Count = "count" // page size
+	Total = "total"
 	Query = "query"
 )
 
 const (
 	OpLike   = "$"
+	OpIn     = "{}"
 	OpRegexp = "~"
 	OpSub    = "-"
 	OpPLus   = "+"

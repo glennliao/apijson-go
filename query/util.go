@@ -12,18 +12,6 @@ import (
 	"strings"
 )
 
-// parseTableKey 解析表名
-func parseTableKey(k string, p string) (tableName string) {
-	tableName = k
-
-	if strings.HasSuffix(k, consts.ListKeySuffix) {
-		tableName = k[0 : len(k)-len(consts.ListKeySuffix)]
-	} else if strings.Contains(p, "[]") {
-		tableName = k
-	}
-	return tableName
-}
-
 // parseQueryNodeReq 解析节点请求内容
 func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, where model.MapStrAny, ctrlMap model.Map) {
 	refMap = model.MapStrStr{}
@@ -67,12 +55,8 @@ func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err 
 
 	condition = config.NewConditionRet()
 
-	accessName := node.Key
-	if strings.HasSuffix(accessName, "[]") { //  todo 统一处理
-		accessName = accessName[0 : len(accessName)-2]
-	}
 	err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
-		AccessName:          accessName,
+		AccessName:          node.Key,
 		TableAccessRoleList: accessRoles,
 		Method:              http.MethodGet,
 		NodeReq:             node.req,
@@ -80,7 +64,6 @@ func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err 
 	}, condition)
 
 	return true, condition, err
-
 }
 
 func getColList(list []model.Map, col string) []any {

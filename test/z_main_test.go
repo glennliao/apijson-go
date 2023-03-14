@@ -41,10 +41,10 @@ func TestQuery(t *testing.T) {
 			//"id>":     "222",
 			//"@column": "id",
 		},
-		//"User[]": model.Map{
-		//	"@column": "id",
-		//	//"userId": "123",
-		//},
+		"User[]": model.Map{
+			"@column": "id",
+			//"userId": "123",
+		},
 		//"user2": model.Map{},
 		"a@": "User/username",
 		"b": model.Map{

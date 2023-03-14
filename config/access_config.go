@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/samber/lo"
@@ -9,8 +8,9 @@ import (
 )
 
 type FieldsGetValue struct {
-	In  map[string][]string
-	Out map[string]string
+	In       map[string][]string
+	Out      map[string]string
+	MaxCount *int // 可使用的最大分页大小,默认100
 }
 
 type AccessConfig struct {
@@ -29,7 +29,7 @@ type AccessConfig struct {
 
 	RowKeyGen string // 主键生成策略
 	RowKey    string
-	FieldsGet map[string]FieldsGetValue
+	FieldsGet map[string]*FieldsGetValue
 	Executor  string
 }
 
@@ -57,7 +57,6 @@ func (a *AccessConfig) GetFieldsGetInByRole(role string) map[string][]string {
 }
 
 func (a *Access) GetAccess(tableAlias string, noVerify bool) (*AccessConfig, error) {
-	tableAlias, _ = util.ParseNodeKey(tableAlias)
 	access, ok := a.accessConfigMap[tableAlias]
 
 	if !ok {

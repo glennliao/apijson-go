@@ -68,6 +68,15 @@ func (c *ExecutorConfig) TableColumns() []string {
 	return c.DBMeta.GetTableColumns(c.accessConfig.Name)
 }
 
+func (c *ExecutorConfig) GetFieldsGetByRole() *FieldsGetValue {
+
+	if val, exists := c.accessConfig.FieldsGet[c.role]; exists {
+		return val
+	}
+
+	return c.accessConfig.FieldsGet["default"]
+}
+
 func (c *ExecutorConfig) GetFieldsGetOutByRole() []string {
 	var fieldsMap map[string]string
 

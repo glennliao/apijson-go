@@ -14,13 +14,13 @@ import (
 )
 
 type Node struct {
-	req        []model.Map
-	ctx        context.Context
-	action     *Action
-	Key        string
-	tableName  string
-	AccessName string
-	Role       string
+	req       []model.Map
+	ctx       context.Context
+	action    *Action
+	Key       string
+	IsList    bool
+	tableName string
+	Role      string
 
 	Data   []model.Map // 需写入数据库的数据
 	Where  []model.Map // 条件
@@ -37,16 +37,19 @@ type Node struct {
 
 func newNode(key string, req []model.Map, structure *config.Structure, executor string) Node {
 
-	accessName := key
-	if strings.HasSuffix(accessName, "[]") {
-		accessName = accessName[0 : len(accessName)-2]
+	n := Node{
+		Key: key, req: req, structure: structure, executor: executor,
 	}
 
-	return Node{
-		Key: key, req: req, structure: structure, executor: executor, AccessName: accessName,
+	if strings.HasSuffix(key, consts.ListKeySuffix) {
+		n.Key = key[0 : len(key)-len(consts.ListKeySuffix)]
+		n.IsList = true
 	}
+
+	return n
 }
 
+// parse req data to data/where
 func (n *Node) parseReq(method string) {
 	n.Data = []model.Map{}
 	n.Where = []model.Map{}
@@ -80,9 +83,9 @@ func (n *Node) parseReq(method string) {
 
 		}
 	}
-
 }
 
+// parse node
 func (n *Node) parse(ctx context.Context, method string) error {
 
 	key := n.Key
@@ -131,11 +134,13 @@ func (n *Node) parse(ctx context.Context, method string) error {
 		return err
 	}
 
-	n.whereUpdate(ctx, method, accessRoles)
+	// 3. get where by accessCondition
+	err = n.whereUpdate(ctx, method, accessRoles)
 
-	return nil
+	return err
 }
 
+// update node role
 func (n *Node) roleUpdate() error {
 
 	if val, exists := n.structure.Insert[consts.Role]; exists {
@@ -176,7 +181,6 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 	return nil
 }
 
-// ? todo 整合到哪
 func (n *Node) whereUpdate(ctx context.Context, method string, accessRoles []string) error {
 
 	for i, item := range n.req {
@@ -326,7 +330,7 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 		if access.RowKeyGen != "" {
 			for i, _ := range n.Data {
 
-				rowKeyVal, err = n.action.actionConfig.RowKeyGen(ctx, access.RowKeyGen, n.AccessName, n.Data[i])
+				rowKeyVal, err = n.action.actionConfig.RowKeyGen(ctx, access.RowKeyGen, n.Key, n.Data[i])
 				if err != nil {
 					return nil, err
 				}

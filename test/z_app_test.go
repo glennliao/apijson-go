@@ -64,6 +64,6 @@ func App(ctx context.Context, a *apijson.ApiJson) {
 		},
 	})
 
-	a.Config().AccessListProvider = "custom"
+	//a.Config().AccessListProvider = "custom"
 
 }

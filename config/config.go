@@ -86,10 +86,27 @@ func (c *Config) ReLoad() {
 
 	if accessListProvider != nil {
 		c.accessList = accessListProvider(ctx)
+
+		defaultMaxCount := 100
+
 		for _, access := range c.accessList {
 			name := access.Alias
 			if name == "" {
 				name = access.Name
+			}
+
+			if access.FieldsGet == nil {
+				access.FieldsGet = map[string]*FieldsGetValue{}
+			}
+
+			if _, exists := access.FieldsGet["default"]; !exists {
+				access.FieldsGet["default"] = &FieldsGetValue{}
+			}
+
+			for role, _ := range access.FieldsGet {
+				if access.FieldsGet[role].MaxCount == nil {
+					access.FieldsGet[role].MaxCount = &defaultMaxCount
+				}
 			}
 			c.Access.accessConfigMap[access.Alias] = access
 		}
