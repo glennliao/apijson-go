@@ -1,7 +1,10 @@
-package executor_goframe
+package executor
 
 import (
 	"context"
+	"net/http"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
@@ -10,8 +13,6 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
-	"net/http"
-	"strings"
 )
 
 type ActionExecutor struct {

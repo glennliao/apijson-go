@@ -1,8 +1,12 @@
-package framework_goframe
+package web
 
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/glennliao/apijson-go"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gmap"
@@ -10,9 +14,6 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/iancoleman/orderedmap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type GF struct {

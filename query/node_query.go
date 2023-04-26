@@ -1,15 +1,19 @@
 package query
 
 import (
+	"fmt"
+	"net/http"
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"net/http"
-	"path/filepath"
-	"strings"
+	"github.com/gogf/gf/v2/util/gconv"
 )
 
 type queryNode struct {
@@ -81,6 +85,30 @@ func (q *queryNode) parse() {
 	refKeyMap, conditionMap, ctrlMap := parseQueryNodeReq(n.req, n.isList)
 
 	n.executor.ParseCtrl(ctrlMap)
+
+	if v, exists := ctrlMap["@column"]; exists {
+		var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
+
+		fieldStr := strings.ReplaceAll(gconv.String(v), ";", ",")
+
+		fieldList := strings.Split(fieldStr, ",")
+
+		for i, item := range fieldList {
+			fieldList[i] = exp.ReplaceAllStringFunc(item, func(field string) string {
+				return field
+			})
+		}
+
+		for _, item := range fieldList {
+			if strings.Contains(item, ":") {
+				n.Column[item] = item
+			} else {
+				n.Column[item] = item
+			}
+		}
+
+		fmt.Println(fieldList)
+	}
 
 	err = n.executor.ParseCondition(conditionMap, true)
 	if err != nil {
@@ -208,8 +236,11 @@ func (q *queryNode) fetch() {
 			count = 0
 		}
 
-		n.ret, n.err = n.executor.List(page, count)
 		n.total, n.err = n.executor.Count()
+		if n.total > 0 {
+			n.ret, n.err = n.executor.List(page, count)
+		}
+
 	} else {
 		n.ret, n.err = n.executor.One()
 	}

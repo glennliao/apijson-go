@@ -78,7 +78,7 @@ func New() *Config {
 
 func (c *Config) ReLoad() {
 
-	c.Access.accessConfigMap = make(map[string]AccessConfig)
+	accessConfigMap := make(map[string]AccessConfig)
 
 	ctx := context.Background()
 
@@ -108,9 +108,11 @@ func (c *Config) ReLoad() {
 					access.FieldsGet[role].MaxCount = &defaultMaxCount
 				}
 			}
-			c.Access.accessConfigMap[access.Alias] = access
+			accessConfigMap[access.Alias] = access
 		}
 	}
+
+	c.Access.accessConfigMap = accessConfigMap
 
 	requestListProvider := requestListProviderMap[c.RequestListProvider]
 	if requestListProvider != nil {

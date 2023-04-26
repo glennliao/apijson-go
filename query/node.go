@@ -2,6 +2,10 @@ package query
 
 import (
 	"context"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
@@ -11,9 +15,6 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
@@ -45,6 +46,9 @@ type Node struct {
 	Path string
 	// 节点类型
 	Type int
+
+	// 字段映射
+	Column map[string]string
 
 	// 是否为列表节点
 	isList bool
@@ -148,6 +152,8 @@ func newNode(query *Query, key string, path string, nodeReq any) *Node {
 	default:
 		node.simpleReqVal = gconv.String(nodeReq)
 	}
+
+	node.Column = map[string]string{}
 
 	return node
 }
