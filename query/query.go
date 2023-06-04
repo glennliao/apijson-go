@@ -3,14 +3,15 @@ package query
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
-	"strings"
-	"time"
 )
 
 type Query struct {

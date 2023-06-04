@@ -1,7 +1,10 @@
-package executor_goframe
+package executor
 
 import (
 	"context"
+	"regexp"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
@@ -11,8 +14,6 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
-	"regexp"
-	"strings"
 )
 
 type SqlExecutor struct {

@@ -1,4 +1,4 @@
-package framework_goframe
+package web
 
 import "github.com/gogf/gf/v2/container/gmap"
 

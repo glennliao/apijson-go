@@ -1,7 +1,10 @@
-package executor_goframe
+package executor
 
 import (
 	"context"
+	"net/http"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
@@ -10,8 +13,6 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
-	"net/http"
-	"strings"
 )
 
 type ActionExecutor struct {
@@ -91,13 +92,13 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			continue
 		}
 		if k == consts.Raw {
-			m = m.Where(v.(model.Map))
+			m = m.Where(v.(map[string]any))
 			delete(where, k)
 			continue
 		}
 
-		if v.(string) == "" || v == nil { //暂只处理字符串为空的情况
-			return nil, gerror.New("where的值不能为空")
+		if v == nil || gconv.String(v) == "" { //暂只处理字符串为空的情况
+			return nil, gerror.New("where的值不能为空:" + k)
 		}
 	}
 

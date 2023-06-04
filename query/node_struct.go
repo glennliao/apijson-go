@@ -134,13 +134,18 @@ func (h *structNode) result() {
 				k = k[0 : len(k)-2]
 			}
 
+			// todo 增加alias ？用来重命名返回的key，避免前端调整取值
+			if node.req["@alias"] != nil {
+				k = node.req["@alias"].(string)
+			}
+
 			retMap[k], err = node.Result()
 			if node.Type == NodeTypeFunc && retMap[k] == nil {
 				delete(retMap, k)
 			}
 
 			if err != nil {
-				n.ret = nil
+				n.err = err
 			}
 		}
 		n.ret = retMap

@@ -41,6 +41,17 @@ func newNode(key string, req []model.Map, structure *config.Structure, executor 
 		Key: key, req: req, structure: structure, executor: executor,
 	}
 
+	n.Data = []model.Map{}
+	n.Where = []model.Map{}
+
+	// ?
+	for _ = range n.req {
+
+		n.Data = append(n.Data, model.Map{})
+		n.Where = append(n.Where, model.Map{})
+
+	}
+
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
 		n.Key = key[0 : len(key)-len(consts.ListKeySuffix)]
 		n.IsList = true
@@ -51,13 +62,11 @@ func newNode(key string, req []model.Map, structure *config.Structure, executor 
 
 // parse req data to data/where
 func (n *Node) parseReq(method string) {
-	n.Data = []model.Map{}
-	n.Where = []model.Map{}
 
 	for i, item := range n.req {
 
-		n.Data = append(n.Data, model.Map{})
-		n.Where = append(n.Where, model.Map{})
+		//n.Data = append(n.Data, model.Map{})
+		//n.Where = append(n.Where, model.Map{})
 
 		for key, val := range item {
 
@@ -101,8 +110,6 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	n.tableName = access.Name
 	n.RowKey = access.RowKey
 
-	n.parseReq(method)
-
 	// 0. 角色替换
 
 	err = n.roleUpdate()
@@ -136,6 +143,8 @@ func (n *Node) parse(ctx context.Context, method string) error {
 
 	// 3. get where by accessCondition
 	err = n.whereUpdate(ctx, method, accessRoles)
+
+	n.parseReq(method)
 
 	return err
 }
@@ -329,10 +338,11 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 		return nil, err
 	}
 
+	var rowKeyVal model.Map
+	var rowKey string
+
 	switch method {
 	case http.MethodPost:
-
-		var rowKeyVal model.Map
 
 		access, err := n.action.actionConfig.GetAccessConfig(n.Key, true)
 		if err != nil {
@@ -358,30 +368,7 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 			}
 		}
 
-		ret, err := executor.GetActionExecutor(n.executor).Do(ctx, executor.ActionExecutorReq{
-			Method: method,
-			Table:  n.tableName,
-			Data:   n.Data,
-			Where:  nil,
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-		if len(n.Data) > 0 { //多条插入时返回值已经应该无意义了
-
-			jsonStyle := n.action.JsonFieldStyle
-			if rowKeyVal != nil {
-				for k, v := range rowKeyVal {
-					if k == consts.RowKey {
-						ret[jsonStyle(ctx, n.tableName, access.RowKey)] = v
-					} else {
-						ret[jsonStyle(ctx, n.tableName, k)] = v
-					}
-				}
-			}
-		}
+		rowKey = access.RowKey
 
 	case http.MethodPut:
 	case http.MethodDelete:
@@ -399,6 +386,20 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if len(n.Data) == 1 {
+
+		jsonStyle := n.action.JsonFieldStyle
+		if rowKeyVal != nil {
+			for k, v := range rowKeyVal {
+				if k == consts.RowKey {
+					ret[jsonStyle(ctx, n.tableName, rowKey)] = v
+				} else {
+					ret[jsonStyle(ctx, n.tableName, k)] = v
+				}
+			}
+		}
 	}
 
 	n.Ret = ret

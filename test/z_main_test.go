@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"github.com/glennliao/apijson-go"
-	_ "github.com/glennliao/apijson-go/drivers/config/goframe"   // need import for executor with goframe
-	_ "github.com/glennliao/apijson-go/drivers/executor/goframe" // need import for executor with goframe
-	"github.com/glennliao/apijson-go/drivers/framework_goframe"
+	_ "github.com/glennliao/apijson-go/drivers/goframe"
+	"github.com/glennliao/apijson-go/drivers/goframe/web"
 	"github.com/glennliao/apijson-go/model"
 	_ "github.com/gogf/gf/contrib/drivers/sqlite/v2" // need import for sqlite
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gctx"
-	"log"
-	"testing"
 )
 
 var a *apijson.ApiJson
@@ -25,7 +25,7 @@ func TestServer(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	s := framework_goframe.New(a)
+	s := web.New(a)
 	s.Run()
 	// then test in test.http
 }
@@ -66,6 +66,28 @@ func TestQuery(t *testing.T) {
 
 	g.Dump(result)
 
+}
+
+func TestAlias(t *testing.T) {
+
+	ctx := gctx.New()
+
+	q := a.NewQuery(ctx, model.Map{
+		"User[]": model.Map{
+			"@column": "id,password:username",
+			//"userId": "123",
+		},
+	})
+
+	q.NoAccessVerify = false
+
+	result, err := q.Result()
+
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	g.Dump(result)
 }
 
 func BenchmarkName(b *testing.B) {

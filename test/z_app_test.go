@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"time"
+
 	"github.com/glennliao/apijson-go"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/tables"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/table-sync/tablesync"
 	"github.com/gogf/gf/v2/frame/g"
-	"time"
 )
 
 type User struct {
@@ -34,6 +35,16 @@ func init() {
 				Alias:  "User",
 				Get:    []string{"UNKNOWN"},
 				RowKey: "id",
+				FieldsGet: map[string]*config.FieldsGetValue{
+					"default": {
+						In: nil,
+						Out: map[string]string{
+							"id":       "",
+							"username": "",
+						},
+						MaxCount: nil,
+					},
+				},
 			},
 			{
 				Name:   "user",
