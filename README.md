@@ -1,6 +1,7 @@
 # apijson-go [摸石头阶段]
 基于 go + goframe 实现的 apijson
 
+
 > ~~暂仍处于前期开发探索中, 请仅使用在 个人探索项目~~
 > 
 > ~~目前处于 【下水阶段】, 欢迎测试、issue、建议、pr~~
@@ -17,6 +18,9 @@
 
 # 使用指南
 ~~暂参考demo目录下的todo~~
+
+- [apijson-go-demo](https://github.com/glennliao/apijson-go-demo)
+- [bookmark](https://github.com/glennliao/bookmark)
 
 ## 文档参考
 1. [Get开放查询](./@doc/query.md)
