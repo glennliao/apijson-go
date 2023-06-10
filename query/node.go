@@ -60,7 +60,7 @@ type Node struct {
 
 	// 节点的请求数据
 	req          model.Map
-	simpleReqVal string //非对象结构
+	simpleReqVal string // 非对象结构
 
 	// 节点数据执行器
 	executor executor.QueryExecutor
@@ -70,6 +70,8 @@ type Node struct {
 
 	// 执行完毕
 	finish bool
+
+	later bool // 后续执行
 
 	ret any
 	err error
@@ -178,7 +180,7 @@ func (n *Node) buildChild() error {
 		return nil
 	}
 
-	//最大深度检查
+	// 最大深度检查
 	maxDeep := n.queryContext.queryConfig.MaxTreeDeep()
 	if len(strings.Split(n.Path, "/")) > maxDeep {
 		return gerror.Newf("deep(%s) > %d", n.Path, maxDeep)

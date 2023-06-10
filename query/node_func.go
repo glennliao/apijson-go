@@ -25,10 +25,18 @@ func (h *funcNode) fetch() {
 
 	_func := queryConfig.Func(functionName)
 
+	if n.isList && _func.Batch {
+		n.later = true
+		return
+	}
+
 	param := model.Map{}
 
 	for i, item := range _func.ParamList {
 		valNode := n.queryContext.pathNodes[paramKeys[i]]
+		// if valNode == nil {
+		// 	continue
+		// }
 		if valNode.ret != nil {
 			param[item.Name] = valNode.ret
 		} else {

@@ -1,11 +1,12 @@
 package query
 
 import (
+	"path/filepath"
+	"strings"
+
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/errors/gerror"
-	"path/filepath"
-	"strings"
 )
 
 type structNode struct {
@@ -134,9 +135,9 @@ func (h *structNode) result() {
 				k = k[0 : len(k)-2]
 			}
 
-			// todo 增加alias ？用来重命名返回的key，避免前端调整取值
-			if node.req["@alias"] != nil {
-				k = node.req["@alias"].(string)
+			// 增加alias 用来重命名返回的key，避免前端调整取值
+			if node.req[consts.Alias] != nil {
+				k = node.req[consts.Alias].(string)
 			}
 
 			retMap[k], err = node.Result()
@@ -148,6 +149,7 @@ func (h *structNode) result() {
 				n.err = err
 			}
 		}
+
 		n.ret = retMap
 	}
 }

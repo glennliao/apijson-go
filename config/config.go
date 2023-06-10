@@ -10,7 +10,7 @@ func RegAccessListProvider(name string, provider AccessListProvider) {
 	accessListProviderMap[name] = provider
 }
 
-type RequestListProvider func(ctx context.Context) []Request
+type RequestListProvider func(ctx context.Context) []RequestConfig
 
 var requestListProviderMap = make(map[string]RequestListProvider)
 
@@ -50,9 +50,9 @@ type Config struct {
 
 	accessList []AccessConfig
 
-	requestConfig *RequestConfig
-	queryConfig   *QueryConfig
-	actionConfig  *ActionConfig
+	requestConfigs *RequestConfigs
+	queryConfig    *QueryConfig
+	actionConfig   *ActionConfig
 }
 
 func New() *Config {
@@ -117,7 +117,7 @@ func (c *Config) ReLoad() {
 	requestListProvider := requestListProviderMap[c.RequestListProvider]
 	if requestListProvider != nil {
 		requestList := requestListProvider(ctx)
-		c.requestConfig = NewRequestConfig(requestList)
+		c.requestConfigs = NewRequestConfig(requestList)
 	}
 
 	dbMetaProvider := dbMetaProviderMap[c.DbMetaProvider]
@@ -134,7 +134,7 @@ func (c *Config) ReLoad() {
 	}
 
 	c.actionConfig = &ActionConfig{
-		requestConfig:    c.requestConfig,
+		requestConfig:    c.requestConfigs,
 		access:           c.Access,
 		functions:        c.Functions,
 		rowKeyGenFuncMap: c.rowKeyGenFuncMap,

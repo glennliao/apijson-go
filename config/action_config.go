@@ -2,11 +2,12 @@ package config
 
 import (
 	"context"
+
 	"github.com/glennliao/apijson-go/model"
 )
 
 type ActionConfig struct {
-	requestConfig    *RequestConfig
+	requestConfig    *RequestConfigs
 	access           *Access
 	functions        *functions
 	rowKeyGenFuncMap map[string]RowKeyGenFuncHandler
@@ -29,7 +30,7 @@ func (c *ActionConfig) Func(name string) Func {
 	return c.functions.funcMap[name]
 }
 
-func (c *ActionConfig) GetRequest(tag string, method string, version string) (*Request, error) {
+func (c *ActionConfig) GetRequest(tag string, method string, version string) (*RequestConfig, error) {
 	return c.requestConfig.GetRequest(tag, method, version)
 }
 

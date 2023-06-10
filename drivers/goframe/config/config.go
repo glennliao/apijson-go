@@ -16,8 +16,8 @@ var (
 	ProviderName = "db"
 )
 
-func RequestListProvider(ctx context.Context) []config.Request {
-	var requestList []config.Request
+func RequestListProvider(ctx context.Context) []config.RequestConfig {
+	var requestList []config.RequestConfig
 	err := g.DB().Model(TableRequest).OrderAsc("version").Scan(&requestList)
 	if err != nil {
 		panic(err)
@@ -31,14 +31,14 @@ func RequestListProvider(ctx context.Context) []config.Request {
 		}
 
 		// provider处理
-		//if strings.ToLower(tag) != tag {
+		// if strings.ToLower(tag) != tag {
 		//	// 本身大写, 如果没有外层, 则套一层
 		//	if _, ok := item.Structure[tag]; !ok {
 		//		item.Structure = map[string]any{
 		//			tag: item.Structure,
 		//		}
 		//	}
-		//}
+		// }
 
 		for k, v := range item.Structure {
 			structure := config.Structure{}

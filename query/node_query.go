@@ -261,7 +261,7 @@ func (q *queryNode) fetch() {
 		functionName, paramKeys := util.ParseFunctionsStr(v.(string))
 		_func := queryConfig.Func(functionName)
 
-		if n.isList {
+		if n.isList && n.ret != nil {
 			for i, item := range n.ret.([]model.Map) {
 
 				param := model.Map{}

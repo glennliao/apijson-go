@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/samber/lo"
 	"net/http"
+
+	"github.com/samber/lo"
 )
 
 type QueryConfig struct {

@@ -2,6 +2,8 @@ package action
 
 import (
 	"context"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
@@ -9,13 +11,12 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
-	"strings"
 )
 
 // Action 非get查询的request表中的请求
 type Action struct {
 	ctx        context.Context
-	tagRequest *config.Request
+	tagRequest *config.RequestConfig
 	method     string
 
 	req model.Map
@@ -30,7 +31,7 @@ type Action struct {
 	// 关闭 request 验证开关, 默认否
 	NoRequestVerify bool
 
-	//Access *config.Access
+	// Access *config.Access
 
 	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
 	DbFieldStyle config.FieldStyle
@@ -75,7 +76,7 @@ func (a *Action) parse() error {
 		}
 		structure, ok := structures[key]
 		if !ok {
-			if structure, ok = structures[structuresKey]; !ok { //User[]可读取User或者User[]
+			if structure, ok = structures[structuresKey]; !ok { // User[]可读取User或者User[]
 				return gerror.New("structure错误: 400, 缺少" + key)
 			}
 		}
@@ -158,7 +159,7 @@ func (a *Action) Result() (model.Map, error) {
 	return ret, err
 }
 
-func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.Request, error) {
+func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.RequestConfig, error) {
 	_tag, ok := req["tag"]
 	if !ok {
 		return nil, gerror.New("tag 缺失")

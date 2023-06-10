@@ -10,7 +10,7 @@ const (
 )
 
 type Hook struct {
-	For string //
+	For []string //
 	// Exec 事务外
 	BeforeNodeExec func(ctx context.Context, n *Node, method string) error
 	AfterNodeExec  func(ctx context.Context, n *Node, method string) error
@@ -23,7 +23,9 @@ type Hook struct {
 var hooksMap = map[string][]Hook{}
 
 func RegHook(h Hook) {
-	hooksMap[h.For] = append(hooksMap[h.For], h)
+	for _, item := range h.For {
+		hooksMap[item] = append(hooksMap[item], h)
+	}
 }
 
 func EmitHook(ctx context.Context, hookAt int, node *Node, method string) error {

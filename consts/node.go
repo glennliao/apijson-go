@@ -18,6 +18,7 @@ const (
 	Count = "count" // page size
 	Total = "total"
 	Query = "query"
+	Alias = "@alias"
 )
 
 const (

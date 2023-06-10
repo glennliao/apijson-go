@@ -1,15 +1,16 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gconv"
-	"strings"
 )
 
-type Request struct {
+type RequestConfig struct {
 	Debug     int8
 	Version   string
 	Method    string
@@ -38,13 +39,13 @@ type Structure struct {
 	Remove []string `json:"REMOVE,omitempty"`
 }
 
-type RequestConfig struct {
-	requestMap map[string]*Request
+type RequestConfigs struct {
+	requestMap map[string]*RequestConfig
 }
 
-func NewRequestConfig(requestList []Request) *RequestConfig {
-	c := RequestConfig{}
-	requestMap := make(map[string]*Request)
+func NewRequestConfig(requestList []RequestConfig) *RequestConfigs {
+	c := RequestConfigs{}
+	requestMap := make(map[string]*RequestConfig)
 
 	for _, _item := range requestList {
 		item := _item
@@ -71,7 +72,7 @@ func getRequestFullKey(tag string, method string, version string) string {
 	return tag + "@" + method + "@" + version
 }
 
-func (c *RequestConfig) GetRequest(tag string, method string, version string) (*Request, error) {
+func (c *RequestConfigs) GetRequest(tag string, method string, version string) (*RequestConfig, error) {
 
 	if version == "" || version == "-1" || version == "0" {
 		version = "latest"

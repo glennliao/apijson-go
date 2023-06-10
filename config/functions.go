@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/frame/g"
 )
@@ -15,6 +16,7 @@ type ParamItem struct {
 
 type Func struct {
 	ParamList []ParamItem
+	Batch     bool // 是否为批量处理, 例如在获取列表后一次性将id传入, 然后按照传入的参数数组返回结果数组
 	Handler   func(ctx context.Context, param model.Map) (res any, err error)
 }
 
