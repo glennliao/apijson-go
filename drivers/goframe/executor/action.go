@@ -97,7 +97,7 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			continue
 		}
 
-		if v == nil || gconv.String(v) == "" { //暂只处理字符串为空的情况
+		if v == nil || gconv.String(v) == "" { // 暂只处理字符串为空的情况
 			return nil, gerror.New("where的值不能为空:" + k)
 		}
 	}
@@ -149,17 +149,26 @@ func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.M
 	m := g.DB(a.DbName).Model(table).Ctx(ctx)
 
 	for k, v := range where {
+
+		if k == "@raw" {
+			m = m.Where(v)
+			continue
+		}
+
 		if strings.HasSuffix(k, "{}") {
 			m = m.WhereIn(k[0:len(k)-2], v)
 			delete(where, k)
 			continue
 		}
-		if v.(string) == "" || v == nil { //暂只处理字符串为空的情况
+
+		if gconv.String(v) == "" || v == nil { // 暂只处理字符串为空的情况
 			return nil, gerror.New("where的值不能为空")
 		}
+
+		m = m.Where(k, v)
 	}
 
-	_ret, err := m.Where(where).Delete()
+	_ret, err := m.Delete()
 	if err != nil {
 		return nil, err
 	}

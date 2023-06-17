@@ -89,6 +89,10 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 		k := dbStyle(e.ctx, tableName, where[0].(string))
 		if val, exists := inFieldsMap[k]; exists {
 
+			if len(val) == 0 {
+				continue
+			}
+
 			if val[0] == "*" {
 				continue
 			}
