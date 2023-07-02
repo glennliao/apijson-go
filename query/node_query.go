@@ -248,28 +248,47 @@ func (q *queryNode) fetch() {
 		return
 	}
 
-	queryConfig := n.queryContext.queryConfig
+	if n.ret != nil { // parse 时判断是否有functions, 有则处理
+		queryConfig := n.queryContext.queryConfig
 
-	// 需优化调整
-	for k, v := range n.req {
-		if !strings.HasSuffix(k, consts.FunctionsKeySuffix) {
-			continue
-		}
+		// 需优化调整
+		// 处理functions调用
+		for k, v := range n.req {
+			if !strings.HasSuffix(k, consts.FunctionsKeySuffix) {
+				continue
+			}
 
-		k = k[0 : len(k)-2]
+			k = k[0 : len(k)-2]
 
-		functionName, paramKeys := util.ParseFunctionsStr(v.(string))
-		_func := queryConfig.Func(functionName)
+			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
+			_func := queryConfig.Func(functionName)
 
-		if n.isList && n.ret != nil {
-			for i, item := range n.ret.([]model.Map) {
+			if n.isList {
+				for i, item := range n.ret.([]model.Map) {
 
+					param := model.Map{}
+					for paramI, paramItem := range _func.ParamList {
+						if paramItem.Name == consts.FunctionOriReqParam {
+							param[paramItem.Name] = item
+						} else {
+							param[paramItem.Name] = item[paramKeys[paramI]]
+						}
+					}
+
+					val, err := _func.Handler(n.ctx, param)
+					if err != nil {
+						n.err = err
+						return
+					}
+					n.ret.([]model.Map)[i][k] = val
+				}
+			} else {
 				param := model.Map{}
 				for paramI, paramItem := range _func.ParamList {
 					if paramItem.Name == consts.FunctionOriReqParam {
-						param[paramItem.Name] = item
+						param[paramItem.Name] = n.ret.(model.Map)
 					} else {
-						param[paramItem.Name] = item[paramKeys[paramI]]
+						param[paramItem.Name] = n.ret.(model.Map)[paramKeys[paramI]]
 					}
 				}
 
@@ -278,24 +297,8 @@ func (q *queryNode) fetch() {
 					n.err = err
 					return
 				}
-				n.ret.([]model.Map)[i][k] = val
+				n.ret.(model.Map)[k] = val
 			}
-		} else {
-			param := model.Map{}
-			for paramI, paramItem := range _func.ParamList {
-				if paramItem.Name == consts.FunctionOriReqParam {
-					param[paramItem.Name] = n.ret.(model.Map)
-				} else {
-					param[paramItem.Name] = n.ret.(model.Map)[paramKeys[paramI]]
-				}
-			}
-
-			val, err := _func.Handler(n.ctx, param)
-			if err != nil {
-				n.err = err
-				return
-			}
-			n.ret.(model.Map)[k] = val
 		}
 	}
 

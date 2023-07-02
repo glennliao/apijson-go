@@ -19,6 +19,7 @@ const (
 	Total = "total"
 	Query = "query"
 	Alias = "@alias"
+	Tag   = "tag"
 )
 
 const (

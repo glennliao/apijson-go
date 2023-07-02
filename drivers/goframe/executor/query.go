@@ -21,7 +21,7 @@ type SqlExecutor struct {
 
 	Role string
 
-	//保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
+	// 保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
 	Where           [][]any
 	accessCondition model.Map
 
@@ -54,8 +54,8 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 
 	for key, condition := range conditions {
 		switch {
-		case strings.HasSuffix(key, "{}"):
-			e.parseMultiCondition(util.RemoveSuffix(key, "{}"), condition)
+		case strings.HasSuffix(key, consts.OpIn):
+			e.parseMultiCondition(util.RemoveSuffix(key, consts.OpIn), condition)
 
 		case strings.HasSuffix(key, consts.OpLike):
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlLike, gconv.String(condition)})

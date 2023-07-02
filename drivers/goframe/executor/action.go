@@ -150,12 +150,12 @@ func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.M
 
 	for k, v := range where {
 
-		if k == "@raw" {
+		if k == consts.Raw {
 			m = m.Where(v)
 			continue
 		}
 
-		if strings.HasSuffix(k, "{}") {
+		if strings.HasSuffix(k, consts.OpIn) {
 			m = m.WhereIn(k[0:len(k)-2], v)
 			delete(where, k)
 			continue

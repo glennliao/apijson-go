@@ -2,6 +2,9 @@ package action
 
 import (
 	"context"
+	"net/http"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
@@ -9,14 +12,12 @@ import (
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/samber/lo"
-	"net/http"
-	"strings"
 )
 
 type Node struct {
 	req       []model.Map
 	ctx       context.Context
-	action    *Action
+	Action    *Action
 	Key       string
 	IsList    bool
 	tableName string
@@ -32,7 +33,7 @@ type Node struct {
 
 	keyNode map[string]*Node
 
-	//access *config.Access
+	// access *config.Access
 }
 
 func newNode(key string, req []model.Map, structure *config.Structure, executor string) Node {
@@ -65,8 +66,8 @@ func (n *Node) parseReq(method string) {
 
 	for i, item := range n.req {
 
-		//n.Data = append(n.Data, model.Map{})
-		//n.Where = append(n.Where, model.Map{})
+		// n.Data = append(n.Data, model.Map{})
+		// n.Where = append(n.Where, model.Map{})
 
 		for key, val := range item {
 
@@ -75,7 +76,7 @@ func (n *Node) parseReq(method string) {
 				continue
 			}
 
-			key = n.action.DbFieldStyle(n.ctx, n.tableName, key)
+			key = n.Action.DbFieldStyle(n.ctx, n.tableName, key)
 
 			switch method {
 			case http.MethodPost:
@@ -101,7 +102,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
 		key = key[0 : len(key)-2]
 	}
-	access, err := n.action.actionConfig.GetAccessConfig(key, true)
+	access, err := n.Action.ActionConfig.GetAccessConfig(key, true)
 
 	if err != nil {
 		return err
@@ -117,7 +118,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 		return err
 	}
 	var accessRoles []string
-	if n.action.NoAccessVerify == false {
+	if n.Action.NoAccessVerify == false {
 		// 1. 检查权限, 无权限就不用做参数检查了
 
 		switch method {
@@ -167,7 +168,7 @@ func (n *Node) roleUpdate() error {
 
 func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []string) error {
 
-	role, err := n.action.actionConfig.DefaultRoleFunc()(ctx, config.RoleReq{
+	role, err := n.Action.ActionConfig.DefaultRoleFunc()(ctx, config.RoleReq{
 		AccessName: n.tableName,
 		Method:     method,
 		NodeRole:   n.Role,
@@ -204,7 +205,7 @@ func (n *Node) whereUpdate(ctx context.Context, method string, accessRoles []str
 			NodeReq:             item,
 		}
 
-		err := n.action.actionConfig.ConditionFunc(ctx, conditionReq, condition)
+		err := n.Action.ActionConfig.ConditionFunc(ctx, conditionReq, condition)
 
 		if err != nil {
 			return err
@@ -270,7 +271,7 @@ func (n *Node) reqUpdate() error {
 
 				// call functions
 				{
-					queryConfig := n.action.actionConfig
+					queryConfig := n.Action.ActionConfig
 
 					functionName, paramKeys := util.ParseFunctionsStr(updateVal.(string))
 
@@ -320,9 +321,9 @@ func (n *Node) reqUpdateBeforeDo() error {
 			if strings.HasSuffix(k, consts.RefKeySuffix) {
 				refNodeKey, refCol := util.ParseRefCol(v.(string))
 				if strings.HasSuffix(refNodeKey, consts.ListKeySuffix) { // 双列表
-					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][n.action.DbFieldStyle(n.ctx, n.tableName, refCol)]
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[i][n.Action.DbFieldStyle(n.ctx, n.tableName, refCol)]
 				} else {
-					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][n.action.DbFieldStyle(n.ctx, n.tableName, refCol)]
+					n.Data[i][k] = n.keyNode[refNodeKey].Data[0][n.Action.DbFieldStyle(n.ctx, n.tableName, refCol)]
 				}
 			}
 		}
@@ -341,18 +342,18 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 	var rowKeyVal model.Map
 	var rowKey string
 
+	access, err := n.Action.ActionConfig.GetAccessConfig(n.Key, true)
+	if err != nil {
+		return nil, err
+	}
+
 	switch method {
 	case http.MethodPost:
-
-		access, err := n.action.actionConfig.GetAccessConfig(n.Key, true)
-		if err != nil {
-			return nil, err
-		}
 
 		if access.RowKeyGen != "" {
 			for i, _ := range n.Data {
 
-				rowKeyVal, err = n.action.actionConfig.RowKeyGen(ctx, access.RowKeyGen, n.Key, n.Data[i])
+				rowKeyVal, err = n.Action.ActionConfig.RowKeyGen(ctx, access.RowKeyGen, n.Key, n.Data[i])
 				if err != nil {
 					return nil, err
 				}
@@ -382,6 +383,8 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 		Table:  n.tableName,
 		Data:   n.Data,
 		Where:  n.Where,
+		Access: access,
+		Config: n.Action.ActionConfig,
 	})
 
 	if err != nil {
@@ -390,7 +393,7 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 
 	if len(n.Data) == 1 {
 
-		jsonStyle := n.action.JsonFieldStyle
+		jsonStyle := n.Action.JsonFieldStyle
 		if rowKeyVal != nil {
 			for k, v := range rowKeyVal {
 				if k == consts.RowKey {

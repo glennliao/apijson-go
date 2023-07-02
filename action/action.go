@@ -39,7 +39,7 @@ type Action struct {
 	// jsonFieldStyle 数据库返回的字段
 	JsonFieldStyle config.FieldStyle
 
-	actionConfig *config.ActionConfig
+	ActionConfig *config.ActionConfig
 }
 
 func New(ctx context.Context, actionConfig *config.ActionConfig, method string, req model.Map) *Action {
@@ -49,7 +49,7 @@ func New(ctx context.Context, actionConfig *config.ActionConfig, method string, 
 		panic(err)
 	}
 
-	delete(req, "tag")
+	delete(req, consts.Tag)
 	delete(req, "version")
 
 	a := &Action{
@@ -59,7 +59,7 @@ func New(ctx context.Context, actionConfig *config.ActionConfig, method string, 
 		req:          req,
 		children:     map[string]*Node{},
 		keyNode:      map[string]*Node{},
-		actionConfig: actionConfig,
+		ActionConfig: actionConfig,
 	}
 	return a
 }
@@ -93,7 +93,7 @@ func (a *Action) parse() error {
 
 		node := newNode(key, list, structure, a.tagRequest.Executor[key])
 		node.ctx = a.ctx
-		node.action = a
+		node.Action = a
 		a.keyNode[key] = &node
 		node.keyNode = a.keyNode
 		err := node.parse(a.ctx, a.method)
@@ -160,7 +160,7 @@ func (a *Action) Result() (model.Map, error) {
 }
 
 func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.RequestConfig, error) {
-	_tag, ok := req["tag"]
+	_tag, ok := req[consts.Tag]
 	if !ok {
 		return nil, gerror.New("tag 缺失")
 	}

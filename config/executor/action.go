@@ -2,6 +2,8 @@ package executor
 
 import (
 	"context"
+
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/samber/lo"
 )
@@ -15,6 +17,8 @@ type ActionExecutorReq struct {
 	Table  string
 	Data   []model.Map
 	Where  []model.Map
+	Access *config.AccessConfig
+	Config *config.ActionConfig
 }
 
 var actionExecutorMap = map[string]ActionExecutor{}

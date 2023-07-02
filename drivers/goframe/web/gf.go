@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/glennliao/apijson-go"
+	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -138,14 +139,14 @@ func sortMap(ctx context.Context, body []byte, res *gmap.ListMap, ret model.Map)
 	}
 
 	for _, k := range reqSortMap.Keys() {
-		if strings.HasPrefix(k, "@") {
+		if strings.HasPrefix(k, consts.RefKeySuffix) {
 			continue
 		}
-		if k == "tag" {
+		if k == consts.Tag {
 			continue
 		}
 
-		if strings.HasSuffix(k, "@") {
+		if strings.HasSuffix(k, consts.RefKeySuffix) {
 			k = k[:len(k)-1]
 		}
 
