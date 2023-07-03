@@ -1,10 +1,15 @@
 package goframe
 
 import (
+	"context"
+
+	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/executor"
 	gfConfig "github.com/glennliao/apijson-go/drivers/goframe/config"
 	gfExecutor "github.com/glennliao/apijson-go/drivers/goframe/executor"
+	"github.com/glennliao/apijson-go/query"
+	"github.com/gogf/gf/v2/database/gdb"
+	"github.com/gogf/gf/v2/frame/g"
 )
 
 func init() {
@@ -14,8 +19,16 @@ func init() {
 
 	config.RegDbMetaProvider(gfConfig.ProviderName, gfConfig.DbMetaProvider)
 
-	executor.RegQueryExecutor("default", gfExecutor.New)
-	executor.RegActionExecutor("default", &gfExecutor.ActionExecutor{})
+	query.RegExecutor("default", gfExecutor.New)
+	action.RegExecutor("default", &gfExecutor.ActionExecutor{})
 
-	// todo 添加未配置driver时的报错信息, 而不是 invalid memory address or nil pointer dereference
+	action.RegTransactionResolver(func(ctx context.Context, req *action.Action) action.TransactionHandler {
+		return func(ctx context.Context, action func(ctx context.Context) error) error {
+			// TODO g.DB() -> resolver
+			return g.DB().Ctx(ctx).Transaction(ctx, func(ctx context.Context, tx gdb.TX) error {
+				return action(ctx)
+			})
+		}
+	})
+
 }

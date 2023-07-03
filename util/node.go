@@ -1,9 +1,10 @@
 package util
 
 import (
-	"github.com/glennliao/apijson-go/model"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"path/filepath"
+
+	"github.com/glennliao/apijson-go/consts"
+	"github.com/glennliao/apijson-go/model"
 )
 
 func IsFirstUp(str string) bool {
@@ -31,7 +32,10 @@ func RemoveSuffix(key string, suffix string) string {
 // ParseRefCol 解析引用字段
 // 将 "id@":"[]/User/userId"  解析出引用信息
 func ParseRefCol(refStr string) (refPath string, refCol string) {
-	refCol = filepath.Base(refStr)                  // userId
+	refCol = filepath.Base(refStr) // userId
+	if refCol == refStr {
+		return refStr, ""
+	}
 	refPath = refStr[0 : len(refStr)-len(refCol)-1] // []/User
 	return refPath, refCol
 }
@@ -76,7 +80,7 @@ func AnalysisOrder(prerequisites [][]string) ([]string, error) {
 	}
 
 	if len(result) != pointNum {
-		return nil, gerror.New("依赖循环, 请检查请求")
+		return nil, consts.NewValidReqErr("nodes cycle")
 	}
 
 	return result, nil

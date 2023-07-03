@@ -6,7 +6,6 @@ import (
 
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
-	"github.com/gogf/gf/v2/errors/gerror"
 )
 
 type structNode struct {
@@ -37,7 +36,8 @@ func (h *structNode) parse() {
 			if child.primaryTableKey != "" {
 
 				if hasPrimary {
-					panic(gerror.Newf("node must only one primary table: (%s)", n.Path))
+					n.err = consts.NewValidReqErr("node must only one primary table: " + n.Path)
+					return
 				}
 
 				hasPrimary = true
@@ -48,7 +48,8 @@ func (h *structNode) parse() {
 		}
 
 		if n.Key == consts.ListKeySuffix && !hasPrimary {
-			panic(gerror.Newf("node must have  primary table: (%s)", n.Path))
+			n.err = consts.NewValidReqErr("node must have  primary table: " + n.Path)
+			return
 		}
 	}
 
@@ -150,7 +151,12 @@ func (h *structNode) result() {
 			}
 		}
 
-		n.ret = retMap
+		if len(retMap) > 0 && n.simpleReqVal == "" {
+			n.ret = retMap
+		} else {
+			n.ret = n.simpleReqVal
+		}
+
 	}
 }
 

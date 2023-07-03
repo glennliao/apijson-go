@@ -36,24 +36,29 @@ func TestQuery(t *testing.T) {
 
 	q := a.NewQuery(ctx, model.Map{
 		"User": model.Map{
-			//"id":      "123",
-			//"id{}":    []string{"123", "456"},
-			//"id>":     "222",
-			//"@column": "id",
+			// "id":      "123",
+			// "id{}":    []string{"123", "456"},
+			// "id>":     "222",
+			// "@column": "id",
 		},
 		"User[]": model.Map{
-			"@column": "id",
-			//"userId": "123",
+			"@column":      "id,username",
+			"concatTest()": "concat(username,c)",
+			// "userId": "123",
 		},
-		//"user2": model.Map{},
-		"a@": "User/username",
-		"b": model.Map{
-			"User": model.Map{
-				"id": 1,
-			},
-			"c@": "/User/username",
-		},
-		"say()": "test()",
+		// "user2": model.Map{},
+		// "a@": "User/username",
+		// "b": model.Map{
+		// 	"User": model.Map{
+		// 		"id": 1,
+		// 	},
+		// 	"c@": "/User/username",
+		// },
+		// "say()":        "test()",
+		// "a":            "12",
+		// "c":            "34",
+		// "concatTest()": "concat(/User/username,c)",
+		// "concatTest()": "concat(User/username,c)",
 	})
 
 	q.NoAccessVerify = true
@@ -75,7 +80,7 @@ func TestAlias(t *testing.T) {
 	q := a.NewQuery(ctx, model.Map{
 		"User[]": model.Map{
 			"@column": "id,password:username",
-			//"userId": "123",
+			// "userId": "123",
 		},
 	})
 
@@ -94,24 +99,24 @@ func BenchmarkName(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
 		q := a.NewQuery(ctx, model.Map{
-			//"User": model.Map{
+			// "User": model.Map{
 			//	"id": 1,
 			//	//"id":      "123",
 			//	//"id{}":    []string{"123", "456"},
 			//	//"id>":     "222",
 			//	//"@column": "id",
-			//},
-			//"User[]": model.Map{
+			// },
+			// "User[]": model.Map{
 			//	"@column": "id",
 			//	//"userId": "123",
-			//},
-			//"a@": "User/username",
-			//"b": model.Map{
+			// },
+			// "a@": "User/username",
+			// "b": model.Map{
 			//	"User": model.Map{
 			//		"id": 1,
 			//	},
 			//	//"c@": "/User/username",
-			//},
+			// },
 			"say()": "test()",
 		})
 

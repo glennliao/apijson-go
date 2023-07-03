@@ -75,6 +75,22 @@ func App(ctx context.Context, a *apijson.ApiJson) {
 		},
 	})
 
-	//a.Config().AccessListProvider = "custom"
+	a.Config().Functions.Bind("concat", config.Func{
+		ParamList: []config.ParamItem{
+			{
+				Name: "a",
+				Type: "string",
+			},
+			{
+				Name: "b",
+				Type: "string",
+			},
+		},
+		Handler: func(ctx context.Context, param model.Map) (res any, err error) {
+			return param["a"].(string) + param["b"].(string), nil
+		},
+	})
+
+	// a.Config().AccessListProvider = "custom"
 
 }

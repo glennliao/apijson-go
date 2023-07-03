@@ -2,16 +2,15 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
@@ -63,7 +62,7 @@ type Node struct {
 	simpleReqVal string // 非对象结构
 
 	// 节点数据执行器
-	executor executor.QueryExecutor
+	executor QueryExecutor
 
 	startAt time.Time
 	endAt   time.Time
@@ -183,7 +182,7 @@ func (n *Node) buildChild() error {
 	// 最大深度检查
 	maxDeep := n.queryContext.queryConfig.MaxTreeDeep()
 	if len(strings.Split(n.Path, "/")) > maxDeep {
-		return gerror.Newf("deep(%s) > %d", n.Path, maxDeep)
+		return consts.NewValidReqErr(fmt.Sprintf("deep(%s) > %d", n.Path, maxDeep))
 	}
 
 	children := make(map[string]*Node)
@@ -230,7 +229,7 @@ func (n *Node) buildChild() error {
 			if path == "" {
 				path = "root"
 			}
-			return gerror.Newf("width(%s) > %d", path, maxWidth)
+			return consts.NewValidReqErr(fmt.Sprintf("width(%s) > %d", path, maxWidth))
 		}
 
 		n.children = children

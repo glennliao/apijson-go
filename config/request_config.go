@@ -21,6 +21,8 @@ type RequestConfig struct {
 	// 节点执行顺序
 	ExecQueue []string
 	Executor  map[string]string
+	// 是否开启事务
+	Transaction *bool
 }
 
 type Structure struct {

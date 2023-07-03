@@ -1,12 +1,13 @@
 package query
 
 import (
+	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
-	"github.com/gogf/gf/v2/errors/gerror"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -30,12 +31,14 @@ func (r *RefNode) parse() {
 	}
 	refPath, refCol := util.ParseRefCol(refStr)
 	if refPath == n.Path { // 不能依赖自身
-		panic(gerror.Newf("node cannot ref self: (%s)", refPath))
+		n.err = consts.NewValidReqErr(fmt.Sprintf("node cannot ref self: (%s)", refPath))
+		return
 	}
 
 	refNode := n.queryContext.pathNodes[refPath]
 	if refNode == nil {
-		panic(gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path))
+		n.err = consts.NewValidReqErr(fmt.Sprintf(" node %s is nil, but ref by %s", refPath, n.Path))
+		return
 	}
 
 	n.refKeyMap = make(map[string]NodeRef)

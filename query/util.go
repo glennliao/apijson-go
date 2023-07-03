@@ -1,6 +1,9 @@
 package query
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
@@ -8,8 +11,6 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/samber/lo"
-	"net/http"
-	"strings"
 )
 
 // parseQueryNodeReq 解析节点请求内容
@@ -23,9 +24,9 @@ func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, w
 			continue
 		}
 
-		if strings.HasSuffix(k, consts.RefKeySuffix) { //引用
+		if strings.HasSuffix(k, consts.RefKeySuffix) { // 引用
 			refMap[k[0:len(k)-1]] = gconv.String(v)
-		} else if strings.HasPrefix(k, "@") { // @column等ctrl字段
+		} else if strings.HasPrefix(k, consts.CtrlKeyPrefix) { // @column等ctrl字段
 			ctrlMap[k] = v
 		} else {
 			if isList {

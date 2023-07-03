@@ -1,8 +1,10 @@
-package executor
+package query
 
 import (
 	"context"
+
 	"github.com/glennliao/apijson-go/config"
+	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/samber/lo"
 )
@@ -20,15 +22,20 @@ type queryExecutorBuilder func(ctx context.Context, config *config.ExecutorConfi
 
 var queryExecutorBuilderMap = map[string]queryExecutorBuilder{}
 
-func RegQueryExecutor(name string, e queryExecutorBuilder) {
+func RegExecutor(name string, e queryExecutorBuilder) {
 	queryExecutorBuilderMap[name] = e
 }
 
-func NewQueryExecutor(name string, ctx context.Context, config *config.ExecutorConfig) (QueryExecutor, error) {
+func NewExecutor(name string, ctx context.Context, config *config.ExecutorConfig) (QueryExecutor, error) {
+	if name == "" {
+		name = "default"
+	}
+
 	if v, exists := queryExecutorBuilderMap[name]; exists {
 		return v(ctx, config)
 	}
-	return queryExecutorBuilderMap["default"](ctx, config)
+
+	return nil, consts.NewSysErr("query executor not found: " + name)
 }
 
 func QueryExecutorList() []string {

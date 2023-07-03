@@ -2,6 +2,7 @@ package apijson
 
 import (
 	"context"
+
 	"github.com/glennliao/apijson-go/action"
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/model"
@@ -19,9 +20,6 @@ type ApiJson struct {
 }
 
 var DefaultApiJson = New()
-
-type App struct {
-}
 
 func New() *ApiJson {
 	a := &ApiJson{}
@@ -75,6 +73,8 @@ func (a *ApiJson) NewAction(ctx context.Context, method string, req model.Map) *
 	act.NoAccessVerify = a.config.Access.NoVerify
 	act.DbFieldStyle = a.config.DbFieldStyle
 	act.JsonFieldStyle = a.config.JsonFieldStyle
+
+	act.NewQuery = a.NewQuery
 
 	return act
 }

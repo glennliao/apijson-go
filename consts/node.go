@@ -13,13 +13,16 @@ const (
 )
 
 const (
-	Role  = "@role"
-	Page  = "page"  // page num
-	Count = "count" // page size
-	Total = "total"
-	Query = "query"
-	Alias = "@alias"
-	Tag   = "tag"
+	CtrlKeyPrefix = "@"
+	Role          = "@role"
+	Page          = "page"  // page num
+	Count         = "count" // page size
+	Total         = "total"
+	Query         = "query"
+	Alias         = "@alias"
+	Column        = "@column"
+	Tag           = "tag"
+	Version       = "version"
 )
 
 const (

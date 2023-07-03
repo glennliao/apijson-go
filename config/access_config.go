@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/gogf/gf/v2/errors/gerror"
+	"net/http"
+
+	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/samber/lo"
-	"net/http"
 )
 
 type FieldsGetValue struct {
@@ -56,28 +57,28 @@ func (a *AccessConfig) GetFieldsGetInByRole(role string) map[string][]string {
 	return inFieldsMap
 }
 
-func (a *Access) GetAccess(tableAlias string, noVerify bool) (*AccessConfig, error) {
-	access, ok := a.accessConfigMap[tableAlias]
+func (a *Access) GetAccess(accessName string, noVerify bool) (*AccessConfig, error) {
+	access, ok := a.accessConfigMap[accessName]
 
 	if !ok {
 		if noVerify {
 			return &AccessConfig{
 				Debug: 0,
-				Name:  tableAlias,
-				Alias: tableAlias,
+				Name:  accessName,
+				Alias: accessName,
 			}, nil
 		}
-		return nil, gerror.Newf("access[%s]: 404", tableAlias)
+		return nil, consts.NewAccessNoFoundErr(accessName)
 	}
 
 	return &access, nil
 }
 
-func (a *Access) GetAccessRole(table string, method string) ([]string, string, error) {
-	access, ok := a.accessConfigMap[table]
+func (a *Access) GetAccessRole(accessName string, method string) ([]string, string, error) {
+	access, ok := a.accessConfigMap[accessName]
 
 	if !ok {
-		return nil, "", gerror.Newf("access[%s]: 404", table)
+		return nil, "", consts.NewAccessNoFoundErr(accessName)
 	}
 
 	switch method {

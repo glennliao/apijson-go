@@ -8,11 +8,9 @@ import (
 	"strings"
 
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -42,7 +40,8 @@ func (q *queryNode) parse() {
 		fieldsGet := n.executorConfig.GetFieldsGetByRole()
 		if *fieldsGet.MaxCount != 0 {
 			if n.page.Count > *fieldsGet.MaxCount {
-				n.err = gerror.New(" > maxCount: " + n.Path)
+
+				n.err = consts.NewValidReqErr(" > maxCount: " + n.Path)
 				return
 			}
 		}
@@ -54,7 +53,7 @@ func (q *queryNode) parse() {
 	n.executorConfig.SetRole(n.role)
 
 	if n.role == consts.DENY {
-		n.err = gerror.New("deny node: " + n.Path)
+		n.err = consts.NewDenyErr(n.Key, n.role)
 		return
 	}
 
@@ -66,14 +65,14 @@ func (q *queryNode) parse() {
 		}
 
 		if !has {
-			n.err = gerror.New("无权限访问:" + n.Key + " by " + n.role)
+			n.err = consts.NewNoAccessErr(n.Key, n.role)
 			return
 		}
 
 		accessWhereCondition = condition.Where()
 	}
 
-	queryExecutor, err := executor.NewQueryExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)
+	queryExecutor, err := NewExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)
 	if err != nil {
 		n.err = err
 		return
@@ -86,7 +85,7 @@ func (q *queryNode) parse() {
 
 	n.executor.ParseCtrl(ctrlMap)
 
-	if v, exists := ctrlMap["@column"]; exists {
+	if v, exists := ctrlMap[consts.Column]; exists {
 		var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 
 		fieldStr := strings.ReplaceAll(gconv.String(v), ";", ",")
@@ -142,13 +141,14 @@ func (q *queryNode) parse() {
 			}
 
 			if refPath == n.Path { // 不能依赖自身
-				n.err = gerror.Newf("node cannot ref self: (%s) {%s:%s}", refPath, refKey, refStr)
+
+				n.err = consts.NewValidReqErr(fmt.Sprintf("node cannot ref self: (%s) {%s:%s}", refPath, refKey, refStr))
 				return
 			}
 
 			refNode := n.queryContext.pathNodes[refPath]
 			if refNode == nil {
-				n.err = gerror.Newf(" node %s is nil, but ref by %s", refPath, n.Path)
+				n.err = consts.NewValidReqErr(fmt.Sprintf(" node %s is nil, but ref by %s", refPath, n.Path))
 				return
 			}
 
@@ -159,7 +159,7 @@ func (q *queryNode) parse() {
 
 			for _, _refN := range refNode.refKeyMap {
 				if _refN.node.Path == n.Path {
-					n.err = gerror.Newf("circle ref %s & %s", refNode.Path, n.Path)
+					n.err = consts.NewValidReqErr(fmt.Sprintf("circle ref %s & %s", refNode.Path, n.Path))
 					return
 				}
 			}
@@ -266,12 +266,13 @@ func (q *queryNode) fetch() {
 			if n.isList {
 				for i, item := range n.ret.([]model.Map) {
 
+					// todo 统一functions调用处理
 					param := model.Map{}
 					for paramI, paramItem := range _func.ParamList {
 						if paramItem.Name == consts.FunctionOriReqParam {
-							param[paramItem.Name] = item
+							param[paramItem.Name] = util.String(item)
 						} else {
-							param[paramItem.Name] = item[paramKeys[paramI]]
+							param[paramItem.Name] = util.String(item[paramKeys[paramI]])
 						}
 					}
 

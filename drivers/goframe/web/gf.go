@@ -18,12 +18,14 @@ import (
 )
 
 type GF struct {
-	apijson *apijson.ApiJson
+	apijson          *apijson.ApiJson
+	ResponseResolver func(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode, debug bool) func(req *ghttp.Request)
 }
 
 func New(a *apijson.ApiJson) *GF {
 	return &GF{
-		apijson: a,
+		apijson:          a,
+		ResponseResolver: CommonResponse,
 	}
 }
 
@@ -40,6 +42,7 @@ func (gf *GF) Run(s ...*ghttp.Server) {
 	server.Group("/", func(group *ghttp.RouterGroup) {
 		gf.Bind(group)
 	})
+
 	server.Run()
 }
 
@@ -47,11 +50,11 @@ func (gf *GF) Bind(group *ghttp.RouterGroup, mode ...Mode) {
 	if len(mode) == 0 {
 		mode = []Mode{InDataMode}
 	}
-	group.POST("/get", gf.CommonResponse(gf.Get, mode[0]))
-	group.POST("/post", gf.CommonResponse(gf.Post, mode[0]))
-	group.POST("/head", gf.CommonResponse(gf.Head, mode[0]))
-	group.POST("/put", gf.CommonResponse(gf.Put, mode[0]))
-	group.POST("/delete", gf.CommonResponse(gf.Delete, mode[0]))
+	group.POST("/get", gf.ResponseResolver(gf.Get, mode[0], gf.apijson.Debug))
+	group.POST("/post", gf.ResponseResolver(gf.Post, mode[0], gf.apijson.Debug))
+	group.POST("/head", gf.ResponseResolver(gf.Head, mode[0], gf.apijson.Debug))
+	group.POST("/put", gf.ResponseResolver(gf.Put, mode[0], gf.apijson.Debug))
+	group.POST("/delete", gf.ResponseResolver(gf.Delete, mode[0], gf.apijson.Debug))
 }
 
 func (gf *GF) Get(ctx context.Context, req model.Map) (res model.Map, err error) {
@@ -78,58 +81,6 @@ func (gf *GF) Delete(ctx context.Context, req model.Map) (res model.Map, err err
 	return act.Result()
 }
 
-func (gf *GF) CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode) func(req *ghttp.Request) {
-	return func(req *ghttp.Request) {
-		metaRes := &gmap.ListMap{}
-		code := 200
-		msg := "success"
-		nodeRes := &gmap.ListMap{}
-
-		err := g.Try(req.Context(), func(ctx context.Context) {
-
-			ret, err := handler(req.Context(), req.GetMap())
-
-			if err == nil {
-				code = 200
-			} else {
-				code = 500
-				msg = err.Error()
-			}
-
-			if gf.apijson.Debug {
-				sortMap(ctx, req.GetBody(), metaRes, ret)
-			} else {
-				for k, v := range ret {
-					nodeRes.Set(k, v)
-				}
-			}
-
-			if err != nil {
-				panic(err)
-			}
-
-		})
-
-		if err != nil {
-			code = 500
-			msg = err.Error()
-			if e, ok := err.(*gerror.Error); ok {
-				g.Log().Stack(false).Error(req.Context(), err, e.Stack())
-			} else {
-				g.Log().Stack(false).Error(req.Context(), err)
-			}
-		}
-
-		metaRes.Set("ok", code == 200)
-		metaRes.Set("code", code)
-		metaRes.Set("msg", msg)
-		metaRes.Set("span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
-
-		res := mode(nodeRes, metaRes)
-		req.Response.WriteJson(res.String())
-	}
-}
-
 // 调试模式开启, 使用orderedmap输出结果
 func sortMap(ctx context.Context, body []byte, res *gmap.ListMap, ret model.Map) *orderedmap.OrderedMap {
 	reqSortMap := orderedmap.New()
@@ -154,4 +105,56 @@ func sortMap(ctx context.Context, body []byte, res *gmap.ListMap, ret model.Map)
 	}
 
 	return reqSortMap
+}
+
+func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode, debug bool) func(req *ghttp.Request) {
+	return func(req *ghttp.Request) {
+		metaRes := &gmap.ListMap{}
+		code := 200
+		msg := "success"
+		nodeRes := &gmap.ListMap{}
+
+		err := g.Try(req.Context(), func(ctx context.Context) {
+
+			ret, err := handler(ctx, req.GetMap())
+
+			if debug {
+				sortMap(ctx, req.GetBody(), metaRes, ret)
+			} else {
+				for k, v := range ret {
+					nodeRes.Set(k, v)
+				}
+			}
+
+			if err != nil {
+				panic(err)
+			}
+
+		})
+
+		if err != nil {
+
+			if e, ok := err.(consts.Err); ok {
+				code = e.Code()
+			} else {
+				code = 500
+			}
+
+			msg = err.Error()
+
+			if e, ok := err.(*gerror.Error); ok {
+				g.Log().Stack(false).Error(req.Context(), err, e.Stack())
+			} else {
+				g.Log().Stack(false).Error(req.Context(), err)
+			}
+		}
+
+		metaRes.Set("ok", code == 200)
+		metaRes.Set("code", code)
+		metaRes.Set("msg", msg)
+		metaRes.Set("span", fmt.Sprintf("%s", time.Since(time.UnixMilli(req.EnterTime))))
+
+		res := mode(nodeRes, metaRes)
+		req.Response.WriteJson(res.String())
+	}
 }

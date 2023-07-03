@@ -7,9 +7,8 @@ import (
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
-	"github.com/gogf/gf/v2/database/gdb"
-	"github.com/gogf/gf/v2/errors/gerror"
-	"github.com/gogf/gf/v2/frame/g"
+	"github.com/glennliao/apijson-go/query"
+	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -40,6 +39,9 @@ type Action struct {
 	JsonFieldStyle config.FieldStyle
 
 	ActionConfig *config.ActionConfig
+
+	NewQuery  func(ctx context.Context, req model.Map) *query.Query
+	NewAction func(ctx context.Context, method string, req model.Map) *Action
 }
 
 func New(ctx context.Context, actionConfig *config.ActionConfig, method string, req model.Map) *Action {
@@ -50,7 +52,7 @@ func New(ctx context.Context, actionConfig *config.ActionConfig, method string, 
 	}
 
 	delete(req, consts.Tag)
-	delete(req, "version")
+	delete(req, consts.Version)
 
 	a := &Action{
 		ctx:          ctx,
@@ -72,12 +74,13 @@ func (a *Action) parse() error {
 
 		structuresKey := key
 		if strings.HasSuffix(key, consts.ListKeySuffix) {
-			structuresKey = structuresKey[0 : len(structuresKey)-2]
+			structuresKey = util.RemoveSuffix(key, consts.ListKeySuffix)
 		}
+
 		structure, ok := structures[key]
 		if !ok {
 			if structure, ok = structures[structuresKey]; !ok { // User[]可读取User或者User[]
-				return gerror.New("structure错误: 400, 缺少" + key)
+				return consts.NewStructureKeyNoFoundErr(key)
 			}
 		}
 
@@ -133,7 +136,21 @@ func (a *Action) Result() (model.Map, error) {
 		}
 	}
 
-	err = g.DB().Transaction(a.ctx, func(ctx context.Context, tx gdb.TX) error {
+	transactionHandler := noTransactionHandler
+
+	if *a.tagRequest.Transaction == true {
+		transactionResolver = GetTransactionHandler
+		h := transactionResolver(a.ctx, a)
+		if h != nil {
+			err = consts.NewSysErr("transaction handler is nil")
+			return nil, err
+		}
+
+		transactionHandler = h
+
+	}
+
+	err = transactionHandler(a.ctx, func(ctx context.Context) error {
 		for _, k := range a.tagRequest.ExecQueue {
 			node := a.children[k]
 			ret[k], err = node.execute(ctx, a.method)
@@ -162,11 +179,11 @@ func (a *Action) Result() (model.Map, error) {
 func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.RequestConfig, error) {
 	_tag, ok := req[consts.Tag]
 	if !ok {
-		return nil, gerror.New("tag 缺失")
+		return nil, consts.ErrNoTag
 	}
 
 	tag := gconv.String(_tag)
-	version := req["version"]
+	version := req[consts.Version]
 
 	request, err := requestCfg.GetRequest(tag, method, gconv.String(version))
 	if err != nil {

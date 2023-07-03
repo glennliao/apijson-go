@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
+	"github.com/glennliao/apijson-go/query"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
@@ -35,7 +35,7 @@ type SqlExecutor struct {
 	config *config.ExecutorConfig
 }
 
-func New(ctx context.Context, config *config.ExecutorConfig) (executor.QueryExecutor, error) {
+func New(ctx context.Context, config *config.ExecutorConfig) (query.QueryExecutor, error) {
 
 	return &SqlExecutor{
 		ctx:             ctx,
@@ -110,11 +110,12 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 			}
 
 			if !lo.Contains(val, op) {
-				panic("不允许使用" + where[0].(string) + "的搜索方式:" + op)
+
+				return consts.NewValidReqErr("不允许使用" + where[0].(string) + "的搜索方式:" + op)
 			}
 
 		} else {
-			panic("不允许使用" + where[0].(string) + "搜索")
+			return consts.NewValidReqErr("不允许使用" + where[0].(string) + "搜索")
 		}
 	}
 

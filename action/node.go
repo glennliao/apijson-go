@@ -6,11 +6,9 @@ import (
 	"strings"
 
 	"github.com/glennliao/apijson-go/config"
-	"github.com/glennliao/apijson-go/config/executor"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/samber/lo"
 )
 
@@ -45,7 +43,6 @@ func newNode(key string, req []model.Map, structure *config.Structure, executor 
 	n.Data = []model.Map{}
 	n.Where = []model.Map{}
 
-	// ?
 	for _ = range n.req {
 
 		n.Data = append(n.Data, model.Map{})
@@ -54,7 +51,7 @@ func newNode(key string, req []model.Map, structure *config.Structure, executor 
 	}
 
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
-		n.Key = key[0 : len(key)-len(consts.ListKeySuffix)]
+		n.Key = util.RemoveSuffix(key, consts.ListKeySuffix)
 		n.IsList = true
 	}
 
@@ -65,10 +62,6 @@ func newNode(key string, req []model.Map, structure *config.Structure, executor 
 func (n *Node) parseReq(method string) {
 
 	for i, item := range n.req {
-
-		// n.Data = append(n.Data, model.Map{})
-		// n.Where = append(n.Where, model.Map{})
-
 		for key, val := range item {
 
 			if key == consts.Role {
@@ -84,7 +77,7 @@ func (n *Node) parseReq(method string) {
 			case http.MethodDelete:
 				n.Where[i][key] = val
 			case http.MethodPut:
-				if key == n.RowKey || key == n.RowKey+"{}" {
+				if key == n.RowKey || key == n.RowKey+consts.OpIn {
 					n.Where[i][key] = val
 				} else {
 					n.Data[i][key] = val
@@ -100,7 +93,7 @@ func (n *Node) parse(ctx context.Context, method string) error {
 
 	key := n.Key
 	if strings.HasSuffix(key, consts.ListKeySuffix) {
-		key = key[0 : len(key)-2]
+		key = util.RemoveSuffix(key, consts.ListKeySuffix)
 	}
 	access, err := n.Action.ActionConfig.GetAccessConfig(key, true)
 
@@ -179,13 +172,13 @@ func (n *Node) checkAccess(ctx context.Context, method string, accessRoles []str
 	}
 
 	if role == consts.DENY {
-		return gerror.Newf("deny node: %s with %s", n.Key, n.Role)
+		return consts.NewDenyErr(n.Key, n.Role)
 	}
 
 	n.Role = role
 
 	if !lo.Contains(accessRoles, role) {
-		return gerror.Newf("node not access: %s with %s", n.Key, n.Role)
+		return consts.NewNoAccessErr(n.Key, n.Role)
 	}
 
 	return nil
@@ -231,26 +224,26 @@ func (n *Node) checkReq() error {
 		// must
 		for _, key := range n.structure.Must {
 			if _, exists := item[key]; !exists {
-				return gerror.New("structure错误: 400, 缺少" + n.Key + "." + key)
+				return consts.NewStructureKeyNoFoundErr(n.Key + "." + key)
 			}
 		}
 
 		// refuse
 		if len(n.structure.Refuse) > 0 && n.structure.Refuse[0] == "!" {
 			if len(n.structure.Must) == 0 {
-				return gerror.New("structure错误: 400, REFUSE为!时必须指定MUST" + n.Key)
+				return consts.NewValidStructureErr("REFUSE为!时必须指定MUST:" + n.Key)
 			}
 
 			for key, _ := range item {
 				if !lo.Contains(n.structure.Must, key) {
-					return gerror.New("structure错误: 400, 不能包含" + n.Key + "." + key)
+					return consts.NewValidStructureErr("不能包含:" + n.Key + "." + key)
 				}
 			}
 
 		} else {
 			for _, key := range n.structure.Refuse {
 				if _, exists := item[key]; exists {
-					return gerror.New("structure错误: 400, 不能包含" + n.Key + "." + key)
+					return consts.NewValidStructureErr("不能包含:" + n.Key + "." + key)
 				}
 			}
 		}
@@ -375,16 +368,22 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 	case http.MethodDelete:
 
 	default:
-		return nil, gerror.New("undefined method:" + method)
+		return nil, consts.NewMethodNotSupportErr(method)
 	}
 
-	ret, err = executor.GetActionExecutor(n.executor).Do(ctx, executor.ActionExecutorReq{
-		Method: method,
-		Table:  n.tableName,
-		Data:   n.Data,
-		Where:  n.Where,
-		Access: access,
-		Config: n.Action.ActionConfig,
+	executor, err := GetActionExecutor(n.executor)
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err = executor.Do(ctx, ActionExecutorReq{
+		Method:   method,
+		Table:    n.tableName,
+		Data:     n.Data,
+		Where:    n.Where,
+		Access:   access,
+		Config:   n.Action.ActionConfig,
+		NewQuery: n.Action.NewQuery,
 	})
 
 	if err != nil {
