@@ -12,6 +12,7 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gmap"
+	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -154,6 +155,16 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 				code = e.Code()
 				if strconv.Itoa(e.Code())[0] == '4' {
 					code = e.Code()
+					msg = e.Error()
+				} else {
+					code = 500
+					msg = "系统异常"
+				}
+			}
+
+			if e, ok := err.(*gerror.Error); ok {
+				if e.Code() == gcode.CodeNil {
+					code = 400
 					msg = e.Error()
 				} else {
 					code = 500
