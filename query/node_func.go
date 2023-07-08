@@ -34,6 +34,11 @@ func (h *funcNode) result() {
 
 	_func := queryConfig.Func(functionName)
 
+	if _func == nil {
+		n.err = consts.NewValidReqErr("functions not exists: " + functionName)
+		return
+	}
+
 	if n.isList && _func.Batch {
 		n.later = true
 		return

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -107,6 +108,25 @@ func sortMap(ctx context.Context, body []byte, res *gmap.ListMap, ret model.Map)
 	return reqSortMap
 }
 
+func try(ctx context.Context, try func(ctx context.Context) error) (err error) {
+	defer func() {
+		if exception := recover(); exception != nil {
+			if v, ok := exception.(error); ok && gerror.HasStack(v) {
+				err = v
+			} else {
+				err = gerror.Newf(`%+v`, exception)
+			}
+		}
+	}()
+	err = try(ctx)
+	return
+}
+
+type CodeErr interface {
+	Code() int
+	Error() string
+}
+
 func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.Map, err error), mode Mode, debug bool) func(req *ghttp.Request) {
 	return func(req *ghttp.Request) {
 		metaRes := &gmap.ListMap{}
@@ -114,7 +134,7 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 		msg := "success"
 		nodeRes := &gmap.ListMap{}
 
-		err := g.Try(req.Context(), func(ctx context.Context) {
+		err := try(req.Context(), func(ctx context.Context) (err error) {
 
 			ret, err := handler(ctx, req.GetMap())
 
@@ -125,28 +145,33 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 					nodeRes.Set(k, v)
 				}
 			}
-
-			if err != nil {
-				panic(err)
-			}
-
+			return
 		})
 
 		if err != nil {
 
-			if e, ok := err.(consts.Err); ok {
+			if e, ok := err.(CodeErr); ok {
 				code = e.Code()
+				if strconv.Itoa(e.Code())[0] == '4' {
+					code = e.Code()
+					msg = e.Error()
+				} else {
+					code = 500
+					msg = "系统异常"
+				}
 			} else {
 				code = 500
+				msg = "系统异常"
 			}
 
-			msg = err.Error()
-
-			if e, ok := err.(*gerror.Error); ok {
-				g.Log().Stack(false).Error(req.Context(), err, e.Stack())
-			} else {
-				g.Log().Stack(false).Error(req.Context(), err)
+			if code >= 500 {
+				if e, ok := err.(*gerror.Error); ok {
+					g.Log().Stack(false).Error(req.Context(), err, e.Stack())
+				} else {
+					g.Log().Stack(false).Error(req.Context(), err)
+				}
 			}
+
 		}
 
 		metaRes.Set("ok", code == 200)

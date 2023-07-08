@@ -21,14 +21,14 @@ type Func struct {
 }
 
 type functions struct {
-	funcMap map[string]Func
+	funcMap map[string]*Func
 }
 
 func (f *functions) Bind(name string, _func Func) {
 	if _, exists := f.funcMap[name]; exists {
 		panic(fmt.Errorf(" function %s has exists", name))
 	}
-	f.funcMap[name] = _func
+	f.funcMap[name] = &_func
 }
 
 func (f *functions) Call(ctx context.Context, name string, param g.Map) (any, error) {

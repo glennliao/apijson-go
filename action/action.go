@@ -48,7 +48,9 @@ func New(ctx context.Context, actionConfig *config.ActionConfig, method string, 
 
 	request, err := checkTag(req, method, actionConfig)
 	if err != nil {
-		panic(err)
+		return &Action{
+			err: err,
+		}
 	}
 
 	delete(req, consts.Tag)
@@ -67,6 +69,10 @@ func New(ctx context.Context, actionConfig *config.ActionConfig, method string, 
 }
 
 func (a *Action) parse() error {
+
+	if a.err != nil {
+		return a.err
+	}
 
 	structures := a.tagRequest.Structure
 
@@ -138,10 +144,9 @@ func (a *Action) Result() (model.Map, error) {
 
 	transactionHandler := noTransactionHandler
 
-	if *a.tagRequest.Transaction == true {
-		transactionResolver = GetTransactionHandler
-		h := transactionResolver(a.ctx, a)
-		if h != nil {
+	if a.tagRequest.Transaction != nil && *a.tagRequest.Transaction == true {
+		h := GetTransactionHandler(a.ctx, a)
+		if h == nil {
 			err = consts.NewSysErr("transaction handler is nil")
 			return nil, err
 		}

@@ -26,7 +26,7 @@ func (c *QueryConfig) GetAccessConfig(key string, noVerify bool) (*AccessConfig,
 	return c.access.GetAccess(key, noVerify)
 }
 
-func (c *QueryConfig) Func(name string) Func {
+func (c *QueryConfig) Func(name string) *Func {
 	return c.functions.funcMap[name]
 }
 

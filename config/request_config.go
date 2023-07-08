@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/glennliao/apijson-go/consts"
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -84,7 +83,7 @@ func (c *RequestConfigs) GetRequest(tag string, method string, version string) (
 	request, ok := c.requestMap[key]
 
 	if !ok {
-		return nil, gerror.Newf("request[%s]: 404", key)
+		return nil, consts.NewRequestNoFoundErr(key)
 	}
 
 	return request, nil

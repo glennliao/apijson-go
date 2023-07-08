@@ -57,6 +57,13 @@ func NewAccessNoFoundErr(key string) Err {
 	}
 }
 
+func NewRequestNoFoundErr(key string) Err {
+	return Err{
+		code:    404,
+		message: "request no found: " + key,
+	}
+}
+
 func NewSysErr(msg string) Err {
 	return Err{
 		code:    500,

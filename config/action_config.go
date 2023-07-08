@@ -26,7 +26,7 @@ func (c *ActionConfig) GetAccessConfig(key string, noVerify bool) (*AccessConfig
 	return c.access.GetAccess(key, noVerify)
 }
 
-func (c *ActionConfig) Func(name string) Func {
+func (c *ActionConfig) Func(name string) *Func {
 	return c.functions.funcMap[name]
 }
 
