@@ -16,6 +16,8 @@ import (
 	"github.com/samber/lo"
 )
 
+type DbResolver func(ctx context.Context) gdb.DB
+
 type SqlExecutor struct {
 	ctx context.Context
 
@@ -23,7 +25,7 @@ type SqlExecutor struct {
 
 	// 保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
 	Where           [][]any
-	accessCondition model.Map
+	accessCondition map[string][]any
 
 	Columns []string
 	Order   string
@@ -33,6 +35,8 @@ type SqlExecutor struct {
 	WithEmptyResult bool
 
 	config *config.ExecutorConfig
+
+	DbResolver DbResolver
 }
 
 func New(ctx context.Context, config *config.ExecutorConfig) (query.QueryExecutor, error) {
@@ -45,6 +49,9 @@ func New(ctx context.Context, config *config.ExecutorConfig) (query.QueryExecuto
 		Group:           "",
 		WithEmptyResult: false,
 		config:          config,
+		DbResolver: func(ctx context.Context) gdb.DB {
+			return g.DB()
+		},
 	}, nil
 }
 
@@ -64,7 +71,7 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
 
 		case key == consts.Raw && !accessVerify:
-			e.accessCondition = condition.(map[string]any)
+			e.accessCondition = condition.(map[string][]any)
 
 		default:
 			e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})
@@ -203,7 +210,7 @@ func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 
 func (e *SqlExecutor) build() *gdb.Model {
 	tableName := e.config.TableName()
-	m := g.DB().Model(tableName).Ctx(e.ctx)
+	m := e.DbResolver(e.ctx).Model(tableName).Ctx(e.ctx)
 
 	if e.Order != "" {
 		m = m.Order(e.Order)
@@ -259,7 +266,9 @@ func (e *SqlExecutor) build() *gdb.Model {
 
 	m = m.Where(whereBuild)
 	if e.accessCondition != nil {
-		m = m.Where(e.accessCondition)
+		for k, v := range e.accessCondition {
+			m = m.Where(k, v...)
+		}
 	}
 
 	if e.Group != "" {

@@ -20,11 +20,15 @@ func init() {
 	config.RegDbMetaProvider(gfConfig.ProviderName, gfConfig.DbMetaProvider)
 
 	query.RegExecutor("default", gfExecutor.New)
-	action.RegExecutor("default", &gfExecutor.ActionExecutor{})
+
+	action.RegExecutor("default", &gfExecutor.ActionExecutor{
+		DbResolver: func(ctx context.Context) gdb.DB {
+			return g.DB()
+		},
+	})
 
 	action.RegTransactionResolver(func(ctx context.Context, req *action.Action) action.TransactionHandler {
 		return func(ctx context.Context, action func(ctx context.Context) error) error {
-			// TODO g.DB() -> resolver
 			return g.DB().Ctx(ctx).Transaction(ctx, func(ctx context.Context, tx gdb.TX) error {
 				return action(ctx)
 			})

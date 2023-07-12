@@ -42,6 +42,8 @@ type Action struct {
 
 	NewQuery  func(ctx context.Context, req model.Map) *query.Query
 	NewAction func(ctx context.Context, method string, req model.Map) *Action
+
+	HooksMap map[string][]*Hook
 }
 
 func New(ctx context.Context, actionConfig *config.ActionConfig, method string, req model.Map) *Action {
@@ -127,58 +129,56 @@ func (a *Action) Result() (model.Map, error) {
 
 	for _, k := range a.tagRequest.ExecQueue {
 		node := a.children[k]
-		err = EmitHook(a.ctx, BeforeNodeExec, node, a.method)
-		if err != nil {
-			return nil, err
+
+		actionHookReq := &HookReq{
+			Node:            node,
+			Method:          a.method,
+			ctx:             a.ctx,
+			nextIdx:         -1,
+			isInTransaction: false,
+			hooks:           getHooksByAccessName(a.HooksMap, k),
 		}
-	}
 
-	for _, k := range a.tagRequest.ExecQueue {
+		actionHookReq.handler = func(ctx context.Context, n *Node, method string) error {
+			transactionHandler := noTransactionHandler
 
-		node := a.children[k]
+			if a.tagRequest.Transaction != nil && *a.tagRequest.Transaction == true {
+				h := GetTransactionHandler(a.ctx, a)
+				if h == nil {
+					err = consts.NewSysErr("transaction handler is nil")
+					return err
+				}
+
+				transactionHandler = h
+
+			}
+
+			err = transactionHandler(a.ctx, func(ctx context.Context) error {
+				for _, k := range a.tagRequest.ExecQueue {
+					node := a.children[k]
+					ret[k], err = node.execute(ctx, a.method)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+
+			return err
+		}
+
 		err = node.reqUpdate()
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	transactionHandler := noTransactionHandler
-
-	if a.tagRequest.Transaction != nil && *a.tagRequest.Transaction == true {
-		h := GetTransactionHandler(a.ctx, a)
-		if h == nil {
-			err = consts.NewSysErr("transaction handler is nil")
-			return nil, err
-		}
-
-		transactionHandler = h
-
-	}
-
-	err = transactionHandler(a.ctx, func(ctx context.Context) error {
-		for _, k := range a.tagRequest.ExecQueue {
-			node := a.children[k]
-			ret[k], err = node.execute(ctx, a.method)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, k := range a.tagRequest.ExecQueue {
-		node := a.children[k]
-		err = EmitHook(a.ctx, AfterNodeExec, node, a.method)
+		err := actionHookReq.Next()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return ret, err
+	return ret, nil
 }
 
 func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.RequestConfig, error) {

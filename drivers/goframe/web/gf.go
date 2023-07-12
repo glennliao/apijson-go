@@ -12,7 +12,6 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gmap"
-	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -160,27 +159,32 @@ func CommonResponse(handler func(ctx context.Context, req model.Map) (res model.
 					code = 500
 					msg = "系统异常"
 				}
-			}
+			} else {
 
-			if e, ok := err.(*gerror.Error); ok {
-				if e.Code() == gcode.CodeNil {
-					code = 400
-					msg = e.Error()
+				if _, ok := err.(*gerror.Error); ok {
+					// if e.Code() == gcode.CodeNil {
+					// 	code = 400
+					// 	msg = e.Error()
+					// } else {
+					// 	code = 500
+					// 	msg = "系统异常"
+					// }
+					code = 500
+					msg = "系统异常"
 				} else {
 					code = 500
 					msg = "系统异常"
 				}
-			} else {
-				code = 500
-				msg = "系统异常"
 			}
 
 			if code >= 500 {
-				if e, ok := err.(*gerror.Error); ok {
-					g.Log().Stack(false).Error(req.Context(), err, e.Stack())
-				} else {
-					g.Log().Stack(false).Error(req.Context(), err)
-				}
+				g.Log().Stack(false).Errorf(req.Context(), "%+v", err)
+
+				// if e, ok := err.(*gerror.Error); ok {
+				// 	g.Log().Stack(false).Error(req.Context(), err, e.Stack())
+				// } else {
+				// 	g.Log().Stack(false).Error(req.Context(), err)
+				// }
 			}
 
 		}

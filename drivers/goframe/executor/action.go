@@ -10,12 +10,11 @@ import (
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/database/gdb"
-	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
 type ActionExecutor struct {
-	DbName string
+	DbResolver DbResolver
 }
 
 func (a *ActionExecutor) Do(ctx context.Context, req action.ActionExecutorReq) (ret model.Map, err error) {
@@ -56,7 +55,7 @@ func (a *ActionExecutor) Do(ctx context.Context, req action.ActionExecutorReq) (
 }
 
 func (a *ActionExecutor) Insert(ctx context.Context, table string, data []model.Map) (ret model.Map, err error) {
-	result, err := g.DB(a.DbName).Insert(ctx, table, data)
+	result, err := a.DbResolver(ctx).Insert(ctx, table, data)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +76,7 @@ func (a *ActionExecutor) Insert(ctx context.Context, table string, data []model.
 }
 
 func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Map, where model.Map) (ret model.Map, err error) {
-	m := g.DB(a.DbName).Model(table).Ctx(ctx)
+	m := a.DbResolver(ctx).Model(table).Ctx(ctx)
 
 	for k, v := range where {
 		if strings.HasSuffix(k, consts.OpIn) {
@@ -145,7 +144,7 @@ func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.M
 		return nil, consts.NewValidReqErr("where的值不能为空")
 	}
 
-	m := g.DB(a.DbName).Model(table).Ctx(ctx)
+	m := a.DbResolver(ctx).Model(table).Ctx(ctx)
 
 	for k, v := range where {
 

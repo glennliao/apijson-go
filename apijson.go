@@ -17,6 +17,9 @@ type ApiJson struct {
 	config *config.Config
 	Debug  bool // 是否开启debug模式, 显示每步骤
 	ctx    context.Context
+
+	actionHooks   []action.Hook
+	actionHookMap map[string][]*action.Hook
 }
 
 var DefaultApiJson = New()
@@ -76,5 +79,16 @@ func (a *ApiJson) NewAction(ctx context.Context, method string, req model.Map) *
 
 	act.NewQuery = a.NewQuery
 
+	act.HooksMap = a.actionHookMap
+
 	return act
+}
+
+func (a *ApiJson) RegActionHook(hook action.Hook) {
+	if a.actionHookMap == nil {
+		a.actionHookMap = make(map[string][]*action.Hook)
+	}
+	for _, item := range hook.For {
+		a.actionHookMap[item] = append(a.actionHookMap[item], &hook)
+	}
 }

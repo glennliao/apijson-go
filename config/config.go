@@ -1,6 +1,8 @@
 package config
 
-import "context"
+import (
+	"context"
+)
 
 type AccessListProvider func(ctx context.Context) []AccessConfig
 
@@ -34,7 +36,7 @@ type Config struct {
 	MaxTreeWidth int
 	MaxTreeDeep  int
 
-	rowKeyGenFuncMap map[string]RowKeyGenFuncHandler
+	rowKeyGenFuncMap map[string]RowKeyGenerator
 
 	// dbFieldStyle 数据库字段命名风格 请求传递到数据库中
 	DbFieldStyle FieldStyle
@@ -56,24 +58,24 @@ type Config struct {
 }
 
 func New() *Config {
-	a := &Config{}
-	a.Access = NewAccess()
-	a.AccessListProvider = "db"
-	a.RequestListProvider = "db"
-	a.DbMetaProvider = "db"
+	c := &Config{}
+	c.Access = NewAccess()
+	c.AccessListProvider = "db"
+	c.RequestListProvider = "db"
+	c.DbMetaProvider = "db"
 
-	a.MaxTreeWidth = 5
-	a.MaxTreeDeep = 5
+	c.MaxTreeWidth = 5
+	c.MaxTreeDeep = 5
 
-	a.rowKeyGenFuncMap = make(map[string]RowKeyGenFuncHandler)
+	c.rowKeyGenFuncMap = make(map[string]RowKeyGenerator)
 
-	a.DbFieldStyle = CaseSnake
-	a.JsonFieldStyle = CaseCamel
+	c.DbFieldStyle = CaseSnake
+	c.JsonFieldStyle = CaseCamel
 
-	a.Functions = &functions{}
-	a.Functions.funcMap = make(map[string]*Func)
+	c.Functions = &functions{}
+	c.Functions.funcMap = make(map[string]*Func)
 
-	return a
+	return c
 }
 
 func (c *Config) ReLoad() {
@@ -140,6 +142,7 @@ func (c *Config) ReLoad() {
 		rowKeyGenFuncMap: c.rowKeyGenFuncMap,
 		defaultRoleFunc:  c.Access.DefaultRoleFunc,
 	}
+
 }
 
 func (c *Config) QueryConfig() *QueryConfig {

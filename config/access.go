@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/samber/lo"
@@ -11,19 +12,19 @@ type ConditionReq struct {
 	AccessName          string // _access 中的alias
 	TableAccessRoleList []string
 	Method              string
-	NodeReq             g.Map  //节点的请求数据
+	NodeReq             g.Map  // 节点的请求数据
 	NodeRole            string // 节点的角色
 }
 
 type ConditionRet struct {
 	condition    map[string]any
-	rawCondition map[string]any
+	rawCondition map[string][]any
 }
 
 func NewConditionRet() *ConditionRet {
 	c := ConditionRet{
 		condition:    map[string]any{},
-		rawCondition: map[string]any{},
+		rawCondition: map[string][]any{},
 	}
 	return &c
 }
@@ -32,7 +33,7 @@ func (c *ConditionRet) Add(k string, v any) {
 	c.condition[k] = v
 }
 
-func (c *ConditionRet) AddRaw(k string, v any) {
+func (c *ConditionRet) AddRaw(k string, v ...any) {
 	c.rawCondition[k] = v
 }
 

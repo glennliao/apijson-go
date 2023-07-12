@@ -263,6 +263,11 @@ func (q *queryNode) fetch() {
 			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
 			_func := queryConfig.Func(functionName)
 
+			if _func == nil {
+				n.err = consts.NewValidReqErr("func not exists：" + functionName)
+				return
+			}
+
 			if n.isList {
 				for i, item := range n.ret.([]model.Map) {
 
@@ -276,7 +281,7 @@ func (q *queryNode) fetch() {
 						}
 					}
 
-					val, err := _func.Handler(n.ctx, param)
+					val, err := queryConfig.CallFunc(n.ctx, functionName, param)
 					if err != nil {
 						n.err = err
 						return
@@ -293,7 +298,7 @@ func (q *queryNode) fetch() {
 					}
 				}
 
-				val, err := _func.Handler(n.ctx, param)
+				val, err := queryConfig.CallFunc(n.ctx, functionName, param)
 				if err != nil {
 					n.err = err
 					return

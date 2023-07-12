@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glennliao/apijson-go"
+	"github.com/glennliao/apijson-go/action"
 	_ "github.com/glennliao/apijson-go/drivers/goframe"
 	"github.com/glennliao/apijson-go/drivers/goframe/web"
 	"github.com/glennliao/apijson-go/model"
@@ -18,6 +19,10 @@ var a *apijson.ApiJson
 
 func init() {
 	a = apijson.Load(App)
+
+	a.RegActionHook(action.Hook{
+		For: []string{"asd"},
+	})
 }
 
 // notice: import section

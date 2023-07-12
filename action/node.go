@@ -264,11 +264,11 @@ func (n *Node) reqUpdate() error {
 
 				// call functions
 				{
-					queryConfig := n.Action.ActionConfig
+					actionConfig := n.Action.ActionConfig
 
 					functionName, paramKeys := util.ParseFunctionsStr(updateVal.(string))
 
-					_func := queryConfig.Func(functionName)
+					_func := actionConfig.Func(functionName)
 
 					param := model.Map{}
 					for paramI, item := range _func.ParamList {
@@ -279,7 +279,7 @@ func (n *Node) reqUpdate() error {
 						}
 					}
 
-					val, err := _func.Handler(n.ctx, param)
+					val, err := actionConfig.CallFunc(n.ctx, functionName, param)
 					if err != nil {
 						return err
 					}
@@ -327,11 +327,6 @@ func (n *Node) reqUpdateBeforeDo() error {
 
 func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error) {
 
-	err = EmitHook(ctx, BeforeExecutorDo, n, method)
-	if err != nil {
-		return nil, err
-	}
-
 	var rowKeyVal model.Map
 	var rowKey string
 
@@ -346,7 +341,7 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 		if access.RowKeyGen != "" {
 			for i, _ := range n.Data {
 
-				rowKeyVal, err = n.Action.ActionConfig.RowKeyGen(ctx, access.RowKeyGen, n.Key, n.Data[i])
+				rowKeyVal, err = n.Action.ActionConfig.RowKeyGen(ctx, access.RowKeyGen, n.Key, n.tableName, n.Data[i])
 				if err != nil {
 					return nil, err
 				}
@@ -405,11 +400,6 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 	}
 
 	n.Ret = ret
-
-	err = EmitHook(ctx, AfterExecutorDo, n, method)
-	if err != nil {
-		return nil, err
-	}
 
 	return
 }

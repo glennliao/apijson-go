@@ -81,7 +81,7 @@ func (h *funcNode) result() {
 		}
 	}
 
-	n.ret, n.err = _func.Handler(n.ctx, param)
+	n.ret, n.err = queryConfig.CallFunc(n.ctx, functionName, param)
 }
 
 func (h *funcNode) nodeType() int {

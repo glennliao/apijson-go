@@ -5,19 +5,27 @@ import (
 	"fmt"
 
 	"github.com/glennliao/apijson-go/model"
+	"github.com/gogf/gf/v2/container/gvar"
 	"github.com/gogf/gf/v2/frame/g"
 )
 
+const (
+	ParamTypeInt    = "int"
+	ParamTypeString = "string"
+)
+
 type ParamItem struct {
-	Type string
-	Name string
-	Desc string
+	Type    string
+	Name    string
+	Desc    string
+	Default any
 }
 
 type Func struct {
-	ParamList []ParamItem
-	Batch     bool // 是否为批量处理, 例如在获取列表后一次性将id传入, 然后按照传入的参数数组返回结果数组
-	Handler   func(ctx context.Context, param model.Map) (res any, err error)
+	Desc      string      // 描述
+	ParamList []ParamItem // 参数列表
+	Batch     bool        // 是否为批量处理, 例如在获取列表后一次性将id传入, 然后按照传入的参数数组返回结果数组
+	Handler   func(ctx context.Context, param model.FuncParam) (res any, err error)
 }
 
 type functions struct {
@@ -32,7 +40,13 @@ func (f *functions) Bind(name string, _func Func) {
 }
 
 func (f *functions) Call(ctx context.Context, name string, param g.Map) (any, error) {
-	return f.funcMap[name].Handler(ctx, param)
+
+	params := map[string]model.Var{}
+	for k, v := range param {
+		params[k] = gvar.New(v)
+	}
+
+	return f.funcMap[name].Handler(ctx, params)
 }
 
 // functions 提供的功能
