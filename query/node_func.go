@@ -39,10 +39,7 @@ func (h *funcNode) result() {
 		return
 	}
 
-	if n.isList && _func.Batch {
-		n.later = true
-		return
-	}
+	// todo batch support
 
 	param := model.Map{}
 

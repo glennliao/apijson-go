@@ -69,7 +69,7 @@ func (q *queryNode) parse() {
 			return
 		}
 
-		accessWhereCondition = condition.Where()
+		accessWhereCondition = condition.AllWhere()
 	}
 
 	queryExecutor, err := NewExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)
@@ -258,7 +258,7 @@ func (q *queryNode) fetch() {
 				continue
 			}
 
-			k = k[0 : len(k)-2]
+			k = k[0 : len(k)-len(consts.FunctionsKeySuffix)]
 
 			functionName, paramKeys := util.ParseFunctionsStr(v.(string))
 			_func := queryConfig.Func(functionName)
@@ -269,32 +269,66 @@ func (q *queryNode) fetch() {
 			}
 
 			if n.isList {
-				for i, item := range n.ret.([]model.Map) {
 
-					// todo 统一functions调用处理
+				// todo 统一func的调用？
+
+				// 组装参数
+				var paramList []model.Map
+				retList := n.ret.([]model.Map)
+				for _, ret := range retList {
 					param := model.Map{}
 					for paramI, paramItem := range _func.ParamList {
+						paramK := paramKeys[paramI]
 						if paramItem.Name == consts.FunctionOriReqParam {
-							param[paramItem.Name] = util.String(item)
+							param[paramItem.Name] = util.String(ret)
 						} else {
-							param[paramItem.Name] = util.String(item[paramKeys[paramI]])
+							if strings.HasPrefix(paramK, "'") && strings.HasSuffix(paramK, "'") {
+								param[paramItem.Name] = paramK[1 : len(paramK)-1]
+							} else {
+								param[paramItem.Name] = util.String(ret[paramK])
+							}
 						}
 					}
+					paramList = append(paramList, param)
+				}
 
-					val, err := queryConfig.CallFunc(n.ctx, functionName, param)
+				if _func.Batch {
+
+					param := model.Map{}
+
+					valList, err := queryConfig.CallFunc(n.ctx, functionName, param)
 					if err != nil {
 						n.err = err
 						return
 					}
-					n.ret.([]model.Map)[i][k] = val
+					list := gconv.Interfaces(valList)
+					for i := range retList {
+						retList[i][k] = list[i]
+					}
+
+				} else {
+					for i, param := range paramList {
+						val, err := queryConfig.CallFunc(n.ctx, functionName, param)
+						if err != nil {
+							n.err = err
+							return
+						}
+						retList[i][k] = val
+					}
 				}
+
 			} else {
 				param := model.Map{}
 				for paramI, paramItem := range _func.ParamList {
+					paramK := paramKeys[paramI]
 					if paramItem.Name == consts.FunctionOriReqParam {
-						param[paramItem.Name] = n.ret.(model.Map)
+						param[paramItem.Name] = util.String(n.ret)
 					} else {
-						param[paramItem.Name] = n.ret.(model.Map)[paramKeys[paramI]]
+						if strings.HasPrefix(paramK, "'") && strings.HasSuffix(paramK, "'") {
+							param[paramItem.Name] = paramK[1 : len(paramK)-1]
+						} else {
+							param[paramItem.Name] = util.String(n.ret.(model.Map)[paramK])
+						}
 					}
 				}
 

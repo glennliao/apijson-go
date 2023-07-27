@@ -12,6 +12,7 @@ import (
 const (
 	ParamTypeInt    = "int"
 	ParamTypeString = "string"
+	FromRes         = "res" // 只从响应的数据字段中取, 不从用户传递的数据取
 )
 
 type ParamItem struct {
@@ -19,13 +20,17 @@ type ParamItem struct {
 	Name    string
 	Desc    string
 	Default any
+	From    string // 指定参数从何处取值
+	V       string // 参数校验规则
 }
 
 type Func struct {
-	Desc      string      // 描述
-	ParamList []ParamItem // 参数列表
-	Batch     bool        // 是否为批量处理, 例如在获取列表后一次性将id传入, 然后按照传入的参数数组返回结果数组
-	Handler   func(ctx context.Context, param model.FuncParam) (res any, err error)
+	Desc string // 描述
+	// 参数可直接读取函数参数传递过来的， ''括起来
+	ParamList []ParamItem // 参数列表 // fixme 限制参数来源，强制用户传递的无法覆盖内部的，减免权限的重复判断，  参数校验限制 ， v （最大值，最小值，默认值， 自定义校验。 使用gvaild）
+
+	Batch   bool // 是否为批量处理, 例如在获取列表后一次性将id传入, 然后按照传入的参数数组返回结果数组
+	Handler func(ctx context.Context, param model.FuncParam) (res any, err error)
 }
 
 type functions struct {
@@ -49,7 +54,7 @@ func (f *functions) Call(ctx context.Context, name string, param g.Map) (any, er
 	return f.funcMap[name].Handler(ctx, params)
 }
 
-// functions 提供的功能
+// functions 可能提供的功能
 // 1. 增加响应字段 -> 该字段需要与系统中别的数据结合处理,如果只是静态处理(去空格,与常量拼接等可直接前端处理即可) 目前会不受_access_ext 中field_get控制, 需处理. 响应字段修改(脱敏、加密、字典转换) 不提供前端控制, 由_access_ext处理
 // 2. 通过func节点获取一些系统信息
 // 3. actions 中 自定义校验参数、自定义校验权限, 请求体修改(批量字段替换处理?)

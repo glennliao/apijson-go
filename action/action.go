@@ -44,6 +44,8 @@ type Action struct {
 	NewAction func(ctx context.Context, method string, req model.Map) *Action
 
 	HooksMap map[string][]*Hook
+
+	ret model.Map
 }
 
 func New(ctx context.Context, actionConfig *config.ActionConfig, method string, req model.Map) *Action {
@@ -118,6 +120,54 @@ func (a *Action) parse() error {
 	return nil
 }
 
+func (a *Action) hookExecute(i int, inTransaction bool) error {
+	k := a.tagRequest.ExecQueue[i]
+	node := a.children[k]
+	nodeHookReq := &HookReq{
+		Node:            node,
+		Method:          a.method,
+		ctx:             a.ctx,
+		nextIdx:         -1,
+		isInTransaction: inTransaction,
+		hooks:           getHooksByAccessName(a.HooksMap, k),
+	}
+
+	nodeHookReq.handler = func(ctx context.Context, n *Node, method string) error {
+
+		if i+1 < len(a.tagRequest.ExecQueue) {
+			return a.hookExecute(i+1, inTransaction)
+		}
+
+		// 执行完了普通hook的before,开始执行事务内
+		if !inTransaction {
+
+			transactionHandler := noTransactionHandler
+
+			if a.tagRequest.Transaction != nil && *a.tagRequest.Transaction == true {
+				h := GetTransactionHandler(a.ctx, a)
+				if h == nil {
+					err := consts.NewSysErr("transaction handler is nil")
+					return err
+				}
+				transactionHandler = h
+			}
+
+			err := transactionHandler(a.ctx, func(ctx context.Context) error {
+				return a.hookExecute(0, !inTransaction)
+			})
+
+			return err
+		}
+
+		var err error
+		a.ret[k], err = node.execute(ctx, a.method)
+		return err
+	}
+
+	err := nodeHookReq.Next()
+	return err
+}
+
 func (a *Action) Result() (model.Map, error) {
 
 	err := a.parse()
@@ -125,60 +175,13 @@ func (a *Action) Result() (model.Map, error) {
 		return nil, err
 	}
 
-	ret := model.Map{}
+	a.ret = model.Map{}
 
-	for _, k := range a.tagRequest.ExecQueue {
-		node := a.children[k]
-
-		actionHookReq := &HookReq{
-			Node:            node,
-			Method:          a.method,
-			ctx:             a.ctx,
-			nextIdx:         -1,
-			isInTransaction: false,
-			hooks:           getHooksByAccessName(a.HooksMap, k),
-		}
-
-		actionHookReq.handler = func(ctx context.Context, n *Node, method string) error {
-			transactionHandler := noTransactionHandler
-
-			if a.tagRequest.Transaction != nil && *a.tagRequest.Transaction == true {
-				h := GetTransactionHandler(a.ctx, a)
-				if h == nil {
-					err = consts.NewSysErr("transaction handler is nil")
-					return err
-				}
-
-				transactionHandler = h
-
-			}
-
-			err = transactionHandler(a.ctx, func(ctx context.Context) error {
-				for _, k := range a.tagRequest.ExecQueue {
-					node := a.children[k]
-					ret[k], err = node.execute(ctx, a.method)
-					if err != nil {
-						return err
-					}
-				}
-				return nil
-			})
-
-			return err
-		}
-
-		err = node.reqUpdate()
-		if err != nil {
-			return nil, err
-		}
-
-		err := actionHookReq.Next()
-		if err != nil {
-			return nil, err
-		}
+	err = a.hookExecute(0, false)
+	if err != nil {
+		a.err = err
 	}
-
-	return ret, nil
+	return a.ret, err
 }
 
 func checkTag(req model.Map, method string, requestCfg *config.ActionConfig) (*config.RequestConfig, error) {

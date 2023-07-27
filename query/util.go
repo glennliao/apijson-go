@@ -56,6 +56,15 @@ func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err 
 
 	condition = config.NewConditionRet()
 
+	_req := model.Map{}
+	for k, v := range node.req {
+		if !strings.HasSuffix(k, consts.FunctionsKeySuffix) && !strings.HasSuffix(k, consts.RefKeySuffix) && !strings.HasPrefix(k, consts.CtrlKeyPrefix) {
+			k = node.queryContext.DbFieldStyle(node.ctx, node.Key, k)
+		}
+		_req[k] = v
+	}
+
+	node.req = _req
 	err = node.queryContext.AccessCondition(node.ctx, config.ConditionReq{
 		AccessName:          node.Key,
 		TableAccessRoleList: accessRoles,

@@ -49,7 +49,7 @@ type Query struct {
 	// jsonFieldStyle 数据库返回的字段
 	JsonFieldStyle config.FieldStyle
 
-	//Config *config.Config
+	// Config *config.Config
 }
 
 func New(ctx context.Context, qc *config.QueryConfig, req model.Map) *Query {
@@ -57,6 +57,7 @@ func New(ctx context.Context, qc *config.QueryConfig, req model.Map) *Query {
 	q := &Query{
 		queryConfig: qc,
 	}
+
 	q.init(ctx, req)
 	q.NoAccessVerify = qc.NoVerify()
 

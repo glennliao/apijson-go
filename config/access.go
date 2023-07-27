@@ -16,34 +16,6 @@ type ConditionReq struct {
 	NodeRole            string // 节点的角色
 }
 
-type ConditionRet struct {
-	condition    map[string]any
-	rawCondition map[string][]any
-}
-
-func NewConditionRet() *ConditionRet {
-	c := ConditionRet{
-		condition:    map[string]any{},
-		rawCondition: map[string][]any{},
-	}
-	return &c
-}
-
-func (c *ConditionRet) Add(k string, v any) {
-	c.condition[k] = v
-}
-
-func (c *ConditionRet) AddRaw(k string, v ...any) {
-	c.rawCondition[k] = v
-}
-
-func (c *ConditionRet) Where() map[string]any {
-	if len(c.rawCondition) > 0 {
-		c.condition[consts.Raw] = c.rawCondition
-	}
-	return c.condition
-}
-
 type AccessCondition func(ctx context.Context, req ConditionReq, condition *ConditionRet) error
 
 type RoleReq struct {
@@ -79,6 +51,8 @@ type Access struct {
 
 func NewAccess() *Access {
 
+	// fixme 统一access字段名大小写问题
+	// fixme
 	a := &Access{}
 	a.ConditionFunc = defaultCondition
 	a.DefaultRoleFunc = defaultRole

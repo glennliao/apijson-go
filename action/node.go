@@ -9,6 +9,7 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/samber/lo"
 )
 
@@ -190,12 +191,19 @@ func (n *Node) whereUpdate(ctx context.Context, method string, accessRoles []str
 
 		condition := config.NewConditionRet()
 
+		req := model.Map{}
+
+		for k, v := range item {
+			k := n.Action.DbFieldStyle(ctx, n.RowKey, k)
+			req[k] = v
+		}
+
 		conditionReq := config.ConditionReq{
 			AccessName:          n.Key,
 			TableAccessRoleList: accessRoles,
 			Method:              method,
 			NodeRole:            n.Role,
-			NodeReq:             item,
+			NodeReq:             req,
 		}
 
 		err := n.Action.ActionConfig.ConditionFunc(ctx, conditionReq, condition)
@@ -205,11 +213,11 @@ func (n *Node) whereUpdate(ctx context.Context, method string, accessRoles []str
 		}
 
 		if method == http.MethodPost {
-			for k, v := range condition.Where() {
+			for k, v := range condition.AllWhere() {
 				n.Data[i][k] = v
 			}
 		} else {
-			for k, v := range condition.Where() {
+			for k, v := range condition.AllWhere() {
 				n.Where[i][k] = v
 			}
 		}
@@ -343,7 +351,7 @@ func (n *Node) do(ctx context.Context, method string) (ret model.Map, err error)
 
 				rowKeyVal, err = n.Action.ActionConfig.RowKeyGen(ctx, access.RowKeyGen, n.Key, n.tableName, n.Data[i])
 				if err != nil {
-					return nil, err
+					return nil, gerror.Wrap(err, "RowKeyGen")
 				}
 
 				for k, v := range rowKeyVal {

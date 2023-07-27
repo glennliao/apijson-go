@@ -5,13 +5,6 @@ import (
 	"net/http"
 )
 
-// const (
-// 	BeforeNodeExec = iota
-// 	AfterNodeExec
-// 	BeforeExecutorDo
-// 	AfterExecutorDo
-// )
-
 type HookReq struct {
 	Node            *Node
 	Method          string
@@ -40,17 +33,7 @@ func (r *HookReq) Next() error {
 
 		var h *Hook
 
-		for r.nextIdx < len(r.hooks) && h == nil {
-
-			if r.nextIdx+1 >= len(r.hooks) {
-				if r.isInTransaction {
-					// finish all
-					return r.handler(r.ctx, r.Node, r.Method)
-				} else {
-					r.nextIdx = -1
-					r.isInTransaction = true
-				}
-			}
+		for r.nextIdx+1 < len(r.hooks) && h == nil {
 
 			r.nextIdx++
 
@@ -70,13 +53,17 @@ func (r *HookReq) Next() error {
 
 		}
 
-		if r.nextIdx < len(r.hooks) {
-			if r.isInTransaction {
-				return h.HandlerInTransaction(r.ctx, r)
-			}
+		if h != nil {
+			if r.nextIdx < len(r.hooks) {
+				if r.isInTransaction {
+					return h.HandlerInTransaction(r.ctx, r)
+				}
 
-			return h.Handler(r.ctx, r)
+				return h.Handler(r.ctx, r)
+			}
 		}
+
+		return r.handler(r.ctx, r.Node, r.Method)
 	}
 
 }
@@ -95,42 +82,3 @@ func getHooksByAccessName(hooksMap map[string][]*Hook, accessName string) []*Hoo
 	hooks := append(hooksMap["*"], hooksMap[accessName]...)
 	return hooks
 }
-
-//
-// type Hook2 struct {
-// 	For []string //
-// 	// Exec 事务外
-// 	BeforeNodeExec func(ctx context.Context, n *Node, method string) error
-// 	AfterNodeExec  func(ctx context.Context, n *Node, method string) error
-//
-// 	// Do 事务内
-// 	BeforeExecutorDo func(ctx context.Context, n *Node, method string) error
-// 	AfterExecutorDo  func(ctx context.Context, n *Node, method string) error
-// }
-//
-// func emitHook(ctx context.Context, hooksMap map[string][]Hook, hookAt int, node *Node, method string) error {
-//
-// 	hooks := append(hooksMap["*"], hooksMap[node.Key]...)
-// 	for _, hook := range hooks {
-//
-// 		var handler func(ctx context.Context, n *Node, method string) error
-// 		switch hookAt {
-// 		case BeforeNodeExec:
-// 			handler = hook.BeforeNodeExec
-// 		case AfterNodeExec:
-// 			handler = hook.AfterNodeExec
-// 		case BeforeExecutorDo:
-// 			handler = hook.BeforeExecutorDo
-// 		case AfterExecutorDo:
-// 			handler = hook.AfterExecutorDo
-// 		}
-//
-// 		if handler != nil {
-// 			err := handler(ctx, node, method)
-// 			if err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
