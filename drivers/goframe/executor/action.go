@@ -90,7 +90,7 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			continue
 		}
 		if k == consts.Raw {
-			m = m.Where(v.(map[string]any))
+			m = m.Where(v.(map[string][]any))
 			delete(where, k)
 			continue
 		}
@@ -119,6 +119,12 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			delete(data, k)
 			continue
 		}
+
+		if data[k] == nil {
+			// 此处目前不允许外部设置null
+			delete(data, k)
+		}
+
 	}
 
 	_ret, err := m.Where(where).Update(data)
