@@ -9,7 +9,6 @@ import (
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/query"
-	"github.com/glennliao/apijson-go/util"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -24,7 +23,10 @@ type SqlExecutor struct {
 	Role string
 
 	// 保存where条件 [ ["user_id",">", 123], ["user_id","<=",345] ]
+	// dep // TODO 废弃
 	Where           [][]any
+	whereBuilder    []*config.ConditionRet
+	whereCondition  []config.WhereItem
 	accessCondition map[string][]any
 
 	Columns []string
@@ -39,8 +41,7 @@ type SqlExecutor struct {
 	DbResolver DbResolver
 }
 
-func New(ctx context.Context, config *config.ExecutorConfig) (query.QueryExecutor, error) {
-
+func New(ctx context.Context, config *config.ExecutorConfig) (query.Executor, error) {
 	return &SqlExecutor{
 		ctx:             ctx,
 		Where:           [][]any{},
@@ -57,28 +58,39 @@ func New(ctx context.Context, config *config.ExecutorConfig) (query.QueryExecuto
 
 // ParseCondition 解析查询条件
 // accessVerify 内部调用时, 不校验是否可使用该种查询方式
-func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bool) error {
-
-	for key, condition := range conditions {
-		switch {
-		case strings.HasSuffix(key, consts.OpIn):
-			e.parseMultiCondition(util.RemoveSuffix(key, consts.OpIn), condition)
-
-		case strings.HasSuffix(key, consts.OpLike):
-			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlLike, gconv.String(condition)})
-
-		case strings.HasSuffix(key, consts.OpRegexp):
-			e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
-
-		case key == consts.Raw && !accessVerify:
-			e.accessCondition = condition.(map[string][]any)
-
-		default:
-			e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})
-		}
+func (e *SqlExecutor) ParseCondition(where *config.ConditionRet, accessVerify bool) error {
+	conditions, builders := where.AllCondition()
+	if where.IsEmptyResult() {
+		e.WithEmptyResult = true
+		return nil
 	}
 
+	// for _, condition := range conditions {
+	// switch {
+	// case strings.HasSuffix(condition.Column, consts.OpIn):
+	// 	e.parseMultiCondition(util.RemoveSuffix(key, consts.OpIn), condition)
+	//
+	// case strings.HasSuffix(key, consts.OpLike):
+	// 	e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlLike, gconv.String(condition)})
+	//
+	// case strings.HasSuffix(key, consts.OpRegexp):
+	// 	e.Where = append(e.Where, []any{key[0 : len(key)-1], consts.SqlRegexp, gconv.String(condition)})
+	//
+	// case key == consts.Raw && !accessVerify:
+	// 	e.accessCondition = condition.(map[string][]any)
+	//
+	// default:
+	// 	e.Where = append(e.Where, []any{key, consts.SqlEqual, condition})
+	// }
+	// }
+
 	if !accessVerify {
+		// TODO 此处为 权限access 中强制的条件, 看下调整放到别处处理
+		e.whereCondition = append(e.whereCondition, conditions...)
+
+		for _, builder := range builders {
+			e.whereBuilder = append(e.whereBuilder, builder)
+		}
 		return nil
 	}
 
@@ -92,8 +104,8 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 
 	tableName := e.config.TableName()
 
-	for _, where := range e.Where {
-		k := dbStyle(e.ctx, tableName, where[0].(string))
+	for _, item := range conditions {
+		k := dbStyle(e.ctx, tableName, item.Column)
 		if val, exists := inFieldsMap[k]; exists {
 
 			if len(val) == 0 {
@@ -104,36 +116,74 @@ func (e *SqlExecutor) ParseCondition(conditions model.MapStrAny, accessVerify bo
 				continue
 			}
 
-			op := where[1].(string)
-			if op == consts.SqlLike {
-				condition := where[2].(string)
-				op = consts.OpLike
-				if strings.HasPrefix(condition, "%") {
-					op = "%" + op
-				}
-				if strings.HasSuffix(condition, "%") {
-					op = op + "%"
-				}
-			}
+			// op := where[1].(string)
+			// if op == consts.SqlLike {
+			// 	condition := where[2].(string)
+			// 	op = consts.OpLike
+			// 	if strings.HasPrefix(condition, "%") {
+			// 		op = "%" + op
+			// 	}
+			// 	if strings.HasSuffix(condition, "%") {
+			// 		op = op + "%"
+			// 	}
+			// }
 
-			if !lo.Contains(val, op) {
-
-				return consts.NewValidReqErr("不允许使用" + where[0].(string) + "的搜索方式:" + op)
-			}
+			// if !lo.Contains(val, op) {
+			// 	return consts.NewValidReqErr("不允许使用" + where[0].(string) + "的搜索方式:" + op)
+			// }
 
 		} else {
-			return consts.NewValidReqErr("不允许使用" + where[0].(string) + "搜索")
+			return consts.NewValidReqErr("不允许使用 " + item.Column + " 搜索")
 		}
 	}
+
+	e.whereCondition = append(e.whereCondition, conditions...)
+
+	for _, builder := range builders {
+		e.whereBuilder = append(e.whereBuilder, builder)
+	}
+
+	// for _, where := range e.Where {
+	// 	k := dbStyle(e.ctx, tableName, where[0].(string))
+	// 	if val, exists := inFieldsMap[k]; exists {
+	//
+	// 		if len(val) == 0 {
+	// 			continue
+	// 		}
+	//
+	// 		if val[0] == "*" {
+	// 			continue
+	// 		}
+	//
+	// 		op := where[1].(string)
+	// 		if op == consts.SqlLike {
+	// 			condition := where[2].(string)
+	// 			op = consts.OpLike
+	// 			if strings.HasPrefix(condition, "%") {
+	// 				op = "%" + op
+	// 			}
+	// 			if strings.HasSuffix(condition, "%") {
+	// 				op = op + "%"
+	// 			}
+	// 		}
+	//
+	// 		if !lo.Contains(val, op) {
+	//
+	// 			return consts.NewValidReqErr("不允许使用" + where[0].(string) + "的搜索方式:" + op)
+	// 		}
+	//
+	// 	} else {
+	// 		return consts.NewValidReqErr("不允许使用" + where[0].(string) + "搜索")
+	// 	}
+	// }
 
 	return nil
 }
 
 // ParseCondition 解析批量查询条件
 func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
-
 	var conditions [][]string
-	var value = condition
+	value := condition
 
 	if _str, ok := condition.(string); ok {
 		for _, s := range strings.Split(_str, ",") {
@@ -166,14 +216,12 @@ func (e *SqlExecutor) parseMultiCondition(k string, condition any) {
 		e.Where = append(e.Where, []any{k, "in", value})
 
 	}
-
 }
 
 var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 
 // ParseCtrl 解析 @column,@group等控制类
 func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
-
 	fieldStyle := e.config.DbFieldStyle
 	tableName := e.config.TableName()
 	for k, v := range ctrl {
@@ -186,6 +234,10 @@ func (e *SqlExecutor) ParseCtrl(ctrl model.Map) error {
 			fieldList[i] = exp.ReplaceAllStringFunc(item, func(field string) string {
 				return fieldStyle(e.ctx, tableName, field)
 			}) // 将请求字段转化为数据库字段风格
+
+			if strings.Contains(fieldList[i], "`") {
+				return consts.NewValidReqErr("@column err: " + fieldList[i])
+			}
 		}
 
 		switch k {
@@ -249,7 +301,6 @@ func (e *SqlExecutor) build() *gdb.Model {
 				whereBuild = whereBuild.WhereIn(key, conditions)
 			}
 		} else {
-
 			switch op {
 			case consts.SqlLike:
 				whereBuild = whereBuild.WhereLike(key, value.(string))
@@ -260,8 +311,41 @@ func (e *SqlExecutor) build() *gdb.Model {
 			case consts.SqlEqual:
 				whereBuild = whereBuild.Where(key, value)
 			}
-
 		}
+	}
+
+	for _, item := range e.whereCondition {
+		column := fieldStyle(e.ctx, tableName, item.Column)
+		switch item.Op {
+		case config.OpEq:
+			whereBuild = whereBuild.Where(column, item.Args)
+		case config.OpNotEq:
+			whereBuild = whereBuild.WhereNot(column, item.Args)
+		case config.OpIn:
+			whereBuild = whereBuild.WhereIn(column, item.Args)
+		case config.OpRaw:
+			whereBuild = whereBuild.Where(column, item.Args)
+		}
+	}
+
+	for _, item := range e.whereBuilder {
+		builder := m.Builder()
+		list, _ := item.AllCondition()
+		for _, item := range list {
+			// TODO 此处与上方重复
+			column := fieldStyle(e.ctx, tableName, item.Column)
+			switch item.Op {
+			case config.OpEq:
+				builder = builder.Where(column, item.Args)
+			case config.OpNotEq:
+				builder = builder.WhereNot(column, item.Args)
+			case config.OpIn:
+				builder = builder.WhereIn(column, item.Args)
+			case config.OpRaw:
+				builder = builder.Where(column, item.Args)
+			}
+		}
+		whereBuild = whereBuild.Where(builder)
 	}
 
 	m = m.Where(whereBuild)
@@ -278,8 +362,7 @@ func (e *SqlExecutor) build() *gdb.Model {
 	return m
 }
 
-func (e *SqlExecutor) column() []string {
-
+func (e *SqlExecutor) column(m *gdb.Model) []string {
 	outFields := e.config.GetFieldsGetOutByRole()
 
 	tableName := e.config.TableName()
@@ -292,7 +375,7 @@ func (e *SqlExecutor) column() []string {
 		columns = e.config.TableColumns()
 	}
 
-	var fields = make([]string, 0, len(columns))
+	fields := make([]string, 0, len(columns))
 
 	fieldStyle := e.config.JsonFieldStyle
 	dbStyle := e.config.DbFieldStyle
@@ -335,22 +418,19 @@ func (e *SqlExecutor) Count() (total int64, err error) {
 	}
 
 	return total, nil
-
 }
 
 func (e *SqlExecutor) List(page int, count int) (list []model.Map, err error) {
-
 	if e.WithEmptyResult {
 		return nil, err
 	}
 
 	m := e.build()
 
-	m = m.Fields(e.column())
+	m = m.Fields(e.column(m))
 
 	m = m.Page(page, count)
 	all, err := m.All()
-
 	if err != nil {
 		return nil, err
 	}
@@ -369,9 +449,13 @@ func (e *SqlExecutor) One() (model.Map, error) {
 
 	m := e.build()
 
-	m = m.Fields(e.column())
+	m = m.Fields(e.column(m))
 
 	one, err := m.One()
+
+	if one.IsEmpty() {
+		return nil, err
+	}
 
 	return one.Map(), err
 }

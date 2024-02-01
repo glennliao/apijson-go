@@ -52,7 +52,6 @@ func (h *structNode) parse() {
 			return
 		}
 	}
-
 }
 
 func (h *structNode) fetch() {
@@ -110,7 +109,6 @@ func (h *structNode) result() {
 							}
 
 						}
-
 					}
 				}
 

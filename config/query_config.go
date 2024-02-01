@@ -39,6 +39,7 @@ func (c *QueryConfig) CallFunc(ctx context.Context, name string, param model.Map
 func (c *QueryConfig) MaxTreeDeep() int {
 	return c.maxTreeDeep
 }
+
 func (c *QueryConfig) MaxTreeWidth() int {
 	return c.maxTreeWidth
 }
@@ -74,7 +75,6 @@ func (c *ExecutorConfig) TableColumns() []string {
 }
 
 func (c *ExecutorConfig) GetFieldsGetByRole() *FieldsGetValue {
-
 	if val, exists := c.accessConfig.FieldsGet[c.role]; exists {
 		return val
 	}
@@ -83,6 +83,10 @@ func (c *ExecutorConfig) GetFieldsGetByRole() *FieldsGetValue {
 }
 
 func (c *ExecutorConfig) GetFieldsGetOutByRole() []string {
+	if c.accessConfig.FieldsGet == nil {
+		return make([]string, 0)
+	}
+
 	var fieldsMap map[string]string
 
 	if val, exists := c.accessConfig.FieldsGet[c.role]; exists {
@@ -119,10 +123,8 @@ func (c *ExecutorConfig) AccessRoles() []string {
 		return c.accessConfig.Delete
 	}
 	return []string{}
-
 }
 
 func (c *ExecutorConfig) Executor() string {
 	return c.accessConfig.Executor
-
 }

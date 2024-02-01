@@ -1,0 +1,1 @@
+> demo中使用了github.com/glennliao/tablesync 来同步数据库表结构, 不是必须使用

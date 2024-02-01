@@ -48,12 +48,9 @@ type Query struct {
 
 	// jsonFieldStyle 数据库返回的字段
 	JsonFieldStyle config.FieldStyle
-
-	// Config *config.Config
 }
 
 func New(ctx context.Context, qc *config.QueryConfig, req model.Map) *Query {
-
 	q := &Query{
 		queryConfig: qc,
 	}
@@ -65,7 +62,6 @@ func New(ctx context.Context, qc *config.QueryConfig, req model.Map) *Query {
 }
 
 func (q *Query) init(ctx context.Context, req model.Map) {
-
 	q.ctx = ctx
 	q.req = req
 
@@ -74,7 +70,6 @@ func (q *Query) init(ctx context.Context, req model.Map) {
 }
 
 func (q *Query) Result() (model.Map, error) {
-
 	if q.PrintProcessLog {
 		g.Log().Debugf(q.ctx, "【query】 ============ [begin]")
 		g.Log().Debugf(q.ctx, "【query】 ============ [buildNodeTree]")
@@ -84,7 +79,6 @@ func (q *Query) Result() (model.Map, error) {
 	q.rootNode = newNode(q, "", "", q.req)
 
 	err := q.rootNode.buildChild()
-
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +106,6 @@ func (q *Query) Result() (model.Map, error) {
 	}
 
 	resultMap, err := q.rootNode.Result()
-
 	if err != nil {
 		if q.rootNode.err != nil {
 			return nil, q.rootNode.err
@@ -138,13 +131,12 @@ func (q *Query) fetch() {
 	var prerequisites [][]string
 	analysisRef(q.rootNode, &prerequisites)
 	fetchQueue, err := util.AnalysisOrder(prerequisites)
-
 	if err != nil {
 		q.err = err
 		return
 	}
 
-	for k, _ := range q.pathNodes {
+	for k := range q.pathNodes {
 		if !lo.Contains(fetchQueue, k) {
 			fetchQueue = append(fetchQueue, k)
 		}
@@ -163,7 +155,6 @@ func (q *Query) fetch() {
 
 // 输出节点信息
 func (q *Query) printNode(n *Node, deep int) {
-
 	for i := 0; i < deep; i++ {
 		fmt.Print("|")
 	}

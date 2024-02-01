@@ -16,20 +16,6 @@ import (
 	"github.com/samber/lo"
 )
 
-const (
-	NodeTypeStruct = iota // 结构节点
-	NodeTypeQuery         // 查询节点
-	NodeTypeRef           // 引用节点
-	NodeTypeFunc          // functions 节点
-)
-
-type nodeHandler interface {
-	parse()
-	fetch()
-	result()
-	nodeType() int
-}
-
 type Page struct {
 	Count int
 	Page  int
@@ -62,7 +48,7 @@ type Node struct {
 	simpleReqVal string // 非对象结构
 
 	// 节点数据执行器
-	executor QueryExecutor
+	executor Executor
 
 	startAt time.Time
 	endAt   time.Time
@@ -95,13 +81,12 @@ type NodeRef struct {
 	node   *Node
 }
 
-/**
+/*
+*
 node 生命周期
 new -> buildChild -> parse -> fetch -> result
 */
-
 func newNode(query *Query, key string, path string, nodeReq any) *Node {
-
 	if query.PrintProcessLog {
 		g.Log().Debugf(query.ctx, "【node】(%s) <new> ", path)
 	}
@@ -174,7 +159,6 @@ func parseNodeKey(inK string, path string) (k string, isList bool) {
 }
 
 func (n *Node) buildChild() error {
-
 	if n.Type == NodeTypeQuery && !util.HasFirstUpKey(n.req) { // 查询节点嵌套查询节点, 目前不支持
 		return nil
 	}
@@ -243,7 +227,6 @@ func (n *Node) buildChild() error {
 }
 
 func (n *Node) parse() {
-
 	if n.queryContext.PrintProcessLog {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse> ", n.Path)
 	}
@@ -270,34 +253,6 @@ func (n *Node) parse() {
 	if n.queryContext.PrintProcessLog {
 		g.Log().Debugf(n.ctx, "【node】(%s) <parse-endAt> ", n.Path)
 	}
-
-}
-
-func (n *Node) fetch() {
-
-	defer func() {
-		n.finish = true
-		n.endAt = time.Now()
-		if n.queryContext.PrintProcessLog {
-			g.Log().Debugf(n.ctx, "【node】(%s) <fetch-endAt> ", n.Path)
-		}
-	}()
-
-	if n.queryContext.PrintProcessLog {
-		g.Log().Debugf(n.ctx, "【node】(%s) <fetch> hasFinish: 【%v】", n.Path, n.finish)
-	}
-
-	if n.finish {
-		g.Log().Error(n.ctx, "再次执行", n.Path)
-		return
-	}
-
-	if n.err != nil {
-		return
-	}
-
-	n.nodeHandler.fetch()
-
 }
 
 func (n *Node) Result() (any, error) {
@@ -308,5 +263,4 @@ func (n *Node) Result() (any, error) {
 	n.nodeHandler.result()
 
 	return n.ret, n.err
-
 }

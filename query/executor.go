@@ -9,8 +9,8 @@ import (
 	"github.com/samber/lo"
 )
 
-type QueryExecutor interface {
-	ParseCondition(conditions model.MapStrAny, accessVerify bool) error
+type Executor interface {
+	ParseCondition(conditions *config.ConditionRet, accessVerify bool) error
 	ParseCtrl(ctrl model.Map) error
 	List(page int, count int) (list []model.Map, err error)
 	Count() (total int64, err error)
@@ -18,7 +18,7 @@ type QueryExecutor interface {
 	SetEmptyResult()
 }
 
-type queryExecutorBuilder func(ctx context.Context, config *config.ExecutorConfig) (QueryExecutor, error)
+type queryExecutorBuilder func(ctx context.Context, config *config.ExecutorConfig) (Executor, error)
 
 var queryExecutorBuilderMap = map[string]queryExecutorBuilder{}
 
@@ -26,7 +26,7 @@ func RegExecutor(name string, e queryExecutorBuilder) {
 	queryExecutorBuilderMap[name] = e
 }
 
-func NewExecutor(name string, ctx context.Context, config *config.ExecutorConfig) (QueryExecutor, error) {
+func NewExecutor(name string, ctx context.Context, config *config.ExecutorConfig) (Executor, error) {
 	if name == "" {
 		name = "default"
 	}
@@ -38,6 +38,6 @@ func NewExecutor(name string, ctx context.Context, config *config.ExecutorConfig
 	return nil, consts.NewSysErr("query executor not found: " + name)
 }
 
-func QueryExecutorList() []string {
+func ExecutorList() []string {
 	return lo.Keys(queryExecutorBuilderMap)
 }

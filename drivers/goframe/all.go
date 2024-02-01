@@ -12,8 +12,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
-func init() {
-
+func Enable() {
 	config.RegAccessListProvider(gfConfig.ProviderName, gfConfig.AccessListDBProvider)
 	config.RegRequestListProvider(gfConfig.ProviderName, gfConfig.RequestListProvider)
 
@@ -34,5 +33,4 @@ func init() {
 			})
 		}
 	})
-
 }

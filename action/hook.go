@@ -10,7 +10,7 @@ type HookReq struct {
 	Method          string
 	ctx             context.Context
 	hooks           []*Hook
-	nextIdx         int
+	nextId          int
 	isInTransaction bool
 	handler         finishHandler
 }
@@ -28,16 +28,15 @@ func (r *HookReq) IsDelete() bool {
 }
 
 func (r *HookReq) Next() error {
-
 	for {
 
 		var h *Hook
 
-		for r.nextIdx+1 < len(r.hooks) && h == nil {
+		for r.nextId+1 < len(r.hooks) && h == nil {
 
-			r.nextIdx++
+			r.nextId++
 
-			_h := r.hooks[r.nextIdx]
+			_h := r.hooks[r.nextId]
 
 			if r.isInTransaction {
 				if _h.HandlerInTransaction == nil {
@@ -54,7 +53,7 @@ func (r *HookReq) Next() error {
 		}
 
 		if h != nil {
-			if r.nextIdx < len(r.hooks) {
+			if r.nextId < len(r.hooks) {
 				if r.isInTransaction {
 					return h.HandlerInTransaction(r.ctx, r)
 				}
@@ -65,7 +64,14 @@ func (r *HookReq) Next() error {
 
 		return r.handler(r.ctx, r.Node, r.Method)
 	}
+}
 
+func (r *HookReq) RowKey() any {
+	id := r.Node.Data[r.Node.RowKey]
+	if r.IsPut() {
+		id = r.Node.Where[r.Node.RowKey]
+	}
+	return id
 }
 
 type Hook struct {
@@ -77,8 +83,3 @@ type Hook struct {
 }
 
 type finishHandler func(ctx context.Context, n *Node, method string) error
-
-func getHooksByAccessName(hooksMap map[string][]*Hook, accessName string) []*Hook {
-	hooks := append(hooksMap["*"], hooksMap[accessName]...)
-	return hooks
-}

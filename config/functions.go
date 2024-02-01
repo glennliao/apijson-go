@@ -3,10 +3,10 @@ package config
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/glennliao/apijson-go/model"
 	"github.com/gogf/gf/v2/container/gvar"
-	"github.com/gogf/gf/v2/frame/g"
 )
 
 const (
@@ -28,9 +28,7 @@ type Func struct {
 	Desc string // 描述
 	// 参数可直接读取函数参数传递过来的， ''括起来
 	ParamList []ParamItem // 参数列表 // fixme 限制参数来源，强制用户传递的无法覆盖内部的，减免权限的重复判断，  参数校验限制 ， v （最大值，最小值，默认值， 自定义校验。 使用gvaild）
-
-	Batch   bool // 是否为批量处理, 例如在获取列表后一次性将id传入, 然后按照传入的参数数组返回结果数组
-	Handler func(ctx context.Context, param model.FuncParam) (res any, err error)
+	Handler   func(ctx context.Context, param model.FuncParam) (res any, err error)
 }
 
 type functions struct {
@@ -44,8 +42,44 @@ func (f *functions) Bind(name string, _func Func) {
 	f.funcMap[name] = &_func
 }
 
-func (f *functions) Call(ctx context.Context, name string, param g.Map) (any, error) {
+func (f *functions) BindFunc(name string, function interface{}) {
+	funcValue := reflect.ValueOf(function)
+	// todo check func param and return
 
+	reqType := funcValue.Type().In(1)
+
+	f.Bind(name, Func{
+		Handler: func(ctx context.Context, param model.FuncParam) (res any, err error) {
+			//if funcInfo.Type().In(1).Kind() == reflect.Ptr {
+			//} else {
+			//	inputObject = reflect.New(funcInfo.Type().In(1).Elem()).Elem()
+			//	err = param.Scan(inputObject.Addr().Interface())
+			//}
+
+			inputObject := reflect.New(reqType.Elem())
+			err = param.Scan(inputObject.Interface())
+			if err != nil {
+				return nil, err
+			}
+
+			inputValues := []reflect.Value{
+				reflect.ValueOf(ctx),
+				inputObject,
+			}
+
+			results := funcValue.Call(inputValues)
+
+			if _err, ok := results[0].Interface().(error); ok {
+				err = _err
+			}
+
+			return results[0], err
+		},
+		Desc: "",
+	})
+}
+
+func (f *functions) Call(ctx context.Context, name string, param model.Map) (any, error) {
 	params := map[string]model.Var{}
 	for k, v := range param {
 		params[k] = gvar.New(v)

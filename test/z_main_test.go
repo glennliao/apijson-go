@@ -5,9 +5,9 @@ import (
 	"log"
 	"testing"
 
+	"github.com/glennliao/apijson-go/drivers/goframe"
+
 	"github.com/glennliao/apijson-go"
-	"github.com/glennliao/apijson-go/action"
-	_ "github.com/glennliao/apijson-go/drivers/goframe"
 	"github.com/glennliao/apijson-go/drivers/goframe/web"
 	"github.com/glennliao/apijson-go/model"
 	_ "github.com/gogf/gf/contrib/drivers/sqlite/v2" // need import for sqlite
@@ -18,14 +18,18 @@ import (
 var a *apijson.ApiJson
 
 func init() {
-	a = apijson.Load(App)
+	// enable goFrame driver
+	goframe.Enable()
 
-	a.RegActionHook(action.Hook{
-		For: []string{"asd"},
-	})
+	// create apiJson app
+	a = apijson.New()
+
+	err := a.Use(App).Load()
+	if err != nil {
+		g.Log().Fatal(context.TODO(), err)
+	}
 }
 
-// notice: import section
 func TestServer(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -36,7 +40,6 @@ func TestServer(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-
 	ctx := gctx.New()
 
 	q := a.NewQuery(ctx, model.Map{
@@ -69,17 +72,14 @@ func TestQuery(t *testing.T) {
 	q.NoAccessVerify = true
 
 	result, err := q.Result()
-
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
 
 	g.Dump(result)
-
 }
 
 func TestAlias(t *testing.T) {
-
 	ctx := gctx.New()
 
 	q := a.NewQuery(ctx, model.Map{
@@ -92,7 +92,6 @@ func TestAlias(t *testing.T) {
 	q.NoAccessVerify = false
 
 	result, err := q.Result()
-
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
@@ -128,7 +127,6 @@ func BenchmarkName(b *testing.B) {
 		q.NoAccessVerify = true
 
 		_, err := q.Result()
-
 		if err != nil {
 			log.Fatalf("%+v", err)
 		}

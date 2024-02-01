@@ -6,27 +6,26 @@ import (
 	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
-	"github.com/glennliao/apijson-go/query"
 	"github.com/samber/lo"
 )
 
-type ActionExecutorReq struct {
-	Method   string
-	Table    string
-	Data     []model.Map
-	Where    []model.Map
-	Access   *config.AccessConfig
-	Config   *config.ActionConfig
-	NewQuery func(ctx context.Context, req model.Map) *query.Query
+type ExecutorReq struct {
+	Method          string
+	Table           string
+	Data            model.Map
+	Where           model.Map
+	AccessCondition *config.ConditionRet
+	Access          *config.AccessConfig
+	Config          *config.ActionConfig
 }
 
-var actionExecutorMap = map[string]ActionExecutor{}
+var actionExecutorMap = map[string]Executor{}
 
-func RegExecutor(name string, e ActionExecutor) {
+func RegExecutor(name string, e Executor) {
 	actionExecutorMap[name] = e
 }
 
-func GetActionExecutor(name string) (ActionExecutor, error) {
+func GetActionExecutor(name string) (Executor, error) {
 	if name == "" {
 		name = "default"
 	}
@@ -36,12 +35,12 @@ func GetActionExecutor(name string) (ActionExecutor, error) {
 	return nil, consts.NewSysErr("action executor not found: " + name)
 }
 
-func ActionExecutorList() []string {
+func ExecutorList() []string {
 	return lo.Keys(actionExecutorMap)
 }
 
-type ActionExecutor interface {
-	Do(ctx context.Context, req ActionExecutorReq) (ret model.Map, err error)
+type Executor interface {
+	Do(ctx context.Context, req ExecutorReq) (ret model.Map, err error)
 }
 
 // TransactionHandler 事务处理函数

@@ -50,9 +50,6 @@ type Access struct {
 }
 
 func NewAccess() *Access {
-
-	// fixme 统一access字段名大小写问题
-	// fixme
 	a := &Access{}
 	a.ConditionFunc = defaultCondition
 	a.DefaultRoleFunc = defaultRole

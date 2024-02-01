@@ -38,16 +38,18 @@ func (q *queryNode) parse() {
 
 	if n.isList {
 		fieldsGet := n.executorConfig.GetFieldsGetByRole()
-		if *fieldsGet.MaxCount != 0 {
-			if n.page.Count > *fieldsGet.MaxCount {
+		if fieldsGet != nil {
+			if *fieldsGet.MaxCount != 0 {
+				if n.page.Count > *fieldsGet.MaxCount {
 
-				n.err = consts.NewValidReqErr(" > maxCount: " + n.Path)
-				return
+					n.err = consts.NewValidReqErr(" > maxCount: " + n.Path)
+					return
+				}
 			}
 		}
 	}
 
-	var accessWhereCondition model.MapStrAny
+	var accessWhereCondition *config.ConditionRet
 
 	setNodeRole(n, n.Key, n.role)
 	n.executorConfig.SetRole(n.role)
@@ -69,7 +71,9 @@ func (q *queryNode) parse() {
 			return
 		}
 
-		accessWhereCondition = condition.AllWhere()
+		accessWhereCondition = condition
+	} else {
+		accessWhereCondition = &config.ConditionRet{}
 	}
 
 	queryExecutor, err := NewExecutor(n.executorConfig.Executor(), n.ctx, n.executorConfig)
@@ -83,10 +87,13 @@ func (q *queryNode) parse() {
 	// 查询条件
 	refKeyMap, conditionMap, ctrlMap := parseQueryNodeReq(n.req, n.isList)
 
-	n.executor.ParseCtrl(ctrlMap)
+	n.err = n.executor.ParseCtrl(ctrlMap)
+	if n.err != nil {
+		return
+	}
 
 	if v, exists := ctrlMap[consts.Column]; exists {
-		var exp = regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
+		exp := regexp.MustCompile(`^[\s\w][\w()]+`) // 匹配 field, COUNT(field)
 
 		fieldStr := strings.ReplaceAll(gconv.String(v), ";", ",")
 
@@ -106,7 +113,6 @@ func (q *queryNode) parse() {
 			}
 		}
 
-		fmt.Println(fieldList)
 	}
 
 	err = n.executor.ParseCondition(conditionMap, true)
@@ -195,10 +201,10 @@ func (q *queryNode) fetch() {
 				break
 			}
 
-			err = n.executor.ParseCondition(model.MapStrAny{
-				refK + consts.OpIn: valList, //  @ 与 {}&等的结合 id{}@的处理
-			}, false)
+			condition := &config.ConditionRet{}
+			condition.In(refK, valList) //  @ 与 {}&等的结合 id{}@的处理
 
+			err = n.executor.ParseCondition(condition, false)
 			if err != nil {
 				n.err = err
 				return
@@ -215,10 +221,11 @@ func (q *queryNode) fetch() {
 
 			refVal := item[refNode.column]
 
-			var refConditionMap = model.MapStrAny{
-				refK: refVal,
-			}
-			err = n.executor.ParseCondition(refConditionMap, false)
+			condition := &config.ConditionRet{}
+
+			condition.In(refK, refVal)
+
+			err = n.executor.ParseCondition(condition, false)
 			if err != nil {
 				n.err = err
 				return
@@ -270,69 +277,25 @@ func (q *queryNode) fetch() {
 
 			if n.isList {
 
-				// todo 统一func的调用？
-
 				// 组装参数
 				var paramList []model.Map
 				retList := n.ret.([]model.Map)
 				for _, ret := range retList {
-					param := model.Map{}
-					for paramI, paramItem := range _func.ParamList {
-						paramK := paramKeys[paramI]
-						if paramItem.Name == consts.FunctionOriReqParam {
-							param[paramItem.Name] = util.String(ret)
-						} else {
-							if strings.HasPrefix(paramK, "'") && strings.HasSuffix(paramK, "'") {
-								param[paramItem.Name] = paramK[1 : len(paramK)-1]
-							} else {
-								param[paramItem.Name] = util.String(ret[paramK])
-							}
-						}
-					}
-					paramList = append(paramList, param)
+					paramList = append(paramList, buildFunctionParam(ret, _func, paramKeys))
 				}
 
-				if _func.Batch {
-
-					param := model.Map{}
-
-					valList, err := queryConfig.CallFunc(n.ctx, functionName, param)
+				for i, param := range paramList {
+					val, err := queryConfig.CallFunc(n.ctx, functionName, param)
 					if err != nil {
 						n.err = err
 						return
 					}
-					list := gconv.Interfaces(valList)
-					for i := range retList {
-						retList[i][k] = list[i]
-					}
-
-				} else {
-					for i, param := range paramList {
-						val, err := queryConfig.CallFunc(n.ctx, functionName, param)
-						if err != nil {
-							n.err = err
-							return
-						}
-						retList[i][k] = val
-					}
+					retList[i][k] = val
 				}
 
 			} else {
-				param := model.Map{}
-				for paramI, paramItem := range _func.ParamList {
-					paramK := paramKeys[paramI]
-					if paramItem.Name == consts.FunctionOriReqParam {
-						param[paramItem.Name] = util.String(n.ret)
-					} else {
-						if strings.HasPrefix(paramK, "'") && strings.HasSuffix(paramK, "'") {
-							param[paramItem.Name] = paramK[1 : len(paramK)-1]
-						} else {
-							param[paramItem.Name] = util.String(n.ret.(model.Map)[paramK])
-						}
-					}
-				}
 
-				val, err := queryConfig.CallFunc(n.ctx, functionName, param)
+				val, err := queryConfig.CallFunc(n.ctx, functionName, buildFunctionParam(n.ret.(model.Map), _func, paramKeys))
 				if err != nil {
 					n.err = err
 					return
@@ -341,7 +304,24 @@ func (q *queryNode) fetch() {
 			}
 		}
 	}
+}
 
+func buildFunctionParam(ret model.Map, _func *config.Func, paramKeys []string) model.Map {
+	param := model.Map{}
+	for paramI, paramItem := range _func.ParamList {
+		paramK := paramKeys[paramI]
+		if paramItem.Name == consts.FunctionOriReqParam {
+			param[paramItem.Name] = util.String(ret)
+		} else {
+			if strings.HasPrefix(paramK, "'") && strings.HasSuffix(paramK, "'") {
+				param[paramItem.Name] = paramK[1 : len(paramK)-1]
+			} else {
+				param[paramItem.Name] = util.String(ret[paramK])
+			}
+		}
+	}
+
+	return param
 }
 
 func (q *queryNode) result() {

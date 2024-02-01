@@ -36,6 +36,7 @@ func NewRowKeyGenRet() *RowKeyGenRet {
 func (r *RowKeyGenRet) RowKey(id any) {
 	r.data[consts.RowKey] = id
 }
+
 func (r *RowKeyGenRet) RowKeys(d model.Map) {
 	for k, v := range d {
 		r.data[k] = v
@@ -57,6 +58,12 @@ func (r *RowKeyGenRet) RowKeys(d model.Map) {
 // }
 
 func (c *Config) RowKeyGenFunc(f RowKeyGenerator) {
+	if f.Handler == nil {
+		panic("RowKeyGenFunc Handler is nil")
+	}
+	if _, ok := c.rowKeyGenFuncMap[f.Name]; ok {
+		panic("RowKeyGenFunc " + f.Name + " already exists")
+	}
 	c.rowKeyGenFuncMap[f.Name] = f
 }
 

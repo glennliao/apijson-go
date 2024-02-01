@@ -14,10 +14,12 @@ import (
 )
 
 // parseQueryNodeReq 解析节点请求内容
-func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, where model.MapStrAny, ctrlMap model.Map) {
+func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, condition *config.ConditionRet, ctrlMap model.Map) {
 	refMap = model.MapStrStr{}
 	ctrlMap = model.Map{}
-	where = model.MapStrAny{}
+
+	condition = &config.ConditionRet{}
+
 	for k, v := range reqMap {
 
 		if strings.HasSuffix(k, consts.FunctionsKeySuffix) {
@@ -37,7 +39,7 @@ func parseQueryNodeReq(reqMap model.Map, isList bool) (refMap model.MapStrStr, w
 				}
 			}
 
-			where[k] = v
+			condition.Eq(k, v)
 		}
 	}
 	return
@@ -77,7 +79,6 @@ func hasAccess(node *Node) (hasAccess bool, condition *config.ConditionRet, err 
 }
 
 func getColList(list []model.Map, col string) []any {
-
 	set := gset.New()
 	for _, item := range list {
 		set.Add(gconv.String(item[col]))
@@ -94,7 +95,6 @@ func setNeedTotal(node *Node) {
 
 // setNodeRole 设置节点的@role, 根据 config.DefaultRoleFunc 获取节点最终的@role
 func setNodeRole(node *Node, tableName string, parenNodeRole string) {
-
 	role, ok := node.req[consts.Role]
 
 	if node.Type != NodeTypeQuery {
@@ -120,7 +120,6 @@ func setNodeRole(node *Node, tableName string, parenNodeRole string) {
 
 // analysisRef 分析依赖, 将依赖关系保存到prerequisites中
 func analysisRef(p *Node, prerequisites *[][]string) {
-
 	// 分析依赖关系, 让无依赖的先执行， 然后在执行后续的
 	for _, node := range p.children {
 		for _, refNode := range node.refKeyMap {

@@ -19,11 +19,9 @@ func newFuncNode(n *Node) *funcNode {
 }
 
 func (h *funcNode) parse() {
-
 }
 
 func (h *funcNode) fetch() {
-
 }
 
 func (h *funcNode) result() {
@@ -38,8 +36,6 @@ func (h *funcNode) result() {
 		n.err = consts.NewValidReqErr("functions not exists: " + functionName)
 		return
 	}
-
-	// todo batch support
 
 	param := model.Map{}
 
@@ -65,14 +61,12 @@ func (h *funcNode) result() {
 			return
 		}
 		if valNode.ret != nil {
-
 			switch valNode.ret.(type) {
 			case model.Map:
 				param[item.Name] = util.String(valNode.ret.(model.Map)[paramName])
 			case string:
 				param[item.Name] = valNode.ret.(string)
 			}
-
 		} else {
 			param[item.Name] = util.String(valNode.simpleReqVal)
 		}

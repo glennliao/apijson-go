@@ -33,6 +33,7 @@ func (c *ActionConfig) GetAccessConfig(key string, noVerify bool) (*AccessConfig
 func (c *ActionConfig) Func(name string) *Func {
 	return c.functions.funcMap[name]
 }
+
 func (c *ActionConfig) CallFunc(ctx context.Context, name string, param model.Map) (res any, err error) {
 	return c.functions.Call(ctx, name, param)
 }
@@ -46,7 +47,6 @@ func (c *ActionConfig) ConditionFunc(ctx context.Context, req ConditionReq, cond
 }
 
 func (c *ActionConfig) RowKeyGen(ctx context.Context, genFuncName string, accessName string, tableName string, data model.Map) (model.Map, error) {
-
 	var paramKeys []string
 
 	if strings.Contains(genFuncName, "(") {
@@ -62,7 +62,7 @@ func (c *ActionConfig) RowKeyGen(ctx context.Context, genFuncName string, access
 		}
 
 		if len(paramKeys) > 0 {
-			var param = model.FuncParam{}
+			param := model.FuncParam{}
 			for i, item := range f.ParamList {
 				if len(paramKeys) >= i {
 					param[item.Name] = gvar.New(paramKeys[i])

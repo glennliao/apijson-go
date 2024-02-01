@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/glennliao/apijson-go/action"
+	"github.com/glennliao/apijson-go/config"
 	"github.com/glennliao/apijson-go/consts"
 	"github.com/glennliao/apijson-go/model"
 	"github.com/glennliao/apijson-go/util"
@@ -17,18 +18,13 @@ type ActionExecutor struct {
 	DbResolver DbResolver
 }
 
-func (a *ActionExecutor) Do(ctx context.Context, req action.ActionExecutorReq) (ret model.Map, err error) {
+func (a *ActionExecutor) Do(ctx context.Context, req action.ExecutorReq) (ret model.Map, err error) {
 	switch req.Method {
 	case http.MethodPost:
 		return a.Insert(ctx, req.Table, req.Data)
 	case http.MethodPut:
 
-		for i, _ := range req.Data {
-			ret, err = a.Update(ctx, req.Table, req.Data[i], req.Where[i])
-			if err != nil {
-				break
-			}
-		}
+		ret, err = a.Update(ctx, req.Table, req.Data, req.Where, req.AccessCondition)
 		if err != nil {
 			ret = model.Map{
 				"code": 200,
@@ -38,12 +34,7 @@ func (a *ActionExecutor) Do(ctx context.Context, req action.ActionExecutorReq) (
 
 	case http.MethodDelete:
 
-		for i, _ := range req.Data {
-			ret, err = a.Delete(ctx, req.Table, req.Where[i])
-			if err != nil {
-				break
-			}
-		}
+		ret, err = a.Delete(ctx, req.Table, req.Where, req.AccessCondition)
 		if err != nil {
 			ret = model.Map{
 				"code": 200,
@@ -54,7 +45,7 @@ func (a *ActionExecutor) Do(ctx context.Context, req action.ActionExecutorReq) (
 	return nil, consts.NewMethodNotSupportErr(req.Method)
 }
 
-func (a *ActionExecutor) Insert(ctx context.Context, table string, data []model.Map) (ret model.Map, err error) {
+func (a *ActionExecutor) Insert(ctx context.Context, table string, data model.Map) (ret model.Map, err error) {
 	result, err := a.DbResolver(ctx).Insert(ctx, table, data)
 	if err != nil {
 		return nil, err
@@ -75,10 +66,18 @@ func (a *ActionExecutor) Insert(ctx context.Context, table string, data []model.
 	return ret, nil
 }
 
-func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Map, where model.Map) (ret model.Map, err error) {
+func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Map, where model.Map, accessCondition *config.ConditionRet) (ret model.Map, err error) {
+	conditions, builders := accessCondition.AllCondition()
+	//if len(conditions)+len(builders) == 0 {
+	//	return nil, consts.NewValidReqErr("where的值不能为空")
+	//}
+
 	m := a.DbResolver(ctx).Model(table).Ctx(ctx)
 
+	whereBuilder := m.Builder()
+
 	for k, v := range where {
+		// TODO 统一到condition中
 		if strings.HasSuffix(k, consts.OpIn) {
 			if vStr, ok := v.(string); ok {
 				if vStr == "" {
@@ -88,16 +87,30 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 			m = m.WhereIn(k[0:len(k)-2], v)
 			delete(where, k)
 			continue
-		}
-		if k == consts.Raw {
+		} else if k == consts.Raw {
 			m = m.Where(v.(map[string][]any))
 			delete(where, k)
 			continue
+		} else {
+			whereBuilder = whereBuilder.Where(k, v)
 		}
+	}
 
-		if v == nil || gconv.String(v) == "" { // 暂只处理字符串为空的情况
-			return nil, consts.NewValidReqErr("where的值不能为空:" + k)
+	for _, v := range conditions {
+
+		whereBuilder = whereBuilder.Where(v.Column, v.Args)
+
+		if strings.Contains(v.Column, "?") {
+			// TODO 校验必须有条件地删除/更新
+			//if len(v.Args) == 0 || gconv.String(v.Args[0]) == "" { // 暂只处理字符串为空的情况, // TODO 此处 args[n]? 存在的可能?
+			//	return nil, consts.NewValidReqErr("where的值不能为空:" + v.Column)
+			//}
 		}
+	}
+
+	// 子查询, 看下如何与上面的统一
+	for _, v := range builders {
+		whereBuilder = whereBuilder.Where(v)
 	}
 
 	for k, v := range data {
@@ -127,7 +140,7 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 
 	}
 
-	_ret, err := m.Where(where).Update(data)
+	_ret, err := m.Where(whereBuilder).Update(data)
 	if err != nil {
 		return nil, err
 	}
@@ -145,40 +158,58 @@ func (a *ActionExecutor) Update(ctx context.Context, table string, data model.Ma
 	return ret, err
 }
 
-func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.Map) (ret model.Map, err error) {
-	if len(where) == 0 {
-		return nil, consts.NewValidReqErr("where的值不能为空")
-	}
+func (a *ActionExecutor) Delete(ctx context.Context, table string, where model.Map, accessCondition *config.ConditionRet) (ret model.Map, err error) {
+	// TODO access 校验判断
+	//conditions, builders := accessCondition.AllCondition()
+	//if len(conditions)+len(builders) == 0 {
+	//	return nil, consts.NewValidReqErr("where的值不能为空")
+	//}
 
 	m := a.DbResolver(ctx).Model(table).Ctx(ctx)
 
+	whereBuilder := m.Builder()
+
 	for k, v := range where {
-
-		if k == consts.Raw {
-			m = m.Where(v)
-			continue
-		}
-
 		if strings.HasSuffix(k, consts.OpIn) {
+			if vStr, ok := v.(string); ok {
+				if vStr == "" {
+					return nil, consts.NewValidReqErr("where的值不能为空")
+				}
+			}
 			m = m.WhereIn(k[0:len(k)-2], v)
 			delete(where, k)
 			continue
+		} else if k == consts.Raw {
+			m = m.Where(v.(map[string][]any))
+			delete(where, k)
+			continue
+		} else {
+			whereBuilder = whereBuilder.Where(k, v)
 		}
-
-		if gconv.String(v) == "" || v == nil { // 暂只处理字符串为空的情况
-			return nil, consts.NewValidReqErr("where的值不能为空:" + k)
-		}
-
-		m = m.Where(k, v)
 	}
 
-	_ret, err := m.Delete()
+	//for _, v := range conditions {
+	//
+	//	whereBuilder = whereBuilder.Where(v.Column, v.Args)
+	//
+	//	if strings.Contains(v.Column, "?") {
+	//		//if len(v.Args) == 0 || gconv.String(v.Args[0]) == "" { // 暂只处理字符串为空的情况, // TODO 此处 args[n]? 存在的可能?
+	//		//	return nil, consts.NewValidReqErr("where的值不能为空:" + v.Column)
+	//		//}
+	//	}
+	//
+	//}
+
+	//for _, v := range builders {
+	//	whereBuilder = whereBuilder.Where(v)
+	//}
+
+	_ret, err := m.Where(whereBuilder).Delete()
 	if err != nil {
 		return nil, err
 	}
 
 	count, err := _ret.RowsAffected()
-
 	if err != nil {
 		return nil, err
 	}

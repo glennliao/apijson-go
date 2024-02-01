@@ -1,0 +1,3 @@
+database:
+  default:
+    link: "sqlite::@file(./test.sqlite3)"

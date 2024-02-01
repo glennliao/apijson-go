@@ -78,11 +78,8 @@ func New() *Config {
 	return c
 }
 
-func (c *Config) ReLoad() {
-
+func (c *Config) ReLoad(ctx context.Context) (err error) {
 	accessConfigMap := make(map[string]AccessConfig)
-
-	ctx := context.Background()
 
 	accessListProvider := accessListProviderMap[c.AccessListProvider]
 
@@ -105,7 +102,7 @@ func (c *Config) ReLoad() {
 				access.FieldsGet["default"] = &FieldsGetValue{}
 			}
 
-			for role, _ := range access.FieldsGet {
+			for role := range access.FieldsGet {
 				if access.FieldsGet[role].MaxCount == nil {
 					access.FieldsGet[role].MaxCount = &defaultMaxCount
 				}
@@ -143,6 +140,7 @@ func (c *Config) ReLoad() {
 		defaultRoleFunc:  c.Access.DefaultRoleFunc,
 	}
 
+	return
 }
 
 func (c *Config) QueryConfig() *QueryConfig {

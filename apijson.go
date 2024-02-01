@@ -9,37 +9,28 @@ import (
 	"github.com/glennliao/apijson-go/query"
 )
 
-type Plugin interface {
-	Install(ctx context.Context, a *ApiJson)
-}
+const CtxKey = "apiJsonApp"
 
 type ApiJson struct {
-	config *config.Config
-	Debug  bool // 是否开启debug模式, 显示每步骤
 	ctx    context.Context
+	config *config.Config
+	Debug  bool
 
 	actionHooks   []action.Hook
 	actionHookMap map[string][]*action.Hook
 }
 
-var DefaultApiJson = New()
-
 func New() *ApiJson {
-	a := &ApiJson{}
-	a.config = config.New()
-	a.ctx = context.Background()
+	a := &ApiJson{
+		ctx:    context.Background(),
+		config: config.New(),
+	}
 	return a
 }
 
-// Load load for defaultApiJson, 简化使用
-func Load(apps ...func(ctx context.Context, a *ApiJson)) *ApiJson {
-
-	for _, app := range apps {
-		DefaultApiJson.Use(app)
-	}
-
-	DefaultApiJson.Load()
-	return DefaultApiJson
+func (a *ApiJson) SetCtx(ctx context.Context) *ApiJson {
+	a.ctx = ctx
+	return a
 }
 
 func (a *ApiJson) Use(p ...func(ctx context.Context, a *ApiJson)) *ApiJson {
@@ -49,8 +40,8 @@ func (a *ApiJson) Use(p ...func(ctx context.Context, a *ApiJson)) *ApiJson {
 	return a
 }
 
-func (a *ApiJson) Load() {
-	a.config.ReLoad()
+func (a *ApiJson) Load() error {
+	return a.config.ReLoad(a.ctx)
 }
 
 func (a *ApiJson) Config() *config.Config {
@@ -58,6 +49,8 @@ func (a *ApiJson) Config() *config.Config {
 }
 
 func (a *ApiJson) NewQuery(ctx context.Context, req model.Map) *query.Query {
+	ctx = context.WithValue(ctx, CtxKey, a)
+
 	q := query.New(ctx, a.Config().QueryConfig(), req)
 
 	q.DbMeta = a.config.DbMeta
@@ -71,13 +64,12 @@ func (a *ApiJson) NewQuery(ctx context.Context, req model.Map) *query.Query {
 }
 
 func (a *ApiJson) NewAction(ctx context.Context, method string, req model.Map) *action.Action {
+	ctx = context.WithValue(ctx, CtxKey, a)
 	act := action.New(ctx, a.Config().ActionConfig(), method, req)
 
 	act.NoAccessVerify = a.config.Access.NoVerify
 	act.DbFieldStyle = a.config.DbFieldStyle
 	act.JsonFieldStyle = a.config.JsonFieldStyle
-
-	act.NewQuery = a.NewQuery
 
 	act.HooksMap = a.actionHookMap
 
@@ -91,4 +83,8 @@ func (a *ApiJson) RegActionHook(hook action.Hook) {
 	for _, item := range hook.For {
 		a.actionHookMap[item] = append(a.actionHookMap[item], &hook)
 	}
+}
+
+func GetApiJson(ctx context.Context) *ApiJson {
+	return ctx.Value(CtxKey).(*ApiJson)
 }

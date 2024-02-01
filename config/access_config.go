@@ -57,6 +57,23 @@ func (a *AccessConfig) GetFieldsGetInByRole(role string) map[string][]string {
 	return inFieldsMap
 }
 
+func (a *AccessConfig) GetAccessRoles(method string) []string {
+	switch method {
+	case http.MethodGet:
+		return a.Get
+	case http.MethodHead:
+		return a.Head
+	case http.MethodPost:
+		return a.Post
+	case http.MethodPut:
+		return a.Put
+	case http.MethodDelete:
+		return a.Delete
+	}
+
+	return make([]string, 0)
+}
+
 func (a *Access) GetAccess(accessName string, noVerify bool) (*AccessConfig, error) {
 	access, ok := a.accessConfigMap[accessName]
 
